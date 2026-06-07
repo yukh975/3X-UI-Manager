@@ -24,7 +24,13 @@ gradlew.bat
 # Keystores — never commit
 *.jks
 *.keystore
+*.p12
+*.pfx
 keystore.properties
+release.properties
+
+# CI decode target for release keystore (outside this dir in CI, but belt+braces)
+.release-keystore.*
 
 # OS junk
 .DS_Store
