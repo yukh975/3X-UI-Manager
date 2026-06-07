@@ -61,10 +61,15 @@ val resolvedVersionCode: Int =
     // Tagged release → version code derived from the tag (stable across
     // rebuilds, predictable for users).
     parseSemverVersionCode(System.getenv("CI_COMMIT_TAG"))
-        // Local builds at an already-tagged commit get the same code.
-        ?: parseSemverVersionCode(runGit("describe", "--tags", "--abbrev=0", "--match", "v*"))
-        // Branch builds: pipeline IID, monotonic but unrelated to tag math.
+        // Branch CI build → pipeline IID. Monotonic per build, far below
+        // any realistic tag code, so never collides. Must come BEFORE the
+        // git-describe fallback because runners do a shallow clone that
+        // still reaches recent tags — every branch build between v0.2.0
+        // and v0.3.0 would otherwise be stuck at 20_000.
         ?: System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
+        // Local builds with a reachable tag get a meaningful code; pure
+        // local builds without one fall through to 1.
+        ?: parseSemverVersionCode(runGit("describe", "--tags", "--abbrev=0", "--match", "v*"))
         ?: 1
 
 val resolvedVersionName: String = run {
