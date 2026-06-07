@@ -166,26 +166,23 @@ release:publish:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
   before_script: []
   script:
-    # Strip the leading "v" so the URL version matches the APK's internal
-    # versionName (e.g. v0.2.0 → 0.2.0). The export is picked up by
-    # release-cli when it materializes the release: block below.
-    - export PKG_VERSION="${CI_COMMIT_TAG#v}"
+    # release-cli is invoked directly (not via the `release:` keyword)
+    # because YAML-level variable substitution happens BEFORE script runs,
+    # so $PKG_VERSION computed here would be empty when it lands in URLs.
+    # Doing it in shell means shell parameter expansion (#v prefix strip)
+    # works and the URLs come out with the correct version.
+    - PKG_VERSION="${CI_COMMIT_TAG#v}"
+    - PKG_BASE="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION"
     - echo "Publishing GitLab Release for $CI_COMMIT_TAG (package version $PKG_VERSION)"
-  release:
-    tag_name: "$CI_COMMIT_TAG"
-    name: "$CI_COMMIT_TAG"
-    description: |
-      Built by [pipeline #$CI_PIPELINE_ID]($CI_PIPELINE_URL) from $CI_COMMIT_SHORT_SHA.
+    - |
+      release-cli create \
+        --tag-name "$CI_COMMIT_TAG" \
+        --name "$CI_COMMIT_TAG" \
+        --description "Built by [pipeline #$CI_PIPELINE_ID]($CI_PIPELINE_URL) from $CI_COMMIT_SHORT_SHA.
 
-      - `app-release.apk` — signed, ready to sideload.
-      - `app-debug.apk` — debug build (applicationId `net.yukh.xui.debug`, installs side-by-side with release).
+      - \`app-release.apk\` — signed, ready to sideload.
+      - \`app-debug.apk\` — debug build (applicationId \`net.yukh.xui.debug\`, installs side-by-side with release).
 
-      APKs live in the project's [Generic Package Registry]($CI_PROJECT_URL/-/packages) — these links keep working after pipeline artifacts expire and after pipelines are cleaned up.
-    assets:
-      links:
-        - name: "app-release.apk (signed)"
-          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/app-release.apk"
-          link_type: package
-        - name: "app-debug.apk"
-          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/app-debug.apk"
-          link_type: package
+      APKs live in the project's [Generic Package Registry]($CI_PROJECT_URL/-/packages) — these links keep working after pipeline artifacts expire and after pipelines are cleaned up." \
+        --assets-link "{\"name\":\"app-release.apk (signed)\",\"url\":\"$PKG_BASE/app-release.apk\",\"link_type\":\"package\"}" \
+        --assets-link "{\"name\":\"app-debug.apk\",\"url\":\"$PKG_BASE/app-debug.apk\",\"link_type\":\"package\"}"
