@@ -1,4 +1,3 @@
-import java.io.ByteArrayOutputStream
 import java.util.Properties
 
 plugins {
@@ -23,16 +22,16 @@ plugins {
 //                  fallback: "0.1.0-<short_sha>" so artifacts from untagged
 //                            commits still have a unique identifier.
 
+// providers.exec defers process execution and is configuration-cache safe,
+// unlike the legacy Project.exec which Gradle 8+ forbids at config time.
 fun runGit(vararg args: String): String? = try {
-    val out = ByteArrayOutputStream()
-    val result = exec {
-        commandLine = listOf("git") + args.toList()
+    val output = providers.exec {
+        commandLine("git", *args)
         workingDir = rootDir
-        standardOutput = out
-        errorOutput = ByteArrayOutputStream()
         isIgnoreExitValue = true
     }
-    if (result.exitValue == 0) out.toString(Charsets.UTF_8).trim().ifEmpty { null } else null
+    val exit = output.result.get().exitValue
+    if (exit == 0) output.standardOutput.asText.get().trim().ifEmpty { null } else null
 } catch (_: Throwable) {
     null
 }
