@@ -1,6 +1,6 @@
 package net.yukh.xui.data.api
 
-import kotlinx.serialization.json.JsonElement
+import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientLinks
 import net.yukh.xui.data.api.dto.EnableRequest
@@ -23,10 +23,10 @@ interface XuiApi {
     suspend fun getTwoFactorEnable(): ApiResponse<Boolean>
 
     @POST("login")
-    suspend fun login(@Body req: LoginRequest): ApiResponse<JsonElement>
+    suspend fun login(@Body req: LoginRequest): ApiAck
 
     @POST("logout")
-    suspend fun logout(): ApiResponse<JsonElement>
+    suspend fun logout(): ApiAck
 
     // ---- Server -----------------------------------------------------------
 
@@ -34,10 +34,10 @@ interface XuiApi {
     suspend fun getServerStatus(): ApiResponse<ServerStatus>
 
     @POST("panel/api/server/restartXrayService")
-    suspend fun restartXray(): ApiResponse<JsonElement>
+    suspend fun restartXray(): ApiAck
 
     @POST("panel/api/server/stopXrayService")
-    suspend fun stopXray(): ApiResponse<JsonElement>
+    suspend fun stopXray(): ApiAck
 
     // ---- Inbounds ---------------------------------------------------------
 
@@ -48,7 +48,7 @@ interface XuiApi {
     suspend fun setInboundEnable(
         @Path("id") id: Int,
         @Body body: EnableRequest,
-    ): ApiResponse<JsonElement>
+    ): ApiAck
 
     // ---- Clients ----------------------------------------------------------
 
@@ -59,7 +59,7 @@ interface XuiApi {
     suspend fun getClientLinks(@Path("email") email: String): ApiResponse<ClientLinks>
 
     @POST("panel/api/clients/del/{email}")
-    suspend fun deleteClient(@Path("email") email: String): ApiResponse<JsonElement>
+    suspend fun deleteClient(@Path("email") email: String): ApiAck
 
     @POST("panel/api/clients/onlines")
     suspend fun listOnlines(): ApiResponse<List<String>>

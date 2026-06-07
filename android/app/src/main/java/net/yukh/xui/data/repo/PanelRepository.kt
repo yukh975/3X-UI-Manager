@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import net.yukh.xui.data.api.ApiResponse
 import net.yukh.xui.data.api.XuiApi
 import net.yukh.xui.data.api.XuiApiFactory
+import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientLinks
 import net.yukh.xui.data.api.dto.EnableRequest
@@ -54,7 +55,7 @@ class PanelRepository @Inject constructor(
         token: String,
     ): Result<ServerStatus> {
         val candidate = XuiApiFactory.tokenAuthed(baseUrl, allowInsecureTls, token, json)
-        return safeCall { candidate.getServerStatus() }.onSuccess {
+        return safeData { candidate.getServerStatus() }.onSuccess {
             store.saveProfile(
                 ConnectionProfile(baseUrl, allowInsecureTls, ConnectionAuth.Token(token)),
             )
@@ -79,16 +80,22 @@ class PanelRepository @Inject constructor(
             baseUrl, allowInsecureTls, jar, csrfHolder, json,
         )
 
-        val csrfBootstrap = safeCall { candidate.getCsrfToken() }
+        // 1. Seed CSRF. GET → no token needed yet, server creates session.
+        val csrfBootstrap = safeData { candidate.getCsrfToken() }
         csrfBootstrap.onFailure { return Result.failure(it) }
             .onSuccess { csrfHolder.set(it) }
 
-        val loginResult = safeCall { candidate.login(LoginRequest(username, password, twoFactorCode)) }
+        // 2. Login. Success returns {success:true, msg:"…", obj:null} — that's
+        //    an ApiAck shape; treating it through safeData would incorrectly
+        //    mark a missing obj as failure.
+        val loginResult = safeAck { candidate.login(LoginRequest(username, password, twoFactorCode)) }
         loginResult.onFailure { return Result.failure(it) }
 
-        safeCall { candidate.getCsrfToken() }.onSuccess { csrfHolder.set(it) }
+        // 3. Refresh CSRF — panel rotates it on session creation.
+        safeData { candidate.getCsrfToken() }.onSuccess { csrfHolder.set(it) }
 
-        val status = safeCall { candidate.getServerStatus() }
+        // 4. Verify the session actually works.
+        val status = safeData { candidate.getServerStatus() }
         return status.onSuccess {
             store.saveProfile(
                 ConnectionProfile(
@@ -115,35 +122,35 @@ class PanelRepository @Inject constructor(
     // ---- Server -----------------------------------------------------------
 
     suspend fun getServerStatus(): Result<ServerStatus> =
-        authedCall { it.getServerStatus() }
+        authedData { it.getServerStatus() }
 
     suspend fun restartXray(): Result<Unit> =
-        authedCallVoid { it.restartXray() }
+        authedAck { it.restartXray() }
 
     suspend fun stopXray(): Result<Unit> =
-        authedCallVoid { it.stopXray() }
+        authedAck { it.stopXray() }
 
     // ---- Inbounds ---------------------------------------------------------
 
     suspend fun listInboundsSlim(): Result<List<InboundSlim>> =
-        authedCall { it.listInboundsSlim() }
+        authedData { it.listInboundsSlim() }
 
     suspend fun setInboundEnable(id: Int, enable: Boolean): Result<Unit> =
-        authedCallVoid { it.setInboundEnable(id, EnableRequest(enable)) }
+        authedAck { it.setInboundEnable(id, EnableRequest(enable)) }
 
     // ---- Clients ----------------------------------------------------------
 
     suspend fun listClients(): Result<List<Client>> =
-        authedCall { it.listClients() }
+        authedData { it.listClients() }
 
     suspend fun getClientLinks(email: String): Result<ClientLinks> =
-        authedCall { it.getClientLinks(email) }
+        authedData { it.getClientLinks(email) }
 
     suspend fun deleteClient(email: String): Result<Unit> =
-        authedCallVoid { it.deleteClient(email) }
+        authedAck { it.deleteClient(email) }
 
     suspend fun listOnlines(): Result<List<String>> =
-        authedCall { it.listOnlines() }
+        authedData { it.listOnlines() }
 
     // ---- Internals --------------------------------------------------------
 
@@ -154,50 +161,67 @@ class PanelRepository @Inject constructor(
         _connected.value = true
     }
 
-    private suspend inline fun <T> authedCall(
+    private suspend inline fun <T> authedData(
         crossinline block: suspend (XuiApi) -> ApiResponse<T>,
     ): Result<T> {
         val current = api ?: return Result.failure(PanelError.NotConnected)
-        return safeCall { block(current) }
+        return safeData { block(current) }
     }
 
-    private suspend inline fun authedCallVoid(
-        crossinline block: suspend (XuiApi) -> ApiResponse<*>,
+    private suspend inline fun authedAck(
+        crossinline block: suspend (XuiApi) -> ApiAck,
     ): Result<Unit> {
         val current = api ?: return Result.failure(PanelError.NotConnected)
-        return try {
-            val resp = block(current)
-            if (resp.success) {
-                Result.success(Unit)
-            } else {
-                Result.failure(PanelError.Rejected(resp.msg.ifBlank { "Request rejected" }))
-            }
-        } catch (e: HttpException) {
-            Result.failure(PanelError.Http(e.code()))
-        } catch (e: IOException) {
-            Result.failure(PanelError.Network(e.message ?: e.javaClass.simpleName))
-        } catch (_: SerializationException) {
-            Result.failure(PanelError.BadResponse)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        return safeAck { block(current) }
     }
 
-    private suspend inline fun <T> safeCall(
+    /**
+     * Run a data-fetching call: success requires both `success: true` AND a
+     * non-null `obj` (the caller specifically wants the payload).
+     */
+    private suspend inline fun <T> safeData(
         crossinline block: suspend () -> ApiResponse<T>,
-    ): Result<T> = try {
+    ): Result<T> = catching {
         val resp = block()
         if (resp.success && resp.obj != null) {
             Result.success(resp.obj)
         } else {
             Result.failure(PanelError.Rejected(resp.msg.ifBlank { "Request rejected" }))
         }
+    }
+
+    /**
+     * Run an ack-only call: success requires just `success: true`. The
+     * panel uses null `obj` plus a status message for login/logout, xray
+     * controls, toggles, and deletes.
+     */
+    private suspend inline fun safeAck(
+        crossinline block: suspend () -> ApiAck,
+    ): Result<Unit> = catching {
+        val resp = block()
+        if (resp.success) {
+            Result.success(Unit)
+        } else {
+            Result.failure(PanelError.Rejected(resp.msg.ifBlank { "Request rejected" }))
+        }
+    }
+
+    /**
+     * Common exception → PanelError mapping. Keeps the typed error surface
+     * narrow so the UI never has to know the Retrofit/OkHttp plumbing.
+     */
+    private inline fun <T> catching(block: () -> Result<T>): Result<T> = try {
+        block()
     } catch (e: HttpException) {
         Result.failure(PanelError.Http(e.code()))
     } catch (e: IOException) {
         Result.failure(PanelError.Network(e.message ?: e.javaClass.simpleName))
-    } catch (_: SerializationException) {
-        Result.failure(PanelError.BadResponse)
+    } catch (e: SerializationException) {
+        // Surface what the parser actually choked on — usually "Unexpected JSON
+        // token at offset N" or "Expected start of an object…", which makes it
+        // obvious whether the panel returned HTML (wrong base path / auth
+        // wall) or just a schema-shape we don't handle yet.
+        Result.failure(PanelError.BadResponse(e.message?.lines()?.firstOrNull()))
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -207,6 +231,15 @@ sealed class PanelError(message: String) : RuntimeException(message) {
     data object NotConnected : PanelError("Not connected to a panel")
     data class Http(val code: Int) : PanelError("HTTP $code")
     data class Network(val reason: String) : PanelError("Network error: $reason")
-    data object BadResponse : PanelError("Unexpected response — check URL and base path")
+    data class BadResponse(val detail: String?) : PanelError(
+        buildString {
+            append("Unexpected response — check URL and base path")
+            if (!detail.isNullOrBlank()) {
+                append(" (")
+                append(detail)
+                append(")")
+            }
+        },
+    )
     data class Rejected(val msg: String) : PanelError(msg)
 }
