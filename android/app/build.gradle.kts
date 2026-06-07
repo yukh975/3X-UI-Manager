@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream
 import java.util.Properties
 
 plugins {
@@ -23,12 +24,12 @@ plugins {
 //                            commits still have a unique identifier.
 
 fun runGit(vararg args: String): String? = try {
-    val out = java.io.ByteArrayOutputStream()
+    val out = ByteArrayOutputStream()
     val result = exec {
         commandLine = listOf("git") + args.toList()
         workingDir = rootDir
         standardOutput = out
-        errorOutput = java.io.ByteArrayOutputStream()
+        errorOutput = ByteArrayOutputStream()
         isIgnoreExitValue = true
     }
     if (result.exitValue == 0) out.toString(Charsets.UTF_8).trim().ifEmpty { null } else null
