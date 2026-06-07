@@ -152,7 +152,7 @@ class PanelRepository @Inject constructor(
 sealed class PanelError(message: String) : RuntimeException(message) {
     data object NotConnected : PanelError("Not connected to a panel")
     data class Http(val code: Int) : PanelError("HTTP $code")
-    data class Network(val cause: String) : PanelError("Network error: $cause")
+    data class Network(val reason: String) : PanelError("Network error: $reason")
     data object BadResponse : PanelError("Unexpected response — check URL and base path")
     data class Rejected(val msg: String) : PanelError(msg)
 }
