@@ -41,3 +41,12 @@
 }
 
 # --- Hilt is handled by its own consumer rules; nothing custom needed -----
+
+# --- Google Tink (transitive dep of androidx.security:security-crypto) ----
+# Tink references compile-only annotation libraries that aren't on the
+# runtime classpath. R8 needs to be told to not warn about them, otherwise
+# the release build fails with "Missing class …CanIgnoreReturnValue".
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn com.google.j2objc.annotations.**
+-dontwarn org.checkerframework.**
+-dontwarn javax.annotation.concurrent.**
