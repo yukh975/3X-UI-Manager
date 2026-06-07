@@ -36,9 +36,35 @@ fun runGit(vararg args: String): String? = try {
     null
 }
 
+/**
+ * Map a semver tag to a deterministic versionCode.
+ *
+ *  v1.2.3  →  1_020_300
+ *  v0.3.0  →    30_000
+ *  v0.2.0  →    20_000
+ *
+ * Scheme: major*1_000_000 + minor*10_000 + patch*100. Leaves 99 slots per
+ * patch level and 99 patches per minor for dev/branch builds to occupy
+ * without ever colliding with a future release tag.
+ */
+fun parseSemverVersionCode(tag: String?): Int? {
+    val v = tag?.removePrefix("v") ?: return null
+    val parts = v.split(".")
+    if (parts.size != 3) return null
+    val major = parts[0].toIntOrNull() ?: return null
+    val minor = parts[1].toIntOrNull() ?: return null
+    val patch = parts[2].toIntOrNull() ?: return null
+    return major * 1_000_000 + minor * 10_000 + patch * 100
+}
+
 val resolvedVersionCode: Int =
-    System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
-        ?: runGit("rev-list", "--count", "HEAD")?.toIntOrNull()
+    // Tagged release → version code derived from the tag (stable across
+    // rebuilds, predictable for users).
+    parseSemverVersionCode(System.getenv("CI_COMMIT_TAG"))
+        // Local builds at an already-tagged commit get the same code.
+        ?: parseSemverVersionCode(runGit("describe", "--tags", "--abbrev=0", "--match", "v*"))
+        // Branch builds: pipeline IID, monotonic but unrelated to tag math.
+        ?: System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
         ?: 1
 
 val resolvedVersionName: String = run {

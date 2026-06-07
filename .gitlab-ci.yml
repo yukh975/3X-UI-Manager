@@ -45,14 +45,17 @@ cache:
 
 workflow:
   rules:
+    # Branch and MR builds trigger only on android/** changes. yaml-only
+    # tweaks don't change the APK, so spawning a pipeline just bumps
+    # CI_PIPELINE_IID and pollutes versionCode space without producing
+    # anything useful. To force a rebuild after a yaml change, push a tag
+    # or trigger from the web UI.
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
         - android/**/*
-        - .gitlab-ci.yml
     - if: $CI_COMMIT_BRANCH
       changes:
         - android/**/*
-        - .gitlab-ci.yml
     # Tag pushes always build — no `changes:` filter — so v1.2.3 tags get a
     # fresh APK with a clean versionName instead of reusing whatever the last
     # branch commit produced.
