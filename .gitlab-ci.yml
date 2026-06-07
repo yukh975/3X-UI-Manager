@@ -30,6 +30,7 @@ variables:
 stages:
   - build
   - test
+  - publish
 
 cache:
   key:
@@ -116,3 +117,43 @@ build:release:
       - android/app/build/outputs/mapping/release/mapping.txt
     expire_in: 26 weeks
     when: on_success
+
+# Auto-create a GitLab Release whenever a v* tag's pipeline goes green.
+# The semver tag enforces "new release = new version" without manual
+# release-page editing — to ship a new build to the Releases page, push a
+# new tag, full stop.
+#
+# `release:` keyword is handled by GitLab's release-cli, which is why this
+# job uses that image and overrides the default before_script (the Android
+# SDK installer would otherwise try to run in a non-apt-equipped image).
+# `needs:` waits for both APK builds to succeed without downloading their
+# artifacts here — release-cli only needs the link URLs.
+release:publish:
+  stage: publish
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  needs:
+    - job: build:debug
+      artifacts: false
+    - job: build:release
+      artifacts: false
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
+  before_script: []
+  script:
+    - echo "Publishing GitLab Release for $CI_COMMIT_TAG (pipeline $CI_PIPELINE_ID)"
+  release:
+    tag_name: "$CI_COMMIT_TAG"
+    name: "$CI_COMMIT_TAG"
+    description: |
+      Built by [pipeline #$CI_PIPELINE_ID]($CI_PIPELINE_URL) from $CI_COMMIT_SHORT_SHA.
+
+      - `app-release.apk` — signed, ready to sideload.
+      - `app-debug.apk` — debug build (applicationId `net.yukh.xui.debug`, installs side-by-side with release).
+    assets:
+      links:
+        - name: "app-release.apk (signed)"
+          url: "${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/android/app/build/outputs/apk/release/app-release.apk?job=build:release"
+          link_type: package
+        - name: "app-debug.apk"
+          url: "${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/android/app/build/outputs/apk/debug/app-debug.apk?job=build:debug"
+          link_type: package
