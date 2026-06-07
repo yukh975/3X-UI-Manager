@@ -1,0 +1,31 @@
+# Built artifacts
+*.apk
+*.aab
+*.aar
+*.dex
+*.class
+build/
+captures/
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.gradle/
+local.properties
+
+# Gradle wrapper jar — regenerated on demand (see README)
+gradle/wrapper/gradle-wrapper.jar
+gradlew
+gradlew.bat
+
+# Logs
+*.log
+
+# Keystores — never commit
+*.jks
+*.keystore
+keystore.properties
+
+# OS junk
+.DS_Store
+Thumbs.db
