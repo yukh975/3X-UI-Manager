@@ -10,7 +10,6 @@ import net.yukh.xui.data.api.XuiApi
 import net.yukh.xui.data.api.XuiApiFactory
 import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.Client
-import net.yukh.xui.data.api.dto.ClientLinks
 import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
@@ -132,8 +131,8 @@ class PanelRepository @Inject constructor(
 
     // ---- Inbounds ---------------------------------------------------------
 
-    suspend fun listInboundsSlim(): Result<List<InboundSlim>> =
-        authedData { it.listInboundsSlim() }
+    suspend fun listInbounds(): Result<List<InboundSlim>> =
+        authedData { it.listInbounds() }
 
     suspend fun setInboundEnable(id: Int, enable: Boolean): Result<Unit> =
         authedAck { it.setInboundEnable(id, EnableRequest(enable)) }
@@ -143,7 +142,7 @@ class PanelRepository @Inject constructor(
     suspend fun listClients(): Result<List<Client>> =
         authedData { it.listClients() }
 
-    suspend fun getClientLinks(email: String): Result<ClientLinks> =
+    suspend fun getClientLinks(email: String): Result<List<String>> =
         authedData { it.getClientLinks(email) }
 
     suspend fun deleteClient(email: String): Result<Unit> =

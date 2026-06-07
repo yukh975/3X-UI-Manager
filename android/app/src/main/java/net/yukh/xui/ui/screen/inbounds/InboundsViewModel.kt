@@ -41,7 +41,7 @@ class InboundsViewModel @Inject constructor(
             )
         }
         viewModelScope.launch {
-            repo.listInboundsSlim()
+            repo.listInbounds()
                 .onSuccess { list ->
                     _state.update {
                         it.copy(

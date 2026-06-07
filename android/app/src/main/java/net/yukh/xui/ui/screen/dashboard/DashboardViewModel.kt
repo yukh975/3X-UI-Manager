@@ -17,6 +17,7 @@ import net.yukh.xui.data.repo.PanelRepository
 
 data class DashboardUiState(
     val status: ServerStatus? = null,
+    val onlineCount: Int = 0,
     val loading: Boolean = false,
     val refreshingNow: Boolean = false,
     val error: String? = null,
@@ -39,18 +40,7 @@ class DashboardViewModel @Inject constructor(
         _state.update { it.copy(loading = it.status == null) }
         pollJob = viewModelScope.launch {
             while (isActive) {
-                _state.update { it.copy(refreshingNow = true) }
-                repo.getServerStatus()
-                    .onSuccess { s ->
-                        _state.update {
-                            it.copy(status = s, loading = false, refreshingNow = false, error = null)
-                        }
-                    }
-                    .onFailure { e ->
-                        _state.update {
-                            it.copy(loading = false, refreshingNow = false, error = e.message)
-                        }
-                    }
+                fetchOnce()
                 delay(POLL_INTERVAL_MS)
             }
         }
@@ -62,16 +52,32 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun refreshNow() {
-        viewModelScope.launch {
-            _state.update { it.copy(refreshingNow = true) }
-            repo.getServerStatus()
-                .onSuccess { s ->
-                    _state.update { it.copy(status = s, refreshingNow = false, error = null) }
+        viewModelScope.launch { fetchOnce() }
+    }
+
+    private suspend fun fetchOnce() {
+        _state.update { it.copy(refreshingNow = true) }
+        val statusResult = repo.getServerStatus()
+        // Online client count isn't in /status on v3.x — derive it from the
+        // onlines list. A failure here shouldn't blank the whole dashboard.
+        val onlineCount = repo.listOnlines().getOrNull()?.size
+        statusResult
+            .onSuccess { s ->
+                _state.update {
+                    it.copy(
+                        status = s,
+                        onlineCount = onlineCount ?: it.onlineCount,
+                        loading = false,
+                        refreshingNow = false,
+                        error = null,
+                    )
                 }
-                .onFailure { e ->
-                    _state.update { it.copy(refreshingNow = false, error = e.message) }
+            }
+            .onFailure { e ->
+                _state.update {
+                    it.copy(loading = false, refreshingNow = false, error = e.message)
                 }
-        }
+            }
     }
 
     fun restartXray() {

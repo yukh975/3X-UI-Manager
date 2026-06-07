@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.Client
-import net.yukh.xui.data.api.dto.ClientLinks
 import net.yukh.xui.data.repo.PanelRepository
 
 data class ClientsUiState(
@@ -21,7 +20,7 @@ data class ClientsUiState(
     val error: String? = null,
     val transientMessage: String? = null,
     val selectedClientEmail: String? = null,
-    val selectedLinks: ClientLinks? = null,
+    val selectedLinks: List<String> = emptyList(),
     val linksLoading: Boolean = false,
     val linksError: String? = null,
 )
@@ -73,7 +72,7 @@ class ClientsViewModel @Inject constructor(
         _state.update {
             it.copy(
                 selectedClientEmail = email,
-                selectedLinks = null,
+                selectedLinks = emptyList(),
                 linksLoading = true,
                 linksError = null,
             )
@@ -93,7 +92,7 @@ class ClientsViewModel @Inject constructor(
         _state.update {
             it.copy(
                 selectedClientEmail = null,
-                selectedLinks = null,
+                selectedLinks = emptyList(),
                 linksLoading = false,
                 linksError = null,
             )
@@ -109,7 +108,7 @@ class ClientsViewModel @Inject constructor(
                             items = it.items.filterNot { c -> c.email == email },
                             transientMessage = "Client $email deleted",
                             selectedClientEmail = null,
-                            selectedLinks = null,
+                            selectedLinks = emptyList(),
                         )
                     }
                 }

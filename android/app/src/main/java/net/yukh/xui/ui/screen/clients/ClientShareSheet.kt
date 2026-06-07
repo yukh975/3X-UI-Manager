@@ -32,9 +32,9 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,14 +42,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import net.yukh.xui.data.api.dto.ClientLinks
 import net.yukh.xui.ui.qr.qrImageBitmap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientShareSheet(
     email: String,
-    links: ClientLinks?,
+    links: List<String>,
     loading: Boolean,
     error: String?,
     sheetState: SheetState,
@@ -87,18 +86,21 @@ fun ClientShareSheet(
                     color = MaterialTheme.colorScheme.error,
                 )
 
-                links != null -> {
-                    val primary = links.httpsLink.ifBlank { links.rawLink }
-                    if (primary.isNotBlank()) {
-                        QrCard(content = primary)
-                        LinkRow(label = "Subscription URL", value = primary, context = context)
-                    }
-                    if (links.rawLink.isNotBlank() && links.rawLink != primary) {
-                        LinkRow(label = "Raw link", value = links.rawLink, context = context)
+                links.isEmpty() -> Text("No subscription links for this client.")
+
+                else -> {
+                    // The first link drives the QR. If the client is attached
+                    // to several inbounds the panel returns multiple links;
+                    // each gets its own copy/share row below.
+                    QrCard(content = links.first())
+                    links.forEachIndexed { index, link ->
+                        LinkRow(
+                            label = if (links.size > 1) "Link ${index + 1}" else "Subscription link",
+                            value = link,
+                            context = context,
+                        )
                     }
                 }
-
-                else -> Text("No links available")
             }
 
             HorizontalDivider()
@@ -128,7 +130,7 @@ fun ClientShareSheet(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Delete client?") },
-            text = { Text("$email will be removed from every attached inbound. Traffic counters are kept.") },
+            text = { Text("$email will be removed from every attached inbound.") },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false

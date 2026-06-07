@@ -41,3 +41,16 @@ fun Long.formatLastOnline(): String {
 
 /** "5.5%" rounded to one decimal. */
 fun Double.formatPercent(): String = "%.1f%%".format(Locale.US, this)
+
+/** Format an uptime given in seconds as "12d 3h 5m". */
+fun Long.formatUptime(): String {
+    if (this <= 0) return "—"
+    val days = this / 86_400
+    val hours = (this % 86_400) / 3_600
+    val minutes = (this % 3_600) / 60
+    return buildList {
+        if (days > 0) add("${days}d")
+        if (hours > 0) add("${hours}h")
+        if (minutes > 0 || isEmpty()) add("${minutes}m")
+    }.joinToString(" ")
+}

@@ -160,9 +160,9 @@ private fun ClientRow(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("↑ ${client.up.formatBytes()}", style = MaterialTheme.typography.labelMedium)
                 Text("↓ ${client.down.formatBytes()}", style = MaterialTheme.typography.labelMedium)
-                if (client.total > 0) {
+                if (client.quota > 0) {
                     Text(
-                        "of ${client.total.formatBytes()}",
+                        "of ${client.quota.formatBytes()}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

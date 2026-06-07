@@ -2,7 +2,6 @@ package net.yukh.xui.data.api
 
 import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.Client
-import net.yukh.xui.data.api.dto.ClientLinks
 import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
@@ -41,8 +40,10 @@ interface XuiApi {
 
     // ---- Inbounds ---------------------------------------------------------
 
-    @GET("panel/api/inbounds/list/slim")
-    suspend fun listInboundsSlim(): ApiResponse<List<InboundSlim>>
+    // /list (not /list/slim): slim strips port/protocol/listen which the list
+    // UI shows. The heavy settings JSON the full list adds is ignored.
+    @GET("panel/api/inbounds/list")
+    suspend fun listInbounds(): ApiResponse<List<InboundSlim>>
 
     @POST("panel/api/inbounds/setEnable/{id}")
     suspend fun setInboundEnable(
@@ -55,8 +56,9 @@ interface XuiApi {
     @GET("panel/api/clients/list")
     suspend fun listClients(): ApiResponse<List<Client>>
 
+    // obj is an array of subscription link strings, e.g. ["vless://…"].
     @GET("panel/api/clients/links/{email}")
-    suspend fun getClientLinks(@Path("email") email: String): ApiResponse<ClientLinks>
+    suspend fun getClientLinks(@Path("email") email: String): ApiResponse<List<String>>
 
     @POST("panel/api/clients/del/{email}")
     suspend fun deleteClient(@Path("email") email: String): ApiAck

@@ -12,10 +12,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -26,7 +28,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -52,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatPercent
+import net.yukh.xui.ui.format.formatUptime
 
 @Composable
 fun DashboardScreen(
@@ -124,17 +126,26 @@ fun DashboardScreen(
             } else {
                 MetricBarCard(
                     icon = Icons.Outlined.Speed,
-                    title = "CPU",
+                    title = "CPU" + if (status.cpuCores > 0) " · ${status.cpuCores} cores" else "",
                     primaryValue = status.cpu.formatPercent(),
                     progress = (status.cpu / 100.0).toFloat().coerceIn(0f, 1f),
                 )
                 MetricBarCard(
                     icon = Icons.Outlined.Memory,
                     title = "Memory",
-                    primaryValue = status.mem.formatPercent(),
-                    secondaryValue = "${status.memUsed.formatBytes()} / ${status.memTotal.formatBytes()}",
-                    progress = (status.mem / 100.0).toFloat().coerceIn(0f, 1f),
+                    primaryValue = status.memPercent.formatPercent(),
+                    secondaryValue = "${status.mem.current.formatBytes()} / ${status.mem.total.formatBytes()}",
+                    progress = (status.memPercent / 100.0).toFloat().coerceIn(0f, 1f),
                 )
+                if (status.disk.total > 0) {
+                    MetricBarCard(
+                        icon = Icons.Outlined.Storage,
+                        title = "Disk",
+                        primaryValue = status.diskPercent.formatPercent(),
+                        secondaryValue = "${status.disk.current.formatBytes()} / ${status.disk.total.formatBytes()}",
+                        progress = (status.diskPercent / 100.0).toFloat().coerceIn(0f, 1f),
+                    )
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -144,25 +155,57 @@ fun DashboardScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.People,
                         title = "Online",
-                        value = status.online.toString(),
+                        value = state.onlineCount.toString(),
                     )
                     MetricTileCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.SwapVert,
-                        title = "Net (Up · Down)",
-                        value = "${status.netUp.formatBytes()} / ${status.netDown.formatBytes()}",
+                        title = "Net ↑ / ↓ per s",
+                        value = "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}",
                     )
                 }
 
-                if (status.load1 + status.load5 + status.load15 > 0.0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    MetricTileCard(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Outlined.Dns,
+                        title = "Connections",
+                        value = "TCP ${status.tcpCount} · UDP ${status.udpCount}",
+                    )
+                    MetricTileCard(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Outlined.Speed,
+                        title = "Load 1·5·15m",
+                        value = "%.2f·%.2f·%.2f".format(status.load1, status.load5, status.load15),
+                    )
+                }
+
+                if (status.uptime > 0 || status.panelVersion.isNotBlank()) {
                     Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Load average", style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                "1m %.2f · 5m %.2f · 15m %.2f"
-                                    .format(status.load1, status.load5, status.load15),
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            if (status.uptime > 0) {
+                                Text(
+                                    "Uptime ${status.uptime.formatUptime()}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                            val meta = buildList {
+                                if (status.panelVersion.isNotBlank()) add("panel ${status.panelVersion}")
+                                if (status.xray.version.isNotBlank()) add("xray ${status.xray.version}")
+                                if (status.publicIP.ipv4.isNotBlank() && status.publicIP.ipv4 != "N/A") {
+                                    add(status.publicIP.ipv4)
+                                }
+                            }
+                            if (meta.isNotEmpty()) {
+                                Text(
+                                    meta.joinToString(" · "),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
@@ -232,10 +275,21 @@ private fun XrayStatusCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text("Xray", style = MaterialTheme.typography.labelMedium)
                 Text(
-                    text = if (status == null) "Status unknown"
-                    else if (running) "Running" else "Stopped",
+                    text = when {
+                        status == null -> "Status unknown"
+                        running -> "Running"
+                        else -> "Stopped"
+                    },
                     style = MaterialTheme.typography.titleLarge,
                 )
+                val err = status?.xray?.errorMsg.orEmpty()
+                if (!running && err.isNotBlank()) {
+                    Text(
+                        err,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
             }
             AssistChip(
                 onClick = onRestartClick,
