@@ -57,8 +57,10 @@ workflow:
 build:debug:
   stage: build
   script:
-    - gradle wrapper --gradle-version 8.10.2 --distribution-type bin
-    - ./gradlew assembleDebug --no-daemon --stacktrace --warning-mode=summary
+    # The gradle:8.10.2-jdk21 image already has the right Gradle. Skip the
+    # wrapper step entirely — `gradle wrapper --gradle-version` does a HEAD
+    # request to services.gradle.org which the runner can't reach.
+    - gradle assembleDebug --no-daemon --stacktrace --warning-mode=summary
   artifacts:
     name: "xui-android-debug-$CI_COMMIT_SHORT_SHA"
     paths:
@@ -71,8 +73,7 @@ test:unit:
   stage: test
   needs: ["build:debug"]
   script:
-    - gradle wrapper --gradle-version 8.10.2 --distribution-type bin
-    - ./gradlew testDebugUnitTest --no-daemon --stacktrace --warning-mode=summary
+    - gradle testDebugUnitTest --no-daemon --stacktrace --warning-mode=summary
   artifacts:
     name: "xui-android-test-$CI_COMMIT_SHORT_SHA"
     paths:
