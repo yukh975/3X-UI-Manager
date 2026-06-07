@@ -52,6 +52,10 @@ workflow:
       changes:
         - android/**/*
         - .gitlab-ci.yml
+    # Tag pushes always build — no `changes:` filter — so v1.2.3 tags get a
+    # fresh APK with a clean versionName instead of reusing whatever the last
+    # branch commit produced.
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
     - if: $CI_PIPELINE_SOURCE == "web"
 
 build:debug:
@@ -88,8 +92,8 @@ test:unit:
 # gate), so a broken commit never produces a release artifact. The keystore
 # is decoded from RELEASE_KEYSTORE_B64 (set as a project CI variable) into a
 # scratch file outside the work tree; app/build.gradle.kts reads it via
-# RELEASE_KEYSTORE_FILE + the three password/alias env vars. Tagged commits
-# get a 6-month retention; branch builds get 4 weeks.
+# RELEASE_KEYSTORE_FILE + the three password/alias env vars. Artifacts are
+# kept for 26 weeks so signed APKs survive the typical release cycle.
 build:release:
   stage: build
   needs: ["build:debug"]
@@ -110,10 +114,5 @@ build:release:
     paths:
       - android/app/build/outputs/apk/release/app-release.apk
       - android/app/build/outputs/mapping/release/mapping.txt
-    expire_in: 4 weeks
+    expire_in: 26 weeks
     when: on_success
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
-      variables:
-        RETENTION: "26 weeks"
-    - if: $CI_COMMIT_BRANCH
