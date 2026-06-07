@@ -1,13 +1,13 @@
 package net.yukh.xui.ui.screen.connect
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +23,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -47,12 +50,9 @@ fun ConnectScreen(
     vm: ConnectViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
-    var tokenVisible by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Connect to panel") })
-        },
+        topBar = { TopAppBar(title = { Text("Connect to panel") }) },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -62,12 +62,6 @@ fun ConnectScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                "Enter your 3x-ui panel URL and an API token from " +
-                    "Settings → Security → API Token.",
-                style = MaterialTheme.typography.bodyLarge,
-            )
-
             OutlinedTextField(
                 value = state.url,
                 onValueChange = vm::setUrl,
@@ -76,36 +70,18 @@ fun ConnectScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                supportingText = {
-                    Text("Include the webBasePath if your admin set one")
-                },
+                supportingText = { Text("Include the webBasePath if your admin set one") },
             )
 
-            OutlinedTextField(
-                value = state.token,
-                onValueChange = vm::setToken,
-                label = { Text("API token") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = if (tokenVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                trailingIcon = {
-                    IconButton(onClick = { tokenVisible = !tokenVisible }) {
-                        Icon(
-                            imageVector = if (tokenVisible) {
-                                Icons.Outlined.VisibilityOff
-                            } else {
-                                Icons.Outlined.Visibility
-                            },
-                            contentDescription = if (tokenVisible) "Hide token" else "Show token",
-                        )
-                    }
-                },
+            AuthMethodPicker(
+                selected = state.method,
+                onSelect = vm::setMethod,
             )
+
+            when (state.method) {
+                AuthMethod.Token -> TokenSection(state = state, vm = vm)
+                AuthMethod.Credentials -> CredentialsSection(state = state, vm = vm)
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -129,20 +105,19 @@ fun ConnectScreen(
             HorizontalDivider()
 
             Button(
-                onClick = { vm.testAndSave(onConnected) },
+                onClick = { vm.submit(onConnected) },
                 enabled = state.canSubmit,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                if (state.testing) {
+                if (state.submitting) {
                     CircularProgressIndicator(
-                        modifier = Modifier.height(20.dp),
+                        modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
-                    Spacer(modifier = Modifier.height(0.dp))
-                    Text("  Testing…")
+                    Text("  Signing in…")
                 } else {
-                    Text("Connect")
+                    Text(if (state.method == AuthMethod.Token) "Connect" else "Sign in")
                 }
             }
 
@@ -155,4 +130,98 @@ fun ConnectScreen(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AuthMethodPicker(
+    selected: AuthMethod,
+    onSelect: (AuthMethod) -> Unit,
+) {
+    val items = listOf(
+        AuthMethod.Token to "API token",
+        AuthMethod.Credentials to "Login & password",
+    )
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        items.forEachIndexed { index, (method, label) ->
+            SegmentedButton(
+                selected = selected == method,
+                onClick = { onSelect(method) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
+            ) { Text(label) }
+        }
+    }
+}
+
+@Composable
+private fun TokenSection(state: ConnectUiState, vm: ConnectViewModel) {
+    var visible by remember { mutableStateOf(false) }
+    OutlinedTextField(
+        value = state.token,
+        onValueChange = vm::setToken,
+        label = { Text("API token") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        supportingText = {
+            Text("Create one in Settings → Security → API Token on the panel.")
+        },
+        trailingIcon = {
+            IconButton(onClick = { visible = !visible }) {
+                Icon(
+                    imageVector = if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = if (visible) "Hide token" else "Show token",
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun CredentialsSection(state: ConnectUiState, vm: ConnectViewModel) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = state.username,
+        onValueChange = vm::setUsername,
+        label = { Text("Username") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    OutlinedTextField(
+        value = state.password,
+        onValueChange = vm::setPassword,
+        label = { Text("Password") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        trailingIcon = {
+            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                Icon(
+                    imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                )
+            }
+        },
+    )
+
+    OutlinedTextField(
+        value = state.twoFactorCode,
+        onValueChange = vm::setTwoFactorCode,
+        label = { Text("2FA code") },
+        placeholder = { Text("Leave empty if 2FA is disabled") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+        supportingText = {
+            Text("Only required if 2FA is enabled on your account.")
+        },
+    )
+
+    // Hidden by default — the field above already communicates this — but kept
+    // around in case we want to add a probe later that flips this on.
+    AnimatedVisibility(visible = false) { Text("") }
 }

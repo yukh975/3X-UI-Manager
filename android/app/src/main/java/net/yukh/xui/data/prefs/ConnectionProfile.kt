@@ -1,9 +1,10 @@
 package net.yukh.xui.data.prefs
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * A single panel connection. Multi-profile support is out of scope for v1.
+ * Persisted panel connection. Multi-profile support is out of scope for v1.
  *
  * `baseUrl` is normalized to end with `/` so Retrofit treats it as a
  * directory and appends paths cleanly. Include the panel's `webBasePath`
@@ -12,8 +13,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ConnectionProfile(
     val baseUrl: String,
-    val token: String,
     val allowInsecureTls: Boolean = false,
+    val auth: ConnectionAuth,
 ) {
     companion object {
         fun normalizeUrl(input: String): String {
@@ -23,4 +24,27 @@ data class ConnectionProfile(
             return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
         }
     }
+}
+
+/**
+ * Two supported auth flavors.
+ *  - [Token]: long-lived API token created in the panel under
+ *    Settings → Security → API Token. Sent as `Authorization: Bearer …`.
+ *  - [Credentials]: username + password (and an ad-hoc 2FA code at login
+ *    time). 2FA codes are NEVER persisted; on each app start the user
+ *    must re-submit to derive a fresh session.
+ */
+@Serializable
+sealed class ConnectionAuth {
+
+    @Serializable
+    @SerialName("token")
+    data class Token(val token: String) : ConnectionAuth()
+
+    @Serializable
+    @SerialName("credentials")
+    data class Credentials(
+        val username: String,
+        val password: String,
+    ) : ConnectionAuth()
 }

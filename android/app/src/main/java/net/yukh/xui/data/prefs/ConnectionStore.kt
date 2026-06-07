@@ -6,18 +6,21 @@ import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Encrypted storage for the user's panel connection profile.
  *
- * Uses Jetpack's EncryptedSharedPreferences (AES-256 GCM for values,
- * AES-256 SIV for keys). The master key lives in the Android Keystore,
- * so reading the raw prefs file off a rooted device still doesn't
- * expose the panel's API token.
+ * EncryptedSharedPreferences gives AES-256 GCM on values, AES-256 SIV on
+ * keys, master key in the Android Keystore. The whole profile (URL + auth)
+ * is serialized to a single JSON blob — keeps the sealed [ConnectionAuth]
+ * discriminator intact and means we only ever touch one prefs key.
  */
 @Singleton
 class ConnectionStore @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val json: Json,
 ) {
     private val prefs by lazy {
         val masterKey = MasterKey.Builder(context)
@@ -33,22 +36,12 @@ class ConnectionStore @Inject constructor(
     }
 
     fun getProfile(): ConnectionProfile? {
-        val url = prefs.getString(KEY_URL, null) ?: return null
-        val token = prefs.getString(KEY_TOKEN, null) ?: return null
-        if (url.isBlank() || token.isBlank()) return null
-        return ConnectionProfile(
-            baseUrl = url,
-            token = token,
-            allowInsecureTls = prefs.getBoolean(KEY_INSECURE, false),
-        )
+        val raw = prefs.getString(KEY_PROFILE, null) ?: return null
+        return runCatching { json.decodeFromString<ConnectionProfile>(raw) }.getOrNull()
     }
 
     fun saveProfile(profile: ConnectionProfile) {
-        prefs.edit()
-            .putString(KEY_URL, profile.baseUrl)
-            .putString(KEY_TOKEN, profile.token)
-            .putBoolean(KEY_INSECURE, profile.allowInsecureTls)
-            .apply()
+        prefs.edit().putString(KEY_PROFILE, json.encodeToString(profile)).apply()
     }
 
     fun clear() {
@@ -57,8 +50,6 @@ class ConnectionStore @Inject constructor(
 
     private companion object {
         const val FILE = "xui_connection"
-        const val KEY_URL = "base_url"
-        const val KEY_TOKEN = "api_token"
-        const val KEY_INSECURE = "allow_insecure_tls"
+        const val KEY_PROFILE = "profile"
     }
 }

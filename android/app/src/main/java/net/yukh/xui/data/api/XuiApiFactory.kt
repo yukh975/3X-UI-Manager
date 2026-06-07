@@ -3,8 +3,10 @@ package net.yukh.xui.data.api
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import net.yukh.xui.data.auth.BearerInterceptor
+import net.yukh.xui.data.auth.CsrfInterceptor
+import net.yukh.xui.data.auth.CsrfState
 import net.yukh.xui.data.auth.InsecureTls
-import net.yukh.xui.data.prefs.ConnectionProfile
+import okhttp3.CookieJar
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -12,34 +14,58 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 
 /**
- * Builds a Retrofit-backed [XuiApi] bound to a specific connection profile.
+ * Builds a Retrofit-backed [XuiApi] for one of the two supported auth modes.
  *
- * Each profile change rebuilds the client; OkHttp is cheap enough that this
- * is fine for the rare case of switching panels.
+ * The factory is intentionally dumb: it does NOT perform login or token
+ * validation. That's the repository's job — the factory just wires the
+ * right interceptors so subsequent calls are authenticated.
  */
 object XuiApiFactory {
 
-    fun create(profile: ConnectionProfile, json: Json): XuiApi {
-        val httpBuilder = OkHttpClient.Builder()
+    fun tokenAuthed(
+        baseUrl: String,
+        allowInsecureTls: Boolean,
+        token: String,
+        json: Json,
+    ): XuiApi {
+        val client = baseClient(allowInsecureTls)
+            .addInterceptor(BearerInterceptor { token })
+            .build()
+        return makeRetrofit(baseUrl, client, json).create(XuiApi::class.java)
+    }
+
+    fun sessionAuthed(
+        baseUrl: String,
+        allowInsecureTls: Boolean,
+        cookieJar: CookieJar,
+        csrf: CsrfState,
+        json: Json,
+    ): XuiApi {
+        val client = baseClient(allowInsecureTls)
+            .cookieJar(cookieJar)
+            .addInterceptor(CsrfInterceptor(csrf))
+            .build()
+        return makeRetrofit(baseUrl, client, json).create(XuiApi::class.java)
+    }
+
+    private fun baseClient(allowInsecureTls: Boolean): OkHttpClient.Builder {
+        val builder = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
-            .addInterceptor(BearerInterceptor { profile.token })
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BASIC
                 },
             )
+        if (allowInsecureTls) InsecureTls.apply(builder)
+        return builder
+    }
 
-        if (profile.allowInsecureTls) {
-            InsecureTls.apply(httpBuilder)
-        }
-
-        return Retrofit.Builder()
-            .baseUrl(profile.baseUrl)
-            .client(httpBuilder.build())
+    private fun makeRetrofit(baseUrl: String, client: OkHttpClient, json: Json): Retrofit =
+        Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
-            .create(XuiApi::class.java)
-    }
 }

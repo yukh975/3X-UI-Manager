@@ -9,21 +9,31 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import net.yukh.xui.data.api.dto.ServerStatus
+import net.yukh.xui.data.prefs.ConnectionAuth
 import net.yukh.xui.data.prefs.ConnectionProfile
 import net.yukh.xui.data.prefs.ConnectionStore
 import net.yukh.xui.data.repo.PanelRepository
 
+enum class AuthMethod { Token, Credentials }
+
 data class ConnectUiState(
     val url: String = "",
+    val method: AuthMethod = AuthMethod.Token,
     val token: String = "",
+    val username: String = "",
+    val password: String = "",
+    val twoFactorCode: String = "",
     val allowInsecureTls: Boolean = false,
-    val testing: Boolean = false,
+    val submitting: Boolean = false,
     val error: String? = null,
-    val lastResult: ServerStatus? = null,
 ) {
     val canSubmit: Boolean
-        get() = !testing && url.isNotBlank() && token.isNotBlank()
+        get() = if (submitting || url.isBlank()) {
+            false
+        } else when (method) {
+            AuthMethod.Token -> token.isNotBlank()
+            AuthMethod.Credentials -> username.isNotBlank() && password.isNotBlank()
+        }
 }
 
 @HiltViewModel
@@ -36,45 +46,63 @@ class ConnectViewModel @Inject constructor(
     val state: StateFlow<ConnectUiState> = _state.asStateFlow()
 
     private fun initialState(): ConnectUiState {
-        val existing = store.getProfile() ?: return ConnectUiState()
-        return ConnectUiState(
-            url = existing.baseUrl,
-            token = existing.token,
-            allowInsecureTls = existing.allowInsecureTls,
-        )
+        val stored = store.getProfile() ?: return ConnectUiState()
+        return when (val auth = stored.auth) {
+            is ConnectionAuth.Token -> ConnectUiState(
+                url = stored.baseUrl,
+                allowInsecureTls = stored.allowInsecureTls,
+                method = AuthMethod.Token,
+                token = auth.token,
+            )
+            is ConnectionAuth.Credentials -> ConnectUiState(
+                url = stored.baseUrl,
+                allowInsecureTls = stored.allowInsecureTls,
+                method = AuthMethod.Credentials,
+                username = auth.username,
+                password = auth.password,
+            )
+        }
     }
 
     fun setUrl(value: String) = _state.update { it.copy(url = value, error = null) }
+    fun setMethod(value: AuthMethod) = _state.update { it.copy(method = value, error = null) }
     fun setToken(value: String) = _state.update { it.copy(token = value, error = null) }
+    fun setUsername(value: String) = _state.update { it.copy(username = value, error = null) }
+    fun setPassword(value: String) = _state.update { it.copy(password = value, error = null) }
+    fun setTwoFactorCode(value: String) =
+        _state.update { it.copy(twoFactorCode = value.filter { c -> c.isDigit() }.take(6), error = null) }
     fun setAllowInsecureTls(value: Boolean) =
         _state.update { it.copy(allowInsecureTls = value, error = null) }
 
-    /**
-     * Validate the entered credentials against `/panel/api/server/status`,
-     * persist them on success, bind the active API client, and notify the
-     * caller so it can navigate forward.
-     */
-    fun testAndSave(onSuccess: () -> Unit) {
+    fun submit(onSuccess: () -> Unit) {
         val s = _state.value
         if (!s.canSubmit) return
-        val profile = ConnectionProfile(
-            baseUrl = ConnectionProfile.normalizeUrl(s.url),
-            token = s.token.trim(),
-            allowInsecureTls = s.allowInsecureTls,
-        )
-        _state.update { it.copy(testing = true, error = null, lastResult = null) }
+        val normalizedUrl = ConnectionProfile.normalizeUrl(s.url)
+        _state.update { it.copy(submitting = true, error = null) }
 
         viewModelScope.launch {
-            repo.testConnection(profile)
-                .onSuccess { status ->
-                    store.saveProfile(profile)
-                    repo.bind(profile)
-                    _state.update { it.copy(testing = false, lastResult = status, error = null) }
+            val result = when (s.method) {
+                AuthMethod.Token -> repo.connectWithToken(
+                    baseUrl = normalizedUrl,
+                    allowInsecureTls = s.allowInsecureTls,
+                    token = s.token.trim(),
+                )
+                AuthMethod.Credentials -> repo.connectWithCredentials(
+                    baseUrl = normalizedUrl,
+                    allowInsecureTls = s.allowInsecureTls,
+                    username = s.username.trim(),
+                    password = s.password,
+                    twoFactorCode = s.twoFactorCode.takeIf { it.isNotBlank() },
+                )
+            }
+            result
+                .onSuccess {
+                    _state.update { it.copy(submitting = false) }
                     onSuccess()
                 }
                 .onFailure { e ->
                     _state.update {
-                        it.copy(testing = false, error = e.message ?: "Connection failed")
+                        it.copy(submitting = false, error = e.message ?: "Connection failed")
                     }
                 }
         }
