@@ -22,8 +22,8 @@ web/dist/*
 release/
 node_modules/
 
-# Ignore compiled binaries
-main
+# Ignore compiled binaries (Go output at repo root)
+/main
 
 # Ignore script and executable files
 /release.sh
