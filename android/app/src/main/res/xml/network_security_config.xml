@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Permissive cleartext + trust user-installed CAs. The app talks only to a
+  panel URL the user explicitly typed in, so the trust scope is dictated by
+  user intent, not by the system trust store alone.
+
+  - cleartextTrafficPermitted=true lets users connect to an HTTP panel for
+    initial testing. The Connect screen also offers an "Allow self-signed
+    TLS" toggle for the (more common) HTTPS-with-self-signed-cert case.
+  - certificates src="user" lets the user install their panel's CA via
+    Settings → Security → Install certificate, which is the secure
+    alternative to the global "allow insecure" toggle.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
