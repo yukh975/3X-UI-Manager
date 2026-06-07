@@ -1,0 +1,195 @@
+package net.yukh.xui.ui.screen.inbounds
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.yukh.xui.data.api.dto.InboundSlim
+import net.yukh.xui.ui.format.formatBytes
+import net.yukh.xui.ui.format.formatExpiry
+
+@Composable
+fun InboundsScreen(
+    vm: InboundsViewModel = hiltViewModel(),
+) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) { vm.load() }
+
+    LaunchedEffect(state.transientMessage) {
+        state.transientMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            vm.dismissMessage()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            state.loading -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) { CircularProgressIndicator() }
+
+            state.error != null && state.items.isEmpty() -> Box(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = state.error.orEmpty(),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+
+            state.items.isEmpty() -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) { Text("No inbounds yet.") }
+
+            else -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    horizontal = 16.dp,
+                    vertical = 12.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(state.items, key = { it.id }) { inbound ->
+                    InboundRow(
+                        inbound = inbound,
+                        toggling = inbound.id in state.toggleInFlight,
+                        onToggle = { vm.toggle(inbound.id, !inbound.enable) },
+                    )
+                }
+            }
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) { Snackbar { Text(it.visuals.message) } }
+    }
+}
+
+@Composable
+private fun InboundRow(
+    inbound: InboundSlim,
+    toggling: Boolean,
+    onToggle: () -> Unit,
+) {
+    val totalUsed = inbound.up + inbound.down
+    val quotaProgress = if (inbound.total > 0) {
+        (totalUsed.toFloat() / inbound.total.toFloat()).coerceIn(0f, 1f)
+    } else 0f
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (inbound.enable) MaterialTheme.colorScheme.surfaceVariant
+            else MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = inbound.remark.ifBlank { "inbound #${inbound.id}" },
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        text = listOf(
+                            inbound.protocol.uppercase().ifBlank { "?" },
+                            inbound.listen.ifBlank { "*" } + ":" + inbound.port,
+                        ).joinToString(" · "),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (toggling) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Switch(checked = inbound.enable, onCheckedChange = { onToggle() })
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    "↑ ${inbound.up.formatBytes()}",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Text(
+                    "↓ ${inbound.down.formatBytes()}",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                if (inbound.total > 0) {
+                    Text(
+                        "of ${inbound.total.formatBytes()}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            if (inbound.total > 0) {
+                LinearProgressIndicator(
+                    progress = { quotaProgress },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Expires ${inbound.expiryTime.formatExpiry()}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                AssistChip(
+                    onClick = {},
+                    enabled = false,
+                    label = {
+                        Text("${inbound.clientStats.size} clients")
+                    },
+                    colors = AssistChipDefaults.assistChipColors(),
+                )
+            }
+        }
+    }
+}

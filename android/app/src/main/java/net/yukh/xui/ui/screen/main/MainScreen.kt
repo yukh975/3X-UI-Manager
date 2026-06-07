@@ -1,0 +1,115 @@
+package net.yukh.xui.ui.screen.main
+
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.AllInbox
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.ui.navigation.MainTabs
+import net.yukh.xui.ui.screen.clients.ClientsScreen
+import net.yukh.xui.ui.screen.dashboard.DashboardScreen
+import net.yukh.xui.ui.screen.inbounds.InboundsScreen
+
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val repo: PanelRepository,
+) : ViewModel() {
+    fun disconnect() = repo.unbind()
+}
+
+private data class BottomTabSpec(
+    val route: String,
+    val label: String,
+    val icon: ImageVector,
+)
+
+private val tabs = listOf(
+    BottomTabSpec(MainTabs.Dashboard, "Dashboard", Icons.Outlined.Dashboard),
+    BottomTabSpec(MainTabs.Inbounds, "Inbounds", Icons.Outlined.AllInbox),
+    BottomTabSpec(MainTabs.Clients, "Clients", Icons.Outlined.People),
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen(
+    onDisconnect: () -> Unit,
+    vm: MainViewModel = hiltViewModel(),
+) {
+    val innerNav = rememberNavController()
+    val backEntry by innerNav.currentBackStackEntryAsState()
+    val currentRoute = backEntry?.destination?.route ?: MainTabs.Dashboard
+    val currentTab = tabs.firstOrNull { it.route == currentRoute } ?: tabs.first()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(currentTab.label) },
+                actions = {
+                    IconButton(onClick = {
+                        vm.disconnect()
+                        onDisconnect()
+                    }) {
+                        Icon(
+                            Icons.AutoMirrored.Outlined.Logout,
+                            contentDescription = "Disconnect",
+                        )
+                    }
+                },
+            )
+        },
+        bottomBar = {
+            NavigationBar {
+                tabs.forEach { tab ->
+                    NavigationBarItem(
+                        selected = currentRoute == tab.route,
+                        onClick = {
+                            innerNav.navigate(tab.route) {
+                                popUpTo(innerNav.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(tab.icon, contentDescription = null) },
+                        label = { Text(tab.label) },
+                    )
+                }
+            }
+        },
+    ) { padding ->
+        NavHost(
+            navController = innerNav,
+            startDestination = MainTabs.Dashboard,
+            modifier = Modifier.padding(padding),
+        ) {
+            composable(MainTabs.Dashboard) { DashboardScreen() }
+            composable(MainTabs.Inbounds) { InboundsScreen() }
+            composable(MainTabs.Clients) { ClientsScreen() }
+        }
+    }
+}

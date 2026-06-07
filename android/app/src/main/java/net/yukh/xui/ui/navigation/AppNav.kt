@@ -13,7 +13,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.StateFlow
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.ui.screen.connect.ConnectScreen
-import net.yukh.xui.ui.screen.dashboard.DashboardScreen
+import net.yukh.xui.ui.screen.main.MainScreen
 
 @HiltViewModel
 class AppNavViewModel @Inject constructor(
@@ -26,23 +26,23 @@ class AppNavViewModel @Inject constructor(
 fun AppNav(vm: AppNavViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val connected by vm.connected.collectAsState()
-    val start = if (connected) Routes.Dashboard else Routes.Connect
+    val start = if (connected) Routes.Main else Routes.Connect
 
     NavHost(navController = navController, startDestination = start) {
         composable(Routes.Connect) {
             ConnectScreen(
                 onConnected = {
-                    navController.navigate(Routes.Dashboard) {
+                    navController.navigate(Routes.Main) {
                         popUpTo(Routes.Connect) { inclusive = true }
                     }
                 },
             )
         }
-        composable(Routes.Dashboard) {
-            DashboardScreen(
+        composable(Routes.Main) {
+            MainScreen(
                 onDisconnect = {
                     navController.navigate(Routes.Connect) {
-                        popUpTo(Routes.Dashboard) { inclusive = true }
+                        popUpTo(Routes.Main) { inclusive = true }
                     }
                 },
             )
