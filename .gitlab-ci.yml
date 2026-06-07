@@ -66,6 +66,16 @@ build:debug:
     # wrapper step entirely — `gradle wrapper --gradle-version` does a HEAD
     # request to services.gradle.org which the runner can't reach.
     - gradle assembleDebug --no-daemon --stacktrace --warning-mode=summary
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        PKG_VERSION="${CI_COMMIT_TAG#v}"
+        echo ">>> Uploading app-debug.apk to generic package registry @ $PKG_VERSION"
+        curl --fail --silent --show-error --request PUT \
+          --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+          --upload-file android/app/build/outputs/apk/debug/app-debug.apk \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/app-debug.apk"
+        echo
+      fi
   artifacts:
     name: "xui-android-debug-$CI_COMMIT_SHORT_SHA"
     paths:
@@ -93,8 +103,12 @@ test:unit:
 # gate), so a broken commit never produces a release artifact. The keystore
 # is decoded from RELEASE_KEYSTORE_B64 (set as a project CI variable) into a
 # scratch file outside the work tree; app/build.gradle.kts reads it via
-# RELEASE_KEYSTORE_FILE + the three password/alias env vars. Artifacts are
-# kept for 26 weeks so signed APKs survive the typical release cycle.
+# RELEASE_KEYSTORE_FILE + the three password/alias env vars.
+#
+# For tag builds, the APK is also pushed to the project's Generic Package
+# Registry so the Release page can link to a URL that survives artifact
+# expiration and pipeline cleanup. The job-level artifact stays around as a
+# 26-week safety net but isn't the canonical download.
 build:release:
   stage: build
   needs: ["build:debug"]
@@ -110,6 +124,16 @@ build:release:
       fi
     - gradle assembleRelease --no-daemon --stacktrace --warning-mode=summary
     - rm -f "$RELEASE_KEYSTORE_FILE"
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        PKG_VERSION="${CI_COMMIT_TAG#v}"
+        echo ">>> Uploading app-release.apk to generic package registry @ $PKG_VERSION"
+        curl --fail --silent --show-error --request PUT \
+          --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+          --upload-file android/app/build/outputs/apk/release/app-release.apk \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/app-release.apk"
+        echo
+      fi
   artifacts:
     name: "xui-android-release-${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}"
     paths:
@@ -140,7 +164,11 @@ release:publish:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
   before_script: []
   script:
-    - echo "Publishing GitLab Release for $CI_COMMIT_TAG (pipeline $CI_PIPELINE_ID)"
+    # Strip the leading "v" so the URL version matches the APK's internal
+    # versionName (e.g. v0.2.0 → 0.2.0). The export is picked up by
+    # release-cli when it materializes the release: block below.
+    - export PKG_VERSION="${CI_COMMIT_TAG#v}"
+    - echo "Publishing GitLab Release for $CI_COMMIT_TAG (package version $PKG_VERSION)"
   release:
     tag_name: "$CI_COMMIT_TAG"
     name: "$CI_COMMIT_TAG"
@@ -149,11 +177,13 @@ release:publish:
 
       - `app-release.apk` — signed, ready to sideload.
       - `app-debug.apk` — debug build (applicationId `net.yukh.xui.debug`, installs side-by-side with release).
+
+      APKs live in the project's [Generic Package Registry]($CI_PROJECT_URL/-/packages) — these links keep working after pipeline artifacts expire and after pipelines are cleaned up.
     assets:
       links:
         - name: "app-release.apk (signed)"
-          url: "${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/android/app/build/outputs/apk/release/app-release.apk?job=build:release"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/app-release.apk"
           link_type: package
         - name: "app-debug.apk"
-          url: "${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/android/app/build/outputs/apk/debug/app-debug.apk?job=build:debug"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/app-debug.apk"
           link_type: package
