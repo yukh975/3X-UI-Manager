@@ -102,15 +102,19 @@ class DashboardViewModel @Inject constructor(
 
     fun openOnlineList() {
         _state.update { it.copy(showOnlineList = true) }
-        // Resolve which inbound each online client is actually connected through.
+        // Resolve which inbound(s) each online client is actually connected
+        // through *right now*.
         //
         // /onlines returns only emails, and the same email can be configured in
-        // several inbounds (e.g. the same user offered over vless + vmess). The
-        // panel doesn't say which one is live — but the connected inbound's
-        // per-client `lastOnline` keeps updating while the others stay stale, so
-        // we show only the inbound(s) with the most-recent lastOnline for that
-        // email. If no lastOnline data is available we fall back to listing every
-        // membership rather than hiding the info.
+        // several inbounds (e.g. the same user offered over vless + vmess). A
+        // client may be connected to several of them at once — but not
+        // necessarily all. The panel doesn't say which directly, but each
+        // inbound's per-client `lastOnline` keeps updating while a connection is
+        // live and goes stale otherwise. So among an email's memberships we take
+        // the most-recent lastOnline and keep every inbound whose lastOnline is
+        // within a short window of it — that captures simultaneous live
+        // connections while dropping inbounds last used long ago. If there's no
+        // lastOnline data we fall back to listing every membership.
         viewModelScope.launch {
             val inbounds = repo.listInbounds().getOrNull().orEmpty()
             val byEmail = mutableMapOf<String, MutableList<Pair<String, Long>>>()
@@ -125,9 +129,14 @@ class DashboardViewModel @Inject constructor(
             val map = byEmail.mapValues { (_, entries) ->
                 val maxLast = entries.maxOf { it.second }
                 if (maxLast <= 0L) {
+                    // No lastOnline data — can't tell, so show all memberships.
                     entries.map { it.first }.distinct()
                 } else {
-                    entries.filter { it.second == maxLast }.map { it.first }.distinct()
+                    // lastOnline is epoch millis; keep inbounds active within the
+                    // window of the most-recent one (concurrent connections).
+                    entries.filter { it.second > 0L && maxLast - it.second <= ONLINE_WINDOW_MS }
+                        .map { it.first }
+                        .distinct()
                 }
             }
             _state.update { it.copy(emailToInbounds = map) }
@@ -203,5 +212,8 @@ class DashboardViewModel @Inject constructor(
 
     private companion object {
         const val POLL_INTERVAL_MS = 3_000L
+        // How close to the most-recent lastOnline an inbound must be to count as
+        // a live concurrent connection (epoch millis).
+        const val ONLINE_WINDOW_MS = 120_000L
     }
 }

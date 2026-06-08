@@ -15,9 +15,9 @@ uses [Semantic Versioning](https://semver.org/).
   and **Stop** (both confirmed); when stopped, only **Start**.
 
 ### Fixed
-- **Online clients list** now shows only the inbound a client is actually
-  connected through right now (by the most-recent `lastOnline`), instead of
-  every inbound they're a member of.
+- **Online clients list** now shows only the inbound(s) a client is actually
+  connected through right now (by `lastOnline` recency — a client can be on
+  several at once), instead of every inbound they're a member of.
 - **Delete buttons** in the inbound and node editors are no longer hidden under
   the Android navigation bar, and the **Comment** field in the client editor is
   no longer covered by the keyboard — editor dialogs now honor system insets
