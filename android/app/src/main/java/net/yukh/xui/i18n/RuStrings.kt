@@ -7,7 +7,7 @@ package net.yukh.xui.i18n
 val ruStrings: Map<String, String> = mapOf(
     // Tabs & top-level menu
     "Dashboard" to "Дашборд",
-    "Inbounds" to "Входящие",
+    "Inbounds" to "Inbounds",
     "Clients" to "Клиенты",
     "Nodes" to "Узлы",
     "Menu" to "Меню",
@@ -107,10 +107,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Network" to "Сеть",
     "Security" to "Безопасность",
     "Sniffing" to "Sniffing",
-    "New inbound" to "Новый входящий",
-    "Edit inbound" to "Изменить входящий",
-    "Delete inbound" to "Удалить входящий",
-    "Delete inbound?" to "Удалить входящий?",
+    "New inbound" to "Новый inbound",
+    "Edit inbound" to "Изменить inbound",
+    "Delete inbound" to "Удалить inbound",
+    "Delete inbound?" to "Удалить inbound?",
     "Add node" to "Добавить узел",
     "Edit node" to "Изменить узел",
     "Delete node" to "Удалить узел",
@@ -173,8 +173,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Apply changes to" to "Применить изменения к",
 
     // Inbounds list & rows
-    "No inbounds yet." to "Пока нет входящих.",
-    "Add inbound" to "Добавить входящий",
+    "No inbounds yet." to "Пока нет inbound'ов.",
+    "Add inbound" to "Добавить inbound",
     "of " to "из ",
     "Expires " to "Истекает ",
 
@@ -195,11 +195,11 @@ val ruStrings: Map<String, String> = mapOf(
     "Show" to "Показать",
     "Clients are managed on the Clients tab and are kept as-is." to
         "Клиентами управляет вкладка Clients, здесь они не затрагиваются.",
-    "Create inbound?" to "Создать входящий?",
+    "Create inbound?" to "Создать inbound?",
     "Apply changes to this inbound? Xray will restart." to
-        "Применить изменения к этому входящему? Xray перезапустится.",
+        "Применить изменения к этому inbound? Xray перезапустится.",
     "This removes the inbound and all its clients. This can't be undone." to
-        "Это удалит входящий и всех его клиентов. Отменить нельзя.",
+        "Это удалит inbound и всех его клиентов. Отменить нельзя.",
 
     // Nodes list & rows
     "No nodes. Tap + to add a remote panel." to
@@ -242,7 +242,7 @@ val ruStrings: Map<String, String> = mapOf(
     // Client share sheet
     "No connection links for this client." to "Нет ссылок-соединений у этого клиента.",
     "will be removed from every attached inbound." to
-        "будет удалён из всех привязанных входящих.",
+        "будет удалён из всех привязанных inbound'ов.",
     "No subscription URL. With an API token, set the " +
         "\"Subscription base URL\" on the connect screen " +
         "(e.g. https://host:2096/sub/) — or connect with " +
@@ -268,7 +268,7 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Count suffixes (lowercase, after a number)
     "clients" to "клиентов",
-    "inbounds" to "входящих",
+    "inbounds" to "inbounds",
 
     // Relative time & expiry words (from Formatters)
     "Expired" to "Истёк",

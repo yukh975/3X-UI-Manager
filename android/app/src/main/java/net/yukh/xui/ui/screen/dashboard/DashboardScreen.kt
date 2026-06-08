@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -411,6 +413,7 @@ private fun PanelVersionCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun XrayStatusCard(
     status: ServerStatus?,
@@ -462,12 +465,16 @@ private fun XrayStatusCard(
 
             // Controls depend on state: running → Restart + Stop; stopped → Start.
             // The status is unknown until the first poll arrives, so show nothing then.
+            // FlowRow so the two chips wrap to a centered second line when the
+            // labels are too wide for one row (e.g. Russian "Перезапустить" +
+            // "Остановить").
             if (status != null) {
-                Row(
+                FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     if (running) {
                         XrayActionChip(tr("Restart"), Icons.Outlined.RestartAlt, !actionInFlight, onRestart)

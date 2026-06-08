@@ -6,6 +6,24 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.7] — 2026-06-08
+
+### Changed
+- The words **inbound/outbound** are no longer translated in the Russian UI
+  ("Изменить inbound", "Удалить inbound", …) — they're established terms.
+- In the client share sheet, **Edit** and **Delete** are swapped (Edit left,
+  Delete right), and **Close** is now a proper button instead of a text link.
+- The Xray controls on the dashboard wrap to a centered second line when they
+  don't fit one row (e.g. Russian "Перезапустить" + "Остановить").
+
+### Fixed
+- After **stopping Xray**, the dashboard immediately shows the "Start" button
+  even if the panel connection drops (on setups where the panel is reverse-
+  proxied through Xray, the poll after a stop may never return) — previously the
+  stale "Restart/Stop" controls stuck around.
+- On the **Xray config** screen in API-token mode, the raw "Network error" is no
+  longer shown — the explanation that login/password is required is enough.
+
 ## [0.3.6] — 2026-06-08
 
 > Every change in this release was verified on an emulator (editor/settings

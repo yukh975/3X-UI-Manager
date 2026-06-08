@@ -180,15 +180,31 @@ class DashboardViewModel @Inject constructor(
                 start -> "start"
                 else -> "restart"
             }
-            _state.update {
-                it.copy(
-                    xrayActionInFlight = false,
-                    xrayActionMessage = result.fold(
-                        onSuccess = { "Xray $verb requested" },
-                        onFailure = { e -> "Xray $verb failed: ${e.message}" },
-                    ),
-                )
-            }
+            result
+                .onSuccess {
+                    // Reflect the action locally right away. Stopping Xray can
+                    // cut the app off from a panel that's reverse-proxied through
+                    // Xray, so the next poll may never return — without this the
+                    // card would keep showing the stale "running" controls. The
+                    // optimistic state shows the correct button (Start after a
+                    // stop); a later successful poll reconciles it.
+                    val newXrayState = if (stop) "stop" else "running"
+                    _state.update { st ->
+                        st.copy(
+                            xrayActionInFlight = false,
+                            xrayActionMessage = "Xray $verb requested",
+                            status = st.status?.let { it.copy(xray = it.xray.copy(state = newXrayState)) },
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _state.update {
+                        it.copy(
+                            xrayActionInFlight = false,
+                            xrayActionMessage = "Xray $verb failed: ${e.message}",
+                        )
+                    }
+                }
             refreshNow()
         }
     }

@@ -103,9 +103,9 @@ fun XrayConfigScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    state.error?.let {
-                        Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
-                    }
+                    // The "not available with a token" text already explains it;
+                    // the raw network error (the session-only endpoint refusing
+                    // the token) would just be noise here, so we don't show it.
                 }
 
                 else -> Column(

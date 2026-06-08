@@ -148,6 +148,10 @@ fun ClientShareSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Outlined.Edit, contentDescription = null)
+                    Text("  " + tr("Edit"))
+                }
                 OutlinedButton(
                     onClick = { confirmDelete = true },
                     modifier = Modifier.weight(1f),
@@ -158,12 +162,8 @@ fun ClientShareSheet(
                     Icon(Icons.Outlined.Delete, contentDescription = null)
                     Text("  " + tr("Delete"))
                 }
-                Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Outlined.Edit, contentDescription = null)
-                    Text("  " + tr("Edit"))
-                }
             }
-            TextButton(
+            OutlinedButton(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(tr("Close")) }
