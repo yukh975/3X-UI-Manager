@@ -6,6 +6,32 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.4] — 2026-06-08
+
+### Added
+- **Client search by email** — filter the list by typing part of a name/address.
+- **Dashboard → Online**: tapping the online count opens a list of currently
+  connected clients, each with the inbound(s) they belong to (refreshes every 3 s).
+- **Xray version** on the status card and a **3x-ui panel version** card at the
+  bottom of the dashboard; when an update is available an "Update" button
+  (confirmed) triggers the panel self-update.
+- **In-app RU/EN language switch** (Settings, ⋮ menu) — no restart needed.
+- **Settings screen** with an "About" section (version, copyright).
+- **Session persistence**: auto-relogin on launch and on a 401 response — the
+  app no longer kicks you out after a login/password sign-in.
+- **App lock**: passcode on launch + fingerprint (biometric) unlock.
+
+### Changed
+- The release APK is now named `3x-ui-manager-release.apk` (instead of
+  `app-release.apk`), matching the project name.
+- CI no longer builds a debug APK — only the signed release is built.
+- The releases page and release notes are now in Russian, generated from this
+  changelog (the matching version's section).
+
+### Fixed
+- The lock screen no longer fails to compile: the biometric prompt labels are
+  hoisted into composable scope (`tr()` can't be called from a plain function).
+
 ## [0.3.3] — 2026-06-08
 
 ### Fixed
