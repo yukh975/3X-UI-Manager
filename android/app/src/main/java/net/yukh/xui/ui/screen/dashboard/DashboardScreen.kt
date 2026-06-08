@@ -4,8 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,10 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.People
-import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
-import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.SystemUpdate
@@ -71,7 +67,6 @@ fun DashboardScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     var showRestartDialog by remember { mutableStateOf(false) }
-    var showStopDialog by remember { mutableStateOf(false) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -131,9 +126,6 @@ fun DashboardScreen(
             XrayStatusCard(
                 status = state.status,
                 actionInFlight = state.xrayActionInFlight,
-                canStop = state.sessionAuth,
-                onStart = vm::startXray,
-                onStop = { showStopDialog = true },
                 onRestart = { showRestartDialog = true },
             )
 
@@ -272,23 +264,6 @@ fun DashboardScreen(
         )
     }
 
-    if (showStopDialog) {
-        AlertDialog(
-            onDismissRequest = { showStopDialog = false },
-            title = { Text(tr("Stop Xray?")) },
-            text = { Text(tr("This disconnects every active client until you start Xray again.")) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showStopDialog = false
-                    vm.stopXray()
-                }) { Text(tr("Stop"), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showStopDialog = false }) { Text(tr("Cancel")) }
-            },
-        )
-    }
-
     if (showUpdateDialog) {
         val info = state.updateInfo
         AlertDialog(
@@ -312,7 +287,8 @@ fun DashboardScreen(
 
     if (state.showOnlineList) {
         OnlineListDialog(
-            emails = state.onlineEmails,
+            groups = state.onlineGroups,
+            loading = state.onlineLoading,
             onDismiss = vm::closeOnlineList,
         )
     }
@@ -320,24 +296,50 @@ fun DashboardScreen(
 
 @Composable
 private fun OnlineListDialog(
-    emails: List<String>,
+    groups: List<net.yukh.xui.ui.screen.dashboard.OnlineGroup>,
+    loading: Boolean,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("${tr("Online clients")} (${emails.size})") },
+        title = { Text(tr("Online by server")) },
         text = {
-            if (emails.isEmpty()) {
-                Text(tr("Nobody connected right now."))
-            } else {
-                Column(
-                    modifier = Modifier
-                        .heightIn(max = 420.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    emails.sorted().forEach { email ->
-                        Text(email, style = MaterialTheme.typography.bodyLarge)
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 460.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                groups.forEach { g ->
+                    val header = if (g.isMain) tr("Main server") else g.server
+                    Text(
+                        "$header (${g.emails.size})",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                    if (g.emails.isEmpty()) {
+                        Text(
+                            "—",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    } else {
+                        g.emails.forEach { email ->
+                            Text(
+                                email,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    }
+                }
+                if (loading) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     }
                 }
             }
@@ -404,14 +406,10 @@ private fun PanelVersionCard(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun XrayStatusCard(
     status: ServerStatus?,
     actionInFlight: Boolean,
-    canStop: Boolean,
-    onStart: () -> Unit,
-    onStop: () -> Unit,
     onRestart: () -> Unit,
 ) {
     val running = status?.xrayRunning == true
@@ -441,6 +439,15 @@ private fun XrayStatusCard(
                         },
                         style = MaterialTheme.typography.titleLarge,
                     )
+                    // Xray core uptime (resets on restart) — appStats is the xray
+                    // process's own stats, distinct from the server's uptime.
+                    val xrayUptime = status?.appStats?.uptime ?: 0
+                    if (running && xrayUptime > 0) {
+                        Text(
+                            "${tr("Xray uptime")} ${xrayUptime.formatUptime()}",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                     val err = status?.xray?.errorMsg.orEmpty()
                     if (!running && err.isNotBlank()) {
                         Text(
@@ -455,37 +462,17 @@ private fun XrayStatusCard(
                 }
             }
 
-            // Controls depend on state: running → Restart + Stop; stopped → Start.
-            // The status is unknown until the first poll arrives, so show nothing then.
-            // FlowRow so the two chips wrap to a centered second line when the
-            // labels are too wide for one row (e.g. Russian "Перезапустить" +
-            // "Остановить").
+            // Only Restart — no Start/Stop. Stopping Xray cuts off a panel that's
+            // reverse-proxied through Xray (confirmed with token AND login/password),
+            // and the app can't bring it back. Restart is safe.
             if (status != null) {
-                FlowRow(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.Center,
                 ) {
-                    // Running → Restart (+ Stop only for login/password sessions);
-                    // stopped → Start. Stop is hidden for token sessions because
-                    // it can dead-lock a panel proxied through Xray. See the
-                    // ViewModel's runXrayAction().
-                    if (running) {
-                        XrayActionChip(tr("Restart"), Icons.Outlined.RestartAlt, !actionInFlight, onRestart)
-                        if (canStop) {
-                            XrayActionChip(
-                                tr("Stop"),
-                                Icons.Outlined.Stop,
-                                !actionInFlight,
-                                onStop,
-                                tint = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    } else {
-                        XrayActionChip(tr("Start"), Icons.Outlined.PlayArrow, !actionInFlight, onStart)
-                    }
+                    XrayActionChip(tr("Restart"), Icons.Outlined.RestartAlt, !actionInFlight, onRestart)
                 }
             }
         }

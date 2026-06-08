@@ -6,6 +6,26 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.9] — 2026-06-08
+
+### Added
+- **Online clients grouped by server.** Tapping "Online" on the dashboard now
+  shows the list grouped by server: the main panel first, then each node with
+  its own connected clients. Each node is queried directly via its own API
+  (address + token from the nodes list), so you see the real picture — including
+  a client connected to several nodes at once (which the central API couldn't
+  report). Nodes are queried in parallel.
+- **Xray uptime** on the status card (time since the last Xray restart, separate
+  from the overall server uptime).
+
+### Changed
+- The dashboard now offers only the **Restart Xray** button; Start and Stop are
+  removed entirely (for all auth methods). Stopping Xray on panels proxied
+  through Xray cuts off the panel itself — confirmed with both token and
+  login/password — while Restart is safe.
+- The connect screen's auth toggle is shortened to **"API Token" / "Login"** (was
+  "Login & password", which overflowed and wrapped, breaking the layout).
+
 ## [0.3.8] — 2026-06-08
 
 ### Changed

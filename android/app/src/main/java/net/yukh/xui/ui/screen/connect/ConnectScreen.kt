@@ -159,9 +159,11 @@ private fun AuthMethodPicker(
     selected: AuthMethod,
     onSelect: (AuthMethod) -> Unit,
 ) {
+    // Short labels so the segmented control fits one line in both EN and RU
+    // ("Login & password" / "Логин и пароль" overflowed and wrapped).
     val items = listOf(
-        AuthMethod.Token to "API token",
-        AuthMethod.Credentials to "Login & password",
+        AuthMethod.Token to "API Token",
+        AuthMethod.Credentials to "Login",
     )
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         items.forEachIndexed { index, (method, label) ->

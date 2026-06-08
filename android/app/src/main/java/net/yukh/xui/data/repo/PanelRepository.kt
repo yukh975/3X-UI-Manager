@@ -263,6 +263,23 @@ class PanelRepository @Inject constructor(
     suspend fun setNodeEnable(id: Int, enable: Boolean): Result<Unit> =
         authedAck { it.setNodeEnable(id, EnableRequest(enable)) }
 
+    /**
+     * Online clients on a specific node, queried directly against that node's own
+     * 3x-ui API (each node carries its own scheme/address/port/basePath/token).
+     * The central panel has no per-node onlines endpoint, but a node reports its
+     * own онлайн — and since xray keys online by email per server, this is the
+     * only way to see which server a multi-server client is actually using.
+     */
+    suspend fun listNodeOnlines(node: Node): Result<List<String>> {
+        val bp = node.basePath.ifBlank { "/" }
+            .let { if (it.startsWith("/")) it else "/$it" }
+            .let { if (it.endsWith("/")) it else "$it/" }
+        val base = "${node.scheme}://${node.address}:${node.port}$bp"
+        val insecure = node.tlsVerifyMode.equals("skip", ignoreCase = true)
+        val nodeApi = XuiApiFactory.tokenAuthed(base, insecure, node.apiToken, json)
+        return safeData { nodeApi.listOnlines() }
+    }
+
     // ---- Xray config (session-auth only) ----------------------------------
 
     /** Fetch the full Xray config (outbounds/routing/dns) + test URL. The

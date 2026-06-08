@@ -36,6 +36,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Panel URL" to "URL панели",
     "Include the webBasePath if your admin set one" to "Укажите webBasePath, если он задан админом",
     "API token" to "API-токен",
+    "API Token" to "API-токен",
+    "Login" to "Логин",
     "Login & password" to "Логин и пароль",
     "Username" to "Имя пользователя",
     "Password" to "Пароль",
@@ -149,6 +151,9 @@ val ruStrings: Map<String, String> = mapOf(
     "Uptime" to "Аптайм",
     "IP" to "IP",
     "Online clients" to "Онлайн-клиенты",
+    "Online by server" to "Онлайн по серверам",
+    "Main server" to "Основной сервер",
+    "Xray uptime" to "Аптайм Xray",
     "Update available:" to "Доступно обновление:",
 
     // Clients list & rows

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,11 +27,10 @@ data class DashboardUiState(
     val error: String? = null,
     val xrayActionInFlight: Boolean = false,
     val xrayActionMessage: String? = null,
-    // True for login/password sessions; token sessions only get Restart (see
-    // runXrayAction — stopping Xray can cut a proxied-through-Xray panel off).
-    val sessionAuth: Boolean = false,
-    // Online list dialog
+    // Online list dialog — grouped by server (main panel + each node)
     val showOnlineList: Boolean = false,
+    val onlineLoading: Boolean = false,
+    val onlineGroups: List<OnlineGroup> = emptyList(),
     // Panel update
     val updateInfo: PanelUpdateInfo? = null,
     val updating: Boolean = false,
@@ -37,6 +38,13 @@ data class DashboardUiState(
 ) {
     val onlineCount: Int get() = onlineEmails.size
 }
+
+/** One server's currently-online clients, for the grouped online dialog. */
+data class OnlineGroup(
+    val server: String,
+    val isMain: Boolean,
+    val emails: List<String>,
+)
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -50,7 +58,7 @@ class DashboardViewModel @Inject constructor(
 
     fun startPolling() {
         if (pollJob?.isActive == true) return
-        _state.update { it.copy(loading = it.status == null, sessionAuth = repo.hasStoredCredentials()) }
+        _state.update { it.copy(loading = it.status == null) }
         if (_state.value.updateInfo == null) refreshUpdateInfo()
         pollJob = viewModelScope.launch {
             while (isActive) {
@@ -102,11 +110,31 @@ class DashboardViewModel @Inject constructor(
 
     // ---- Online list ------------------------------------------------------
 
-    // Just shows which clients are online (emails). We deliberately don't show
-    // the inbound: 3x-ui keys online/traffic by email under a single canonical
-    // inbound and replicates that record into every inbound the email belongs
-    // to, so the API can't tell which inbound(s) a client is actually live on.
-    fun openOnlineList() = _state.update { it.copy(showOnlineList = true) }
+    // Shows who is online, grouped by SERVER (main panel first, then each node).
+    // The central API can't say which inbound a client uses, but each node is its
+    // own 3x-ui panel that reports its own онлайн — so querying every node gives a
+    // true per-server breakdown (and reveals a client connected to several nodes
+    // at once). Node queries run in parallel.
+    fun openOnlineList() {
+        _state.update {
+            it.copy(
+                showOnlineList = true,
+                onlineLoading = true,
+                onlineGroups = listOf(OnlineGroup("", isMain = true, emails = it.onlineEmails.sorted())),
+            )
+        }
+        viewModelScope.launch {
+            val nodes = repo.listNodes().getOrNull().orEmpty().filter { it.enable }
+            val nodeGroups = nodes.map { node ->
+                async {
+                    val emails = repo.listNodeOnlines(node).getOrNull().orEmpty().sorted()
+                    OnlineGroup(node.remark.ifBlank { node.name }, isMain = false, emails = emails)
+                }
+            }.awaitAll()
+            val main = OnlineGroup("", isMain = true, emails = _state.value.onlineEmails.sorted())
+            _state.update { it.copy(onlineGroups = listOf(main) + nodeGroups, onlineLoading = false) }
+        }
+    }
 
     fun closeOnlineList() = _state.update { it.copy(showOnlineList = false) }
 
@@ -139,44 +167,24 @@ class DashboardViewModel @Inject constructor(
 
     // ---- Xray controls ----------------------------------------------------
 
-    // Start/Restart both call restartXrayService (starts Xray when down, restarts
-    // when up). Stop uses stopXrayService and is only offered for login/password
-    // sessions (see sessionAuth): on panels reverse-proxied through Xray, stopping
-    // Xray also cuts off the panel/API, and a token session typically can't bring
-    // it back — so token mode is restricted to Restart only.
-    fun startXray() = runXrayAction(verb = "start", resultRunning = true) { repo.restartXray() }
-    fun restartXray() = runXrayAction(verb = "restart", resultRunning = true) { repo.restartXray() }
-    fun stopXray() = runXrayAction(verb = "stop", resultRunning = false) { repo.stopXray() }
-
-    private fun runXrayAction(
-        verb: String,
-        resultRunning: Boolean,
-        action: suspend () -> Result<Unit>,
-    ) {
+    // Only Restart is exposed. There is deliberately NO Start/Stop: panels are
+    // commonly reverse-proxied through Xray, so stopping Xray also cuts off the
+    // panel/API (confirmed with both token and login/password sessions) and the
+    // app can't bring it back — recovery needs a host-level panel restart.
+    // restartXrayService is safe: Xray comes back up and the connection returns.
+    fun restartXray() {
         if (_state.value.xrayActionInFlight) return
         _state.update { it.copy(xrayActionInFlight = true, xrayActionMessage = null) }
         viewModelScope.launch {
-            val result = action()
-            result
+            repo.restartXray()
                 .onSuccess {
-                    // Reflect the new Xray state immediately so the right control
-                    // shows even if the next poll never returns (e.g. a stop that
-                    // cuts off a proxied-through-Xray panel).
-                    val newState = if (resultRunning) "running" else "stop"
-                    _state.update { st ->
-                        st.copy(
-                            xrayActionInFlight = false,
-                            xrayActionMessage = "Xray $verb requested",
-                            status = st.status?.let { it.copy(xray = it.xray.copy(state = newState)) },
-                        )
+                    _state.update {
+                        it.copy(xrayActionInFlight = false, xrayActionMessage = "Xray restart requested")
                     }
                 }
                 .onFailure { e ->
                     _state.update {
-                        it.copy(
-                            xrayActionInFlight = false,
-                            xrayActionMessage = "Xray $verb failed: ${e.message}",
-                        )
+                        it.copy(xrayActionInFlight = false, xrayActionMessage = "Xray restart failed: ${e.message}")
                     }
                 }
             refreshNow()
