@@ -10,4 +10,5 @@ object MainTabs {
     const val Dashboard = "tab/dashboard"
     const val Inbounds = "tab/inbounds"
     const val Clients = "tab/clients"
+    const val Nodes = "tab/nodes"
 }

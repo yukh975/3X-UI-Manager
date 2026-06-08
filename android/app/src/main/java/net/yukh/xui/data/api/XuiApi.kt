@@ -8,6 +8,8 @@ import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
+import net.yukh.xui.data.api.dto.Node
+import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.ServerStatus
 import retrofit2.http.Body
@@ -90,6 +92,23 @@ interface XuiApi {
 
     @POST("panel/api/clients/onlines")
     suspend fun listOnlines(): ApiResponse<List<String>>
+
+    // ---- Nodes ------------------------------------------------------------
+
+    @GET("panel/api/nodes/list")
+    suspend fun listNodes(): ApiResponse<List<Node>>
+
+    @POST("panel/api/nodes/add")
+    suspend fun addNode(@Body node: NodeModel): ApiAck
+
+    @POST("panel/api/nodes/update/{id}")
+    suspend fun updateNode(@Path("id") id: Int, @Body node: NodeModel): ApiAck
+
+    @POST("panel/api/nodes/del/{id}")
+    suspend fun deleteNode(@Path("id") id: Int): ApiAck
+
+    @POST("panel/api/nodes/setEnable/{id}")
+    suspend fun setNodeEnable(@Path("id") id: Int, @Body body: EnableRequest): ApiAck
 
     // ---- Settings (session-auth only; token gets redirected to login) -----
 

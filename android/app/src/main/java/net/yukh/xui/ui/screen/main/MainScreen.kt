@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.AllInbox
 import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import net.yukh.xui.ui.navigation.MainTabs
 import net.yukh.xui.ui.screen.clients.ClientsScreen
 import net.yukh.xui.ui.screen.dashboard.DashboardScreen
 import net.yukh.xui.ui.screen.inbounds.InboundsScreen
+import net.yukh.xui.ui.screen.nodes.NodesScreen
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -51,6 +53,7 @@ private val tabs = listOf(
     BottomTabSpec(MainTabs.Dashboard, "Dashboard", Icons.Outlined.Dashboard),
     BottomTabSpec(MainTabs.Inbounds, "Inbounds", Icons.Outlined.AllInbox),
     BottomTabSpec(MainTabs.Clients, "Clients", Icons.Outlined.People),
+    BottomTabSpec(MainTabs.Nodes, "Nodes", Icons.Outlined.Hub),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,6 +113,7 @@ fun MainScreen(
             composable(MainTabs.Dashboard) { DashboardScreen() }
             composable(MainTabs.Inbounds) { InboundsScreen() }
             composable(MainTabs.Clients) { ClientsScreen() }
+            composable(MainTabs.Nodes) { NodesScreen() }
         }
     }
 }

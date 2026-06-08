@@ -16,6 +16,8 @@ import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
+import net.yukh.xui.data.api.dto.Node
+import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.data.auth.CsrfState
@@ -196,6 +198,23 @@ class PanelRepository @Inject constructor(
 
     suspend fun listOnlines(): Result<List<String>> =
         authedData { it.listOnlines() }
+
+    // ---- Nodes ------------------------------------------------------------
+
+    suspend fun listNodes(): Result<List<Node>> =
+        authedData { it.listNodes() }
+
+    suspend fun addNode(node: NodeModel): Result<Unit> =
+        authedAck { it.addNode(node) }
+
+    suspend fun updateNode(id: Int, node: NodeModel): Result<Unit> =
+        authedAck { it.updateNode(id, node) }
+
+    suspend fun deleteNode(id: Int): Result<Unit> =
+        authedAck { it.deleteNode(id) }
+
+    suspend fun setNodeEnable(id: Int, enable: Boolean): Result<Unit> =
+        authedAck { it.setNodeEnable(id, EnableRequest(enable)) }
 
     // ---- Internals --------------------------------------------------------
 
