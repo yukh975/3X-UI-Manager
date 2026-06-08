@@ -142,7 +142,7 @@ fun MainScreen(
     if (showXrayConfig) {
         Dialog(
             onDismissRequest = { showXrayConfig = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
         ) {
             XrayConfigScreen(onClose = { showXrayConfig = false })
         }

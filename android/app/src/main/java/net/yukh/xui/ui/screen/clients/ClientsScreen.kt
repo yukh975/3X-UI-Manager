@@ -135,7 +135,7 @@ fun ClientsScreen(
     state.editor?.let { editor ->
         Dialog(
             onDismissRequest = vm::closeEditor,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
         ) {
             ClientEditorScreen(
                 state = editor,
