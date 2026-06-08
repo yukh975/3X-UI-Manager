@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "xui-kmp"
 include(":shared")
+include(":composeApp")
