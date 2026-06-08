@@ -16,13 +16,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -85,17 +89,44 @@ fun ClientsScreen(
                 contentAlignment = Alignment.Center,
             ) { Text("No clients yet.") }
 
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.items, key = { it.email.ifBlank { it.id.toString() } }) { client ->
-                    ClientRow(
-                        client = client,
-                        online = client.email in state.online,
-                        onClick = { vm.openShareSheet(client.email) },
-                    )
+            else -> Column(modifier = Modifier.fillMaxSize()) {
+                OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = vm::setSearchQuery,
+                    label = { Text("Search by email") },
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (state.searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { vm.setSearchQuery("") }) {
+                                Icon(Icons.Filled.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+
+                val visible = state.visibleItems
+                if (visible.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No clients match \"${state.searchQuery}\".")
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(visible, key = { it.email.ifBlank { it.id.toString() } }) { client ->
+                            ClientRow(
+                                client = client,
+                                online = client.email in state.online,
+                                onClick = { vm.openShareSheet(client.email) },
+                            )
+                        }
+                    }
                 }
             }
         }

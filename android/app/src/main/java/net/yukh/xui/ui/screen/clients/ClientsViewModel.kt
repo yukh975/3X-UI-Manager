@@ -19,6 +19,7 @@ private const val BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0
 data class ClientsUiState(
     val items: List<Client> = emptyList(),
     val online: Set<String> = emptySet(),
+    val searchQuery: String = "",
     val loading: Boolean = false,
     val refreshing: Boolean = false,
     val error: String? = null,
@@ -30,7 +31,12 @@ data class ClientsUiState(
     val selectedSubUrl: String? = null,
     val subUrlChecked: Boolean = false,
     val editor: ClientEditorState? = null,
-)
+) {
+    /** Items filtered by the search query (case-insensitive substring of email). */
+    val visibleItems: List<Client>
+        get() = if (searchQuery.isBlank()) items
+        else items.filter { it.email.contains(searchQuery.trim(), ignoreCase = true) }
+}
 
 /** Form state for creating or editing a client. Numeric inputs are kept as
  *  strings so partial/empty typing doesn't fight the user. */
@@ -281,6 +287,8 @@ class ClientsViewModel @Inject constructor(
                 }
         }
     }
+
+    fun setSearchQuery(q: String) = _state.update { it.copy(searchQuery = q) }
 
     fun dismissMessage() = _state.update { it.copy(transientMessage = null) }
 }
