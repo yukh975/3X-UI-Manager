@@ -122,4 +122,19 @@ val ruStrings: Map<String, String> = mapOf(
     "About" to "О приложении",
     "Version" to "Версия",
     "Application" to "Приложение",
+
+    // App lock
+    "App lock" to "Блокировка приложения",
+    "Set passcode" to "Задать код-пароль",
+    "Change passcode" to "Сменить код-пароль",
+    "Remove passcode" to "Убрать код-пароль",
+    "Unlock with fingerprint" to "Разблокировка по отпечатку",
+    "Set a 4–8 digit passcode" to "Задайте код-пароль из 4–8 цифр",
+    "Passcode" to "Код-пароль",
+    "Confirm passcode" to "Повторите код-пароль",
+    "Enter passcode" to "Введите код-пароль",
+    "Wrong passcode" to "Неверный код-пароль",
+    "Unlock" to "Разблокировать",
+    "Use passcode" to "Ввести код-пароль",
+    "Use fingerprint" to "Использовать отпечаток",
 )

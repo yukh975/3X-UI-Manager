@@ -147,6 +147,21 @@ class PanelRepository @Inject constructor(
         store.clear()
     }
 
+    /** A login/password profile is saved (so we can auto-relogin). */
+    fun hasStoredCredentials(): Boolean =
+        store.getProfile()?.auth is ConnectionAuth.Credentials
+
+    /**
+     * At app start, silently re-establish a session from a stored
+     * login/password profile so the user isn't dropped to the connect screen
+     * after the panel's session expired or the app restarted. No-op (returns
+     * false) for token profiles, 2FA accounts, or if already connected.
+     */
+    suspend fun tryAutoReconnect(): Boolean {
+        if (_connected.value) return true
+        return reauth()
+    }
+
     // ---- Server -----------------------------------------------------------
 
     suspend fun getServerStatus(): Result<ServerStatus> =
@@ -284,14 +299,42 @@ class PanelRepository @Inject constructor(
         crossinline block: suspend (XuiApi) -> ApiResponse<T>,
     ): Result<T> {
         val current = api ?: return Result.failure(PanelError.NotConnected)
-        return safeData { block(current) }
+        val r = safeData { block(current) }
+        if (isUnauthorized(r) && reauth()) {
+            val again = api ?: return r
+            return safeData { block(again) }
+        }
+        return r
     }
 
     private suspend inline fun authedAck(
         crossinline block: suspend (XuiApi) -> ApiAck,
     ): Result<Unit> {
         val current = api ?: return Result.failure(PanelError.NotConnected)
-        return safeAck { block(current) }
+        val r = safeAck { block(current) }
+        if (isUnauthorized(r) && reauth()) {
+            val again = api ?: return r
+            return safeAck { block(again) }
+        }
+        return r
+    }
+
+    private fun isUnauthorized(r: Result<*>): Boolean {
+        val e = r.exceptionOrNull()
+        return e is PanelError.Http && e.code == 401
+    }
+
+    /**
+     * Re-establish a session from stored login/password credentials (no 2FA).
+     * Used on a 401 mid-session and at app start. Token profiles and
+     * 2FA-protected accounts return false (the user must act).
+     */
+    private suspend fun reauth(): Boolean {
+        val p = store.getProfile() ?: return false
+        val auth = p.auth as? ConnectionAuth.Credentials ?: return false
+        return connectWithCredentials(
+            p.baseUrl, p.allowInsecureTls, auth.username, auth.password, null, p.subBaseUrl,
+        ).isSuccess
     }
 
     /**
