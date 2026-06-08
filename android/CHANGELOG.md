@@ -6,6 +6,19 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.8] — 2026-06-08
+
+### Changed
+- **Xray controls now depend on the auth method**: with an **API token** only
+  **Restart** is available; with **login/password** you get the full
+  **Start / Stop / Restart**. Reason: on panels reverse-proxied through Xray,
+  stopping Xray cuts off the panel/API and a token session can't bring it back.
+  Restart is safe — Xray comes back up and the connection is restored.
+- The **online clients list** now shows only emails (no inbound): 3x-ui keys
+  online/traffic by email under a single canonical inbound and copies that record
+  into every inbound the email belongs to, so the API can't tell which inbounds a
+  client is actually live on — showing one would be misleading.
+
 ## [0.3.7] — 2026-06-08
 
 ### Changed

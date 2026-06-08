@@ -25,9 +25,11 @@ data class DashboardUiState(
     val error: String? = null,
     val xrayActionInFlight: Boolean = false,
     val xrayActionMessage: String? = null,
+    // True for login/password sessions; token sessions only get Restart (see
+    // runXrayAction — stopping Xray can cut a proxied-through-Xray panel off).
+    val sessionAuth: Boolean = false,
     // Online list dialog
     val showOnlineList: Boolean = false,
-    val emailToInbounds: Map<String, List<String>> = emptyMap(),
     // Panel update
     val updateInfo: PanelUpdateInfo? = null,
     val updating: Boolean = false,
@@ -48,7 +50,7 @@ class DashboardViewModel @Inject constructor(
 
     fun startPolling() {
         if (pollJob?.isActive == true) return
-        _state.update { it.copy(loading = it.status == null) }
+        _state.update { it.copy(loading = it.status == null, sessionAuth = repo.hasStoredCredentials()) }
         if (_state.value.updateInfo == null) refreshUpdateInfo()
         pollJob = viewModelScope.launch {
             while (isActive) {
@@ -100,38 +102,11 @@ class DashboardViewModel @Inject constructor(
 
     // ---- Online list ------------------------------------------------------
 
-    fun openOnlineList() {
-        _state.update { it.copy(showOnlineList = true) }
-        // Resolve which inbound each online client is tracked under.
-        //
-        // The same email can be a *member* of several inbounds (e.g. one user
-        // allowed across FI/SE/FR servers). 3x-ui (and xray) key a client's
-        // traffic/online state by email under a single canonical inbound, and
-        // then list that same ClientStat inside every inbound the email belongs
-        // to — so `clientStat.inboundId` is constant for an email even when it
-        // shows up in other inbounds' clientStats, while the container inbound
-        // is not. Mapping by container inbound therefore wrongly lists every
-        // membership; mapping by `clientStat.inboundId` gives the one inbound
-        // the panel actually attributes the client to. (lastOnline/up/down are
-        // replicated across the duplicates, so they can't disambiguate either.)
-        viewModelScope.launch {
-            val inbounds = repo.listInbounds().getOrNull().orEmpty()
-            val nameById = inbounds.associate { it.id to it.remark.ifBlank { "#${it.id}" } }
-            val byEmail = mutableMapOf<String, MutableSet<Int>>()
-            inbounds.forEach { ib ->
-                ib.clientStats.forEach { c ->
-                    if (c.email.isNotBlank()) {
-                        val realId = if (c.inboundId != 0) c.inboundId else ib.id
-                        byEmail.getOrPut(c.email) { mutableSetOf() }.add(realId)
-                    }
-                }
-            }
-            val map = byEmail.mapValues { (_, ids) ->
-                ids.sorted().mapNotNull { nameById[it] ?: "#$it" }
-            }
-            _state.update { it.copy(emailToInbounds = map) }
-        }
-    }
+    // Just shows which clients are online (emails). We deliberately don't show
+    // the inbound: 3x-ui keys online/traffic by email under a single canonical
+    // inbound and replicates that record into every inbound the email belongs
+    // to, so the API can't tell which inbound(s) a client is actually live on.
+    fun openOnlineList() = _state.update { it.copy(showOnlineList = true) }
 
     fun closeOnlineList() = _state.update { it.copy(showOnlineList = false) }
 
@@ -164,36 +139,35 @@ class DashboardViewModel @Inject constructor(
 
     // ---- Xray controls ----------------------------------------------------
 
-    // restartXrayService also starts Xray when it's stopped, so "Start" and
-    // "Restart" both hit it; "Stop" uses stopXrayService.
-    fun startXray() = runXrayAction(start = true) { repo.restartXray() }
-    fun restartXray() = runXrayAction(start = false) { repo.restartXray() }
-    fun stopXray() = runXrayAction(start = false, stop = true) { repo.stopXray() }
+    // Start/Restart both call restartXrayService (starts Xray when down, restarts
+    // when up). Stop uses stopXrayService and is only offered for login/password
+    // sessions (see sessionAuth): on panels reverse-proxied through Xray, stopping
+    // Xray also cuts off the panel/API, and a token session typically can't bring
+    // it back — so token mode is restricted to Restart only.
+    fun startXray() = runXrayAction(verb = "start", resultRunning = true) { repo.restartXray() }
+    fun restartXray() = runXrayAction(verb = "restart", resultRunning = true) { repo.restartXray() }
+    fun stopXray() = runXrayAction(verb = "stop", resultRunning = false) { repo.stopXray() }
 
-    private fun runXrayAction(start: Boolean, stop: Boolean = false, action: suspend () -> Result<Unit>) {
+    private fun runXrayAction(
+        verb: String,
+        resultRunning: Boolean,
+        action: suspend () -> Result<Unit>,
+    ) {
         if (_state.value.xrayActionInFlight) return
         _state.update { it.copy(xrayActionInFlight = true, xrayActionMessage = null) }
         viewModelScope.launch {
             val result = action()
-            val verb = when {
-                stop -> "stop"
-                start -> "start"
-                else -> "restart"
-            }
             result
                 .onSuccess {
-                    // Reflect the action locally right away. Stopping Xray can
-                    // cut the app off from a panel that's reverse-proxied through
-                    // Xray, so the next poll may never return — without this the
-                    // card would keep showing the stale "running" controls. The
-                    // optimistic state shows the correct button (Start after a
-                    // stop); a later successful poll reconciles it.
-                    val newXrayState = if (stop) "stop" else "running"
+                    // Reflect the new Xray state immediately so the right control
+                    // shows even if the next poll never returns (e.g. a stop that
+                    // cuts off a proxied-through-Xray panel).
+                    val newState = if (resultRunning) "running" else "stop"
                     _state.update { st ->
                         st.copy(
                             xrayActionInFlight = false,
                             xrayActionMessage = "Xray $verb requested",
-                            status = st.status?.let { it.copy(xray = it.xray.copy(state = newXrayState)) },
+                            status = st.status?.let { it.copy(xray = it.xray.copy(state = newState)) },
                         )
                     }
                 }

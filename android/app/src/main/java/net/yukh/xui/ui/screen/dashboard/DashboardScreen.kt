@@ -131,6 +131,7 @@ fun DashboardScreen(
             XrayStatusCard(
                 status = state.status,
                 actionInFlight = state.xrayActionInFlight,
+                canStop = state.sessionAuth,
                 onStart = vm::startXray,
                 onStop = { showStopDialog = true },
                 onRestart = { showRestartDialog = true },
@@ -312,7 +313,6 @@ fun DashboardScreen(
     if (state.showOnlineList) {
         OnlineListDialog(
             emails = state.onlineEmails,
-            emailToInbounds = state.emailToInbounds,
             onDismiss = vm::closeOnlineList,
         )
     }
@@ -321,7 +321,6 @@ fun DashboardScreen(
 @Composable
 private fun OnlineListDialog(
     emails: List<String>,
-    emailToInbounds: Map<String, List<String>>,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -338,15 +337,7 @@ private fun OnlineListDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     emails.sorted().forEach { email ->
-                        Column {
-                            Text(email, style = MaterialTheme.typography.bodyLarge)
-                            val inbs = emailToInbounds[email].orEmpty()
-                            Text(
-                                if (inbs.isNotEmpty()) inbs.joinToString(", ") else "—",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Text(email, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
@@ -418,6 +409,7 @@ private fun PanelVersionCard(
 private fun XrayStatusCard(
     status: ServerStatus?,
     actionInFlight: Boolean,
+    canStop: Boolean,
     onStart: () -> Unit,
     onStop: () -> Unit,
     onRestart: () -> Unit,
@@ -476,15 +468,21 @@ private fun XrayStatusCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
+                    // Running → Restart (+ Stop only for login/password sessions);
+                    // stopped → Start. Stop is hidden for token sessions because
+                    // it can dead-lock a panel proxied through Xray. See the
+                    // ViewModel's runXrayAction().
                     if (running) {
                         XrayActionChip(tr("Restart"), Icons.Outlined.RestartAlt, !actionInFlight, onRestart)
-                        XrayActionChip(
-                            tr("Stop"),
-                            Icons.Outlined.Stop,
-                            !actionInFlight,
-                            onStop,
-                            tint = MaterialTheme.colorScheme.error,
-                        )
+                        if (canStop) {
+                            XrayActionChip(
+                                tr("Stop"),
+                                Icons.Outlined.Stop,
+                                !actionInFlight,
+                                onStop,
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     } else {
                         XrayActionChip(tr("Start"), Icons.Outlined.PlayArrow, !actionInFlight, onStart)
                     }
