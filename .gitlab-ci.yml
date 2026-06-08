@@ -29,7 +29,6 @@ variables:
 
 stages:
   - build
-  - test
   - publish
 
 cache:
@@ -54,20 +53,10 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "api"
 
-test:unit:
-  stage: test
-  needs: ["build:release"]
-  script:
-    - gradle testDebugUnitTest --no-daemon --stacktrace --warning-mode=summary
-  artifacts:
-    name: "xui-android-test-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - android/app/build/reports/tests/
-    reports:
-      junit:
-        - android/app/build/test-results/**/TEST-*.xml
-    when: always
-    expire_in: 1 week
+# NOTE: there is no `test:unit` job — the app currently has no unit tests, and
+# it never gated the release anyway (release:publish only needs build:release, so
+# they ran in parallel). When real tests are added, reintroduce a `test` job AND
+# make release:publish `needs` it so it actually blocks a bad release.
 
 # Signed release APK — the only APK we ship. The keystore is decoded from
 # RELEASE_KEYSTORE_B64 (a project CI variable) into a scratch file outside the
