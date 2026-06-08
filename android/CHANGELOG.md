@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.3] — 2026-06-08
+
+### Fixed
+- Editor dialogs (client, inbound, node, Xray) now fill the screen height.
+  They were sizing to their content, so tall forms overflowed off-screen:
+  the content wouldn't scroll and the bottom (Delete button / last field)
+  was cut off. The earlier inset tweak didn't address this; the real cause
+  was the dialog wrapping content height.
+
 ## [0.3.2] — 2026-06-08
 
 ### Changed

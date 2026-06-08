@@ -69,6 +69,7 @@ fun InboundEditorScreen(
     var showAdvanced by remember { mutableStateOf(false) }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text(if (state.isNew) "New inbound" else "Edit inbound") },

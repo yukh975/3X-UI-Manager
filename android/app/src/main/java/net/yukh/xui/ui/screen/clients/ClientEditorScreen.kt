@@ -63,6 +63,7 @@ fun ClientEditorScreen(
     var confirmSave by remember { mutableStateOf(false) }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text(if (state.isNew) "New client" else "Edit client") },

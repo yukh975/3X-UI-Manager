@@ -64,6 +64,7 @@ fun NodeEditorScreen(
     var confirmSave by remember { mutableStateOf(false) }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text(if (state.isNew) "Add node" else "Edit node") },
