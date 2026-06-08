@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [0.3.0] — 2026-06-08
 
 ### Added
 - **Client editor** — create, edit and delete clients: email, inbound
