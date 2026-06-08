@@ -17,37 +17,50 @@ for the **main panel alone** (NOT aggregating sub-nodes), and the same pair
 **per node**.
 
 ### How (client-side only, no panel changes)
-- **Total** = Σ(up + down) over **all** inbounds.
-- **This month** = Σ(up + down) over inbounds whose `trafficReset == "monthly"`.
-  The panel's `@monthly` cron resets those counters at 00:00 on the 1st, so for a
-  monthly-reset inbound `up+down` *is* exactly the traffic since the 1st.
+The central `GET /panel/api/inbounds/list` **already includes node inbounds**,
+each tagged with a `nodeId` (absent/0 = the main node's own inbounds; `N` = node
+with that id). So **no per-node queries are needed** — group the one list by
+`nodeId`:
+- **Main node** = inbounds with no/zero `nodeId` (e.g. NETADM, FAM).
+- **Node N** = inbounds with `nodeId == N`; map id→name via `/nodes/list`.
 
-- **Main panel:** `GET /panel/api/inbounds/list` → sum up+down of monthly-reset
-  inbounds only.
-- **Per node:** query each node's own `/panel/api/inbounds/list` directly (reuse
-  the per-node query path already built for "online by server" —
-  `PanelRepository.listNodeOnlines`), sum its monthly-reset inbounds.
-- UI: a "Трафик за месяц" card on the Dashboard + a per-node line in the Nodes
-  screen (next to CPU/RAM/uptime/version).
+Per group, traffic = Σ(up + down). Each inbound also carries
+`lastTrafficResetTime` (unix) — use it to label the figure ("since 01.06").
 
-### Caveats (verified against the live panel)
-- **This-month** figure counts **only** inbounds with `trafficReset = "monthly"`.
-  Inbounds set to `never`/`daily`/etc. can't be attributed to "this month" from
-  the API, so they're excluded from the monthly number (they still count toward
-  **Total**). For a complete monthly figure, all of that node's inbounds must use
-  monthly reset — show a small hint when some aren't, so it isn't silently partial.
-- Do **NOT** use `netTraffic` from `/server/status` — that's the NIC counter
-  since OS boot, not monthly.
-- Node metric history (`/nodes/history`) is **cpu/mem only** — there is no
-  per-node traffic history to integrate.
+### ⚠️ Hard limit: one counter per inbound (total XOR monthly)
+An inbound stores a **single** up/down counter; its `trafficReset` mode decides
+what that counter means — you cannot read both all-time and this-month from it:
+- `trafficReset == "monthly"` → counter = **this month** (panel's `@monthly`
+  cron zeroes it on the 1st); all-time is **discarded**, not stored.
+- `trafficReset == "never"` → counter = **all-time total**; there is **no**
+  monthly breakdown.
+
+Live-panel reality (user's setup):
+- **Main node** NETADM + FAM are `monthly` → "this month" is exact; "total
+  all-time" is NOT kept (equals the monthly number).
+- **Nodes** WS-* are `never` → "total all-time" is exact; "this month" is NOT
+  available unless those inbounds switch to monthly reset.
+
+So "Total **and** This-month for everything" is not possible from the API alone.
+Options to decide with the user:
+1. Show whichever is available per group, labelled honestly (main → monthly;
+   nodes → total) + the reset date. Simplest, no surprises.
+2. Ask the user to set all inbounds to `monthly` → then everything shows
+   this-month (but loses all-time).
+3. App-side history: persist a per-inbound counter snapshot at month start and
+   compute the delta → gives both, but is fragile (storage, counter resets,
+   inbound add/remove, first-month has no baseline).
+
+### Other caveats
+- Do **NOT** use `netTraffic` from `/server/status` — NIC counter since OS boot.
+- Node metric history (`/nodes/history`) is **cpu/mem only** — no traffic series.
 
 ### Files to touch
-- `data/repo/PanelRepository.kt` — add `monthlyTraffic()` for main + a per-node
-  inbound-sum helper (mirror `listNodeOnlines`).
-- `ui/screen/dashboard/DashboardViewModel.kt` + `DashboardScreen.kt` — fetch +
-  new card.
+- `data/api/dto` — add `nodeId` + `lastTrafficResetTime` to the inbound DTO.
+- `data/repo/PanelRepository.kt` — group inbounds by `nodeId`, sum up+down.
+- `ui/screen/dashboard/DashboardViewModel.kt` + `DashboardScreen.kt` — new card.
 - `ui/screen/nodes/NodesScreen.kt` / `NodesViewModel.kt` — per-node line.
-- i18n: `RuStrings.kt` ("Traffic this month" → "Трафик за месяц", etc.).
+- i18n: `RuStrings.kt` ("Traffic" / "This month" / "Total" → RU).
 
 ---
 
