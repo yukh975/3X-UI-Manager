@@ -40,9 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import net.yukh.xui.ui.components.AdjustResizeDialogWindow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.Client
@@ -165,30 +162,8 @@ fun ClientsScreen(
         )
     }
 
-    // Full-screen editor over the tab UI (Dialog escapes the bottom-nav scaffold).
-    state.editor?.let { editor ->
-        Dialog(
-            onDismissRequest = vm::closeEditor,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-        ) {
-            AdjustResizeDialogWindow()
-            ClientEditorScreen(
-                state = editor,
-                onEmail = vm::setEditorEmail,
-                onEnable = vm::setEditorEnable,
-                onLimitIp = vm::setEditorLimitIp,
-                onTotalGb = vm::setEditorTotalGb,
-                onReset = vm::setEditorReset,
-                onTgId = vm::setEditorTgId,
-                onGroup = vm::setEditorGroup,
-                onComment = vm::setEditorComment,
-                onExpiry = vm::setEditorExpiry,
-                onToggleInbound = vm::toggleEditorInbound,
-                onSave = vm::saveEditor,
-                onClose = vm::closeEditor,
-            )
-        }
-    }
+    // The client editor is rendered as a full-screen overlay by MainScreen
+    // (activity window) so its insets/keyboard handling work correctly.
 }
 
 @Composable

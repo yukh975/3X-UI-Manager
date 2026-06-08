@@ -102,42 +102,32 @@ class DashboardViewModel @Inject constructor(
 
     fun openOnlineList() {
         _state.update { it.copy(showOnlineList = true) }
-        // Resolve which inbound(s) each online client is actually connected
-        // through *right now*.
+        // Resolve which inbound each online client is tracked under.
         //
-        // /onlines returns only emails, and the same email can be configured in
-        // several inbounds (e.g. the same user offered over vless + vmess). A
-        // client may be connected to several of them at once — but not
-        // necessarily all. The panel doesn't say which directly, but each
-        // inbound's per-client `lastOnline` keeps updating while a connection is
-        // live and goes stale otherwise. So among an email's memberships we take
-        // the most-recent lastOnline and keep every inbound whose lastOnline is
-        // within a short window of it — that captures simultaneous live
-        // connections while dropping inbounds last used long ago. If there's no
-        // lastOnline data we fall back to listing every membership.
+        // The same email can be a *member* of several inbounds (e.g. one user
+        // allowed across FI/SE/FR servers). 3x-ui (and xray) key a client's
+        // traffic/online state by email under a single canonical inbound, and
+        // then list that same ClientStat inside every inbound the email belongs
+        // to — so `clientStat.inboundId` is constant for an email even when it
+        // shows up in other inbounds' clientStats, while the container inbound
+        // is not. Mapping by container inbound therefore wrongly lists every
+        // membership; mapping by `clientStat.inboundId` gives the one inbound
+        // the panel actually attributes the client to. (lastOnline/up/down are
+        // replicated across the duplicates, so they can't disambiguate either.)
         viewModelScope.launch {
             val inbounds = repo.listInbounds().getOrNull().orEmpty()
-            val byEmail = mutableMapOf<String, MutableList<Pair<String, Long>>>()
+            val nameById = inbounds.associate { it.id to it.remark.ifBlank { "#${it.id}" } }
+            val byEmail = mutableMapOf<String, MutableSet<Int>>()
             inbounds.forEach { ib ->
-                val name = ib.remark.ifBlank { "#${ib.id}" }
                 ib.clientStats.forEach { c ->
                     if (c.email.isNotBlank()) {
-                        byEmail.getOrPut(c.email) { mutableListOf() }.add(name to c.lastOnline)
+                        val realId = if (c.inboundId != 0) c.inboundId else ib.id
+                        byEmail.getOrPut(c.email) { mutableSetOf() }.add(realId)
                     }
                 }
             }
-            val map = byEmail.mapValues { (_, entries) ->
-                val maxLast = entries.maxOf { it.second }
-                if (maxLast <= 0L) {
-                    // No lastOnline data — can't tell, so show all memberships.
-                    entries.map { it.first }.distinct()
-                } else {
-                    // lastOnline is epoch millis; keep inbounds active within the
-                    // window of the most-recent one (concurrent connections).
-                    entries.filter { it.second > 0L && maxLast - it.second <= ONLINE_WINDOW_MS }
-                        .map { it.first }
-                        .distinct()
-                }
+            val map = byEmail.mapValues { (_, ids) ->
+                ids.sorted().mapNotNull { nameById[it] ?: "#$it" }
             }
             _state.update { it.copy(emailToInbounds = map) }
         }
@@ -212,8 +202,5 @@ class DashboardViewModel @Inject constructor(
 
     private companion object {
         const val POLL_INTERVAL_MS = 3_000L
-        // How close to the most-recent lastOnline an inbound must be to count as
-        // a live concurrent connection (epoch millis).
-        const val ONLINE_WINDOW_MS = 120_000L
     }
 }

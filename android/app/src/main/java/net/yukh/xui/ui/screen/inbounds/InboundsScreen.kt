@@ -34,9 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import net.yukh.xui.ui.components.AdjustResizeDialogWindow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.InboundSlim
@@ -118,15 +115,8 @@ fun InboundsScreen(
         ) { Snackbar { Text(it.visuals.message) } }
     }
 
-    state.editor?.let { editor ->
-        Dialog(
-            onDismissRequest = vm::closeEditor,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-        ) {
-            AdjustResizeDialogWindow()
-            InboundEditorScreen(state = editor, vm = vm)
-        }
-    }
+    // The inbound editor is rendered as a full-screen overlay by MainScreen
+    // (activity window) so its insets/keyboard handling work correctly.
 }
 
 @Composable

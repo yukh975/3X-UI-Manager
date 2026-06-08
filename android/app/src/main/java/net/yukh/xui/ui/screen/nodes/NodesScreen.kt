@@ -34,10 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
-import net.yukh.xui.ui.components.AdjustResizeDialogWindow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.i18n.tr
@@ -94,30 +91,8 @@ fun NodesScreen(
         ) { Snackbar { Text(it.visuals.message) } }
     }
 
-    state.editor?.let { editor ->
-        Dialog(
-            onDismissRequest = vm::closeEditor,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-        ) {
-            AdjustResizeDialogWindow()
-            NodeEditorScreen(
-                state = editor,
-                onName = vm::setName,
-                onRemark = vm::setRemark,
-                onScheme = vm::setScheme,
-                onAddress = vm::setAddress,
-                onPort = vm::setPort,
-                onBasePath = vm::setBasePath,
-                onApiToken = vm::setApiToken,
-                onEnable = vm::setEnable,
-                onAllowPrivate = vm::setAllowPrivate,
-                onTlsVerifyMode = vm::setTlsVerifyMode,
-                onSave = vm::saveEditor,
-                onDelete = { vm.deleteNode(editor.id) },
-                onClose = vm::closeEditor,
-            )
-        }
-    }
+    // The node editor is rendered as a full-screen overlay by MainScreen
+    // (activity window) so its insets/keyboard handling work correctly.
 }
 
 @Composable

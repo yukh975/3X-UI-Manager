@@ -65,7 +65,7 @@ fun ClientEditorScreen(
     var confirmSave by remember { mutableStateOf(false) }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().imePadding(),
         topBar = {
             TopAppBar(
                 title = { Text(if (state.isNew) tr("New client") else tr("Edit client")) },
@@ -90,7 +90,6 @@ fun ClientEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -105,10 +104,10 @@ fun ClientEditorScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(tr("Enabled"), style = MaterialTheme.typography.bodyLarge)
+                Text(tr("Enabled"), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                 Switch(checked = state.enable, onCheckedChange = onEnable)
             }
 

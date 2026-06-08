@@ -119,10 +119,14 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(tr("Unlock with fingerprint"), style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    tr("Unlock with fingerprint"),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.weight(1f),
+                                )
                                 Switch(
                                     checked = biometric,
                                     onCheckedChange = { vm.setBiometricEnabled(it); biometric = it },

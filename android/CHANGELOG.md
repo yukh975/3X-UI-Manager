@@ -6,6 +6,29 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.6] — 2026-06-08
+
+> Every change in this release was verified on an emulator (editor/settings
+> screenshots), not just by compiling.
+
+### Fixed
+- **Online clients list** now resolves the inbound via `clientStat.inboundId`
+  (the one the panel actually tracks the client under) instead of whichever
+  inbound's list the client appears in. One email can be a member of several
+  inbounds (one user across multiple servers); 3x-ui stores its traffic/online
+  under a single canonical inbound and replicates that record into the others,
+  which is why all of them used to show. Now only the attributed one does.
+- **Delete buttons (inbound/node) no longer run off-screen under the system
+  navigation bar.** Editors are now rendered full-screen in the activity window
+  (not in a `Dialog`, where Compose never received system-bar insets), and the
+  delete button is pinned in a bottom bar that's always visible — no scrolling
+  needed to reach it.
+- **The Comment field in the client editor is no longer covered by the
+  keyboard** — the form lifts above the keyboard so the field stays reachable.
+- **Switches/buttons in Settings and the editors no longer overlap Russian
+  text** — long labels get their own space (weight) with the control kept to
+  the right.
+
 ## [0.3.5] — 2026-06-08
 
 ### Added

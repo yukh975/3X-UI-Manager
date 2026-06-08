@@ -28,8 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -41,12 +43,17 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.i18n.tr
-import net.yukh.xui.ui.components.AdjustResizeDialogWindow
 import net.yukh.xui.ui.navigation.MainTabs
+import net.yukh.xui.ui.screen.clients.ClientEditorScreen
 import net.yukh.xui.ui.screen.clients.ClientsScreen
+import net.yukh.xui.ui.screen.clients.ClientsViewModel
 import net.yukh.xui.ui.screen.dashboard.DashboardScreen
+import net.yukh.xui.ui.screen.inbounds.InboundEditorScreen
 import net.yukh.xui.ui.screen.inbounds.InboundsScreen
+import net.yukh.xui.ui.screen.inbounds.InboundsViewModel
+import net.yukh.xui.ui.screen.nodes.NodeEditorScreen
 import net.yukh.xui.ui.screen.nodes.NodesScreen
+import net.yukh.xui.ui.screen.nodes.NodesViewModel
 import net.yukh.xui.ui.screen.settings.SettingsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
 
@@ -84,6 +91,18 @@ fun MainScreen(
     var showXrayConfig by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
 
+    // The editor-bearing VMs are created here and shared with the tab screens, so
+    // their full-screen editors can be rendered as overlays in THIS (activity)
+    // window — Compose Dialog windows don't reliably get system-bar / IME insets,
+    // which is why editor action buttons used to hide under the nav bar/keyboard.
+    val inboundsVm: InboundsViewModel = hiltViewModel()
+    val clientsVm: ClientsViewModel = hiltViewModel()
+    val nodesVm: NodesViewModel = hiltViewModel()
+    val inboundsState by inboundsVm.state.collectAsStateWithLifecycle()
+    val clientsState by clientsVm.state.collectAsStateWithLifecycle()
+    val nodesState by nodesVm.state.collectAsStateWithLifecycle()
+
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -143,29 +162,67 @@ fun MainScreen(
             modifier = Modifier.padding(padding),
         ) {
             composable(MainTabs.Dashboard) { DashboardScreen() }
-            composable(MainTabs.Inbounds) { InboundsScreen() }
-            composable(MainTabs.Clients) { ClientsScreen() }
-            composable(MainTabs.Nodes) { NodesScreen() }
+            composable(MainTabs.Inbounds) { InboundsScreen(vm = inboundsVm) }
+            composable(MainTabs.Clients) { ClientsScreen(vm = clientsVm) }
+            composable(MainTabs.Nodes) { NodesScreen(vm = nodesVm) }
         }
+    }
+
+    // ---- Full-screen overlays (rendered in the activity window so system-bar
+    // and keyboard insets work; each is opaque and covers the bottom nav) ----
+
+    inboundsState.editor?.let { editor ->
+        BackHandler(onBack = inboundsVm::closeEditor)
+        InboundEditorScreen(state = editor, vm = inboundsVm)
+    }
+
+    clientsState.editor?.let { editor ->
+        BackHandler(onBack = clientsVm::closeEditor)
+        ClientEditorScreen(
+            state = editor,
+            onEmail = clientsVm::setEditorEmail,
+            onEnable = clientsVm::setEditorEnable,
+            onLimitIp = clientsVm::setEditorLimitIp,
+            onTotalGb = clientsVm::setEditorTotalGb,
+            onReset = clientsVm::setEditorReset,
+            onTgId = clientsVm::setEditorTgId,
+            onGroup = clientsVm::setEditorGroup,
+            onComment = clientsVm::setEditorComment,
+            onExpiry = clientsVm::setEditorExpiry,
+            onToggleInbound = clientsVm::toggleEditorInbound,
+            onSave = clientsVm::saveEditor,
+            onClose = clientsVm::closeEditor,
+        )
+    }
+
+    nodesState.editor?.let { editor ->
+        BackHandler(onBack = nodesVm::closeEditor)
+        NodeEditorScreen(
+            state = editor,
+            onName = nodesVm::setName,
+            onRemark = nodesVm::setRemark,
+            onScheme = nodesVm::setScheme,
+            onAddress = nodesVm::setAddress,
+            onPort = nodesVm::setPort,
+            onBasePath = nodesVm::setBasePath,
+            onApiToken = nodesVm::setApiToken,
+            onEnable = nodesVm::setEnable,
+            onAllowPrivate = nodesVm::setAllowPrivate,
+            onTlsVerifyMode = nodesVm::setTlsVerifyMode,
+            onSave = nodesVm::saveEditor,
+            onDelete = { nodesVm.deleteNode(editor.id) },
+            onClose = nodesVm::closeEditor,
+        )
     }
 
     if (showXrayConfig) {
-        Dialog(
-            onDismissRequest = { showXrayConfig = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-        ) {
-            AdjustResizeDialogWindow()
-            XrayConfigScreen(onClose = { showXrayConfig = false })
-        }
+        BackHandler(onBack = { showXrayConfig = false })
+        XrayConfigScreen(onClose = { showXrayConfig = false })
     }
 
     if (showSettings) {
-        Dialog(
-            onDismissRequest = { showSettings = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-        ) {
-            AdjustResizeDialogWindow()
-            SettingsScreen(onClose = { showSettings = false })
-        }
+        BackHandler(onBack = { showSettings = false })
+        SettingsScreen(onClose = { showSettings = false })
+    }
     }
 }
