@@ -6,6 +6,7 @@ import java.util.Locale
 import kotlin.math.ln
 import kotlin.math.pow
 import net.yukh.xui.i18n.LANG_EN
+import net.yukh.xui.i18n.LANG_RU
 import net.yukh.xui.i18n.tr
 
 private val units = arrayOf("B", "KB", "MB", "GB", "TB", "PB")
@@ -30,6 +31,16 @@ fun Long.formatExpiry(lang: String = LANG_EN): String {
 /** Plain calendar date for an expiry timestamp (Unix ms). 0 → "Never". */
 fun Long.formatDate(lang: String = LANG_EN): String =
     if (this == 0L) tr(lang, "Never") else SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
+
+/** Days remaining until expiry (Unix ms). 0 → "Never"; already past → "Expired";
+ *  otherwise the whole-day count with a short unit ("12 d" / "12 дн."). */
+fun Long.formatExpiryDays(lang: String = LANG_EN): String {
+    if (this == 0L) return tr(lang, "Never")
+    val days = (this - System.currentTimeMillis()) / 86_400_000L
+    if (days < 0) return tr(lang, "Expired")
+    val unit = if (lang == LANG_RU) "дн." else "d"
+    return "$days $unit"
+}
 
 /** Format a relative timestamp ("12s ago", "5m ago"). 0 → "—". */
 fun Long.formatLastOnline(lang: String = LANG_EN): String {

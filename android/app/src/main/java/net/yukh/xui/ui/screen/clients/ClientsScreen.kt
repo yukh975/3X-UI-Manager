@@ -46,7 +46,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.i18n.LocalAppLanguage
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.format.formatBytes
-import net.yukh.xui.ui.format.formatExpiry
+import net.yukh.xui.ui.format.formatExpiryDays
 import net.yukh.xui.ui.format.formatLastOnline
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -220,21 +220,18 @@ private fun ClientRow(
                     )
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    "${tr("Expires")} ${client.expiryTime.formatExpiry(LocalAppLanguage.current)}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    "${tr("Last seen")} ${client.lastOnline.formatLastOnline(LocalAppLanguage.current)}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text(
+                "${tr("Expires")}: ${client.expiryTime.formatExpiryDays(LocalAppLanguage.current)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            val lastSeen = if (client.lastOnline <= 0L) tr("Never")
+                else client.lastOnline.formatLastOnline(LocalAppLanguage.current)
+            Text(
+                "${tr("Last seen")}: $lastSeen",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

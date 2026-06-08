@@ -3,6 +3,8 @@ package net.yukh.xui.ui.screen.nodes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -75,7 +78,13 @@ fun NodesScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(state.items, key = { it.id }) { node ->
-                    NodeRow(node = node, onClick = { vm.openEditEditor(node.id) })
+                    NodeRow(
+                        node = node,
+                        latestVersion = state.latestVersion,
+                        updating = node.id in state.updatingIds,
+                        onUpdate = { vm.updateNode(node.id) },
+                        onClick = { vm.openEditEditor(node.id) },
+                    )
                 }
             }
         }
@@ -96,7 +105,13 @@ fun NodesScreen(
 }
 
 @Composable
-private fun NodeRow(node: Node, onClick: () -> Unit) {
+private fun NodeRow(
+    node: Node,
+    latestVersion: String,
+    updating: Boolean,
+    onUpdate: () -> Unit,
+    onClick: () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
@@ -134,14 +149,34 @@ private fun NodeRow(node: Node, onClick: () -> Unit) {
                 )
             }
             if (node.online) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(tr("CPU ") + "${node.cpuPct.formatPercent()}", style = MaterialTheme.typography.labelMedium)
-                    Text(tr("RAM ") + "${node.memPct.formatPercent()}", style = MaterialTheme.typography.labelMedium)
-                    if (node.latencyMs > 0) Text("${node.latencyMs}ms", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+                val muted = MaterialTheme.colorScheme.onSurfaceVariant
+                Text(
+                    "${tr("CPU")}: ${node.cpuPct.formatPercent()}  ·  ${tr("RAM")}: ${node.memPct.formatPercent()}",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                if (node.latencyMs > 0) {
+                    Text("${tr("Ping")}: ${node.latencyMs} ms", style = MaterialTheme.typography.labelMedium)
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("${node.inboundCount} ${tr("inbounds")} · ${node.clientCount} ${tr("clients")}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (node.uptimeSecs > 0) Text(tr("up ") + "${node.uptimeSecs.formatUptime()}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "${node.inboundCount} ${tr("inbounds")}  ·  ${node.clientCount} ${tr("clients")}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = muted,
+                )
+                if (node.uptimeSecs > 0) {
+                    Text("${tr("Uptime")}: ${node.uptimeSecs.formatUptime()}", style = MaterialTheme.typography.labelMedium, color = muted)
+                }
+                if (node.panelVersion.isNotBlank()) {
+                    val outdated = latestVersion.isNotBlank() &&
+                        node.panelVersion.removePrefix("v") != latestVersion
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("3x-ui: v${node.panelVersion}", style = MaterialTheme.typography.labelMedium, color = muted)
+                        if (outdated) {
+                            TextButton(onClick = onUpdate, enabled = !updating) {
+                                Text(if (updating) tr("Updating…") else tr("Update"))
+                            }
+                        }
+                    }
                 }
             } else if (node.lastError.isNotBlank()) {
                 Text(node.lastError, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error, maxLines = 2, overflow = TextOverflow.Ellipsis)

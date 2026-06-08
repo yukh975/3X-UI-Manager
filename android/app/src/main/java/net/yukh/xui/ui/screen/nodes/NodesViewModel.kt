@@ -20,6 +20,10 @@ data class NodesUiState(
     val error: String? = null,
     val transientMessage: String? = null,
     val editor: NodeEditorState? = null,
+    // Latest 3x-ui version (from the central panel) — a node is "outdated" when
+    // its panelVersion differs. Empty until fetched.
+    val latestVersion: String = "",
+    val updatingIds: Set<Int> = emptySet(),
 )
 
 data class NodeEditorState(
@@ -63,6 +67,29 @@ class NodesViewModel @Inject constructor(
                 .onFailure { e ->
                     _state.update { it.copy(loading = false, refreshing = false, error = e.message) }
                 }
+        }
+        // Latest version (to flag outdated nodes). Fetched once; cheap to skip if known.
+        if (_state.value.latestVersion.isBlank()) {
+            viewModelScope.launch {
+                repo.getPanelUpdateInfo().onSuccess { info ->
+                    _state.update { it.copy(latestVersion = info.latestVersion.removePrefix("v")) }
+                }
+            }
+        }
+    }
+
+    /** Trigger a 3x-ui self-update on a single node via the central panel. */
+    fun updateNode(id: Int) {
+        if (id in _state.value.updatingIds) return
+        _state.update { it.copy(updatingIds = it.updatingIds + id) }
+        viewModelScope.launch {
+            repo.updateNodes(listOf(id))
+                .onSuccess { _state.update { it.copy(transientMessage = "Node update started") } }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Node update failed: ${e.message}") } }
+            // The node restarts during the update; refresh a bit later, then clear the flag.
+            kotlinx.coroutines.delay(4000)
+            _state.update { it.copy(updatingIds = it.updatingIds - id) }
+            load(force = true)
         }
     }
 

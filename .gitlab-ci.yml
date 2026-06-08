@@ -83,12 +83,15 @@ build:release:
     - |
       if [ -n "$CI_COMMIT_TAG" ]; then
         PKG_VERSION="${CI_COMMIT_TAG#v}"
-        echo ">>> Uploading 3x-ui-manager-release.apk to generic package registry @ $PKG_VERSION"
+        # The downloaded filename = the URL's last segment, so put the version in
+        # it (3x-ui-manager-<version>.apk) while the local Gradle output keeps its
+        # static name.
+        echo ">>> Uploading 3x-ui-manager-$PKG_VERSION.apk to generic package registry @ $PKG_VERSION"
         # cwd is $CI_PROJECT_DIR/android (set in before_script).
         curl --fail --silent --show-error --request PUT \
           --header "JOB-TOKEN: $CI_JOB_TOKEN" \
           --upload-file app/build/outputs/apk/release/3x-ui-manager-release.apk \
-          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/3x-ui-manager-release.apk"
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/3x-ui-manager-$PKG_VERSION.apk"
         echo
       fi
   artifacts:
@@ -124,7 +127,7 @@ release:publish:
     # works and the URLs come out with the correct version.
     - PKG_VERSION="${CI_COMMIT_TAG#v}"
     - PKG_BASE="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION"
-    - APK="3x-ui-manager-release.apk"
+    - APK="3x-ui-manager-$PKG_VERSION.apk"
     - echo "Publishing GitLab Release for $CI_COMMIT_TAG (package version $PKG_VERSION)"
     # The release description (and thus the Releases page) is in Russian and is
     # built from this version's section of the Russian changelog — i.e. the diff

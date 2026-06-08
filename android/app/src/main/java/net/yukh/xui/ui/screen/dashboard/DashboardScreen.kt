@@ -171,42 +171,33 @@ fun DashboardScreen(
                     )
                 }
 
-                Row(
+                // Each metric is its own full-width card, in this order:
+                // CPU, Memory, (Disk), Load, Net, Connections, Online.
+                MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    MetricTileCard(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Outlined.People,
-                        title = tr("Online (tap)"),
-                        value = state.onlineCount.toString(),
-                        onClick = vm::openOnlineList,
-                    )
-                    MetricTileCard(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Outlined.SwapVert,
-                        title = tr("Net ↑ / ↓ per s"),
-                        value = "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}",
-                    )
-                }
-
-                Row(
+                    icon = Icons.Outlined.Speed,
+                    title = tr("Load 1·5·15m"),
+                    value = "%.2f·%.2f·%.2f".format(status.load1, status.load5, status.load15),
+                )
+                MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    MetricTileCard(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Outlined.Dns,
-                        title = tr("Connections"),
-                        value = "TCP ${status.tcpCount} · UDP ${status.udpCount}",
-                    )
-                    MetricTileCard(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Outlined.Speed,
-                        title = tr("Load 1·5·15m"),
-                        value = "%.2f·%.2f·%.2f".format(status.load1, status.load5, status.load15),
-                    )
-                }
+                    icon = Icons.Outlined.SwapVert,
+                    title = tr("Net ↑ / ↓ per s"),
+                    value = "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}",
+                )
+                MetricTileCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Outlined.Dns,
+                    title = tr("Connections"),
+                    value = "TCP ${status.tcpCount} · UDP ${status.udpCount}",
+                )
+                MetricTileCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Outlined.People,
+                    title = tr("Online (tap)"),
+                    value = state.onlineCount.toString(),
+                    onClick = vm::openOnlineList,
+                )
 
                 if (status.uptime > 0 || status.publicIP.ipv4.isNotBlank()) {
                     Card(modifier = Modifier.fillMaxWidth()) {

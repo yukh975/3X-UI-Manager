@@ -10,6 +10,7 @@ import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
 import net.yukh.xui.data.api.dto.Node
+import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
@@ -131,6 +132,11 @@ interface XuiApi {
 
     @POST("panel/api/nodes/setEnable/{id}")
     suspend fun setNodeEnable(@Path("id") id: Int, @Body body: EnableRequest): ApiAck
+
+    // Trigger a 3x-ui self-update on the given node(s); the central panel relays
+    // it to each node. Body: {"ids":[...]}.
+    @POST("panel/api/nodes/updatePanel")
+    suspend fun updateNodePanel(@Body body: NodeIdsRequest): ApiAck
 
     // ---- Settings & Xray config (session-auth only; token → login redirect) ---
 
