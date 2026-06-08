@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,10 +62,10 @@ fun XrayConfigScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Xray config") },
+                title = { Text(tr("Xray config")) },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Close"))
                     }
                 },
                 actions = {
@@ -73,7 +74,7 @@ fun XrayConfigScreen(
                             if (state.saving) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                             } else {
-                                Text("Save")
+                                Text(tr("Save"))
                             }
                         }
                     }
@@ -92,13 +93,13 @@ fun XrayConfigScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        "Xray configuration isn't available with an API token.",
+                        tr("Xray configuration isn't available with an API token."),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        "The panel only exposes the Xray config (outbounds, routing, " +
-                            "DNS) to a logged-in session. Reconnect with login/password " +
-                            "to edit it.",
+                        tr("The panel only exposes the Xray config (outbounds, routing, ") +
+                            tr("DNS) to a logged-in session. Reconnect with login/password ") +
+                            tr("to edit it."),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -116,22 +117,22 @@ fun XrayConfigScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
-                        "Full Xray config — outbounds, routing, DNS, etc. Same as the " +
-                            "panel's Xray Configuration page. Save, then restart Xray to apply.",
+                        tr("Full Xray config — outbounds, routing, DNS, etc. Same as the ") +
+                            tr("panel's Xray Configuration page. Save, then restart Xray to apply."),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     OutlinedTextField(
                         value = state.testUrl,
                         onValueChange = vm::setTestUrl,
-                        label = { Text("Outbound test URL") },
+                        label = { Text(tr("Outbound test URL")) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = state.configText,
                         onValueChange = vm::setConfigText,
-                        label = { Text("xray config (JSON)") },
+                        label = { Text(tr("xray config (JSON)")) },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 360.dp),
                         textStyle = MaterialTheme.typography.bodySmall,
                     )
@@ -145,10 +146,10 @@ fun XrayConfigScreen(
 
     if (confirmSave) {
         ConfirmDialog(
-            title = "Save Xray config?",
-            text = "This replaces the panel's Xray configuration. Restart Xray " +
-                "afterwards to apply. A broken config can take Xray down.",
-            confirmLabel = "Save",
+            title = tr("Save Xray config?"),
+            text = tr("This replaces the panel's Xray configuration. Restart Xray ") +
+                tr("afterwards to apply. A broken config can take Xray down."),
+            confirmLabel = tr("Save"),
             onConfirm = vm::save,
             onDismiss = { confirmSave = false },
             destructive = true,

@@ -17,8 +17,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.SystemUpdate
@@ -36,6 +38,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +57,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.ServerStatus
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatPercent
 import net.yukh.xui.ui.format.formatUptime
@@ -65,6 +69,7 @@ fun DashboardScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     var showRestartDialog by remember { mutableStateOf(false) }
+    var showStopDialog by remember { mutableStateOf(false) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -94,6 +99,11 @@ fun DashboardScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        PullToRefreshBox(
+            isRefreshing = state.pullRefreshing,
+            onRefresh = vm::onPullRefresh,
+            modifier = Modifier.fillMaxSize(),
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -119,7 +129,9 @@ fun DashboardScreen(
             XrayStatusCard(
                 status = state.status,
                 actionInFlight = state.xrayActionInFlight,
-                onRestartClick = { showRestartDialog = true },
+                onStart = vm::startXray,
+                onStop = { showStopDialog = true },
+                onRestart = { showRestartDialog = true },
             )
 
             val status = state.status
@@ -131,18 +143,18 @@ fun DashboardScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     if (state.loading) CircularProgressIndicator()
-                    else Text("Waiting for first response…")
+                    else Text(tr("Waiting for first response…"))
                 }
             } else {
                 MetricBarCard(
                     icon = Icons.Outlined.Speed,
-                    title = "CPU" + if (status.cpuCores > 0) " · ${status.cpuCores} cores" else "",
+                    title = tr("CPU") + if (status.cpuCores > 0) " · ${status.cpuCores} ${tr("cores")}" else "",
                     primaryValue = status.cpu.formatPercent(),
                     progress = (status.cpu / 100.0).toFloat().coerceIn(0f, 1f),
                 )
                 MetricBarCard(
                     icon = Icons.Outlined.Memory,
-                    title = "Memory",
+                    title = tr("Memory"),
                     primaryValue = status.memPercent.formatPercent(),
                     secondaryValue = "${status.mem.current.formatBytes()} / ${status.mem.total.formatBytes()}",
                     progress = (status.memPercent / 100.0).toFloat().coerceIn(0f, 1f),
@@ -150,7 +162,7 @@ fun DashboardScreen(
                 if (status.disk.total > 0) {
                     MetricBarCard(
                         icon = Icons.Outlined.Storage,
-                        title = "Disk",
+                        title = tr("Disk"),
                         primaryValue = status.diskPercent.formatPercent(),
                         secondaryValue = "${status.disk.current.formatBytes()} / ${status.disk.total.formatBytes()}",
                         progress = (status.diskPercent / 100.0).toFloat().coerceIn(0f, 1f),
@@ -164,14 +176,14 @@ fun DashboardScreen(
                     MetricTileCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.People,
-                        title = "Online (tap)",
+                        title = tr("Online (tap)"),
                         value = state.onlineCount.toString(),
                         onClick = vm::openOnlineList,
                     )
                     MetricTileCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.SwapVert,
-                        title = "Net ↑ / ↓ per s",
+                        title = tr("Net ↑ / ↓ per s"),
                         value = "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}",
                     )
                 }
@@ -183,13 +195,13 @@ fun DashboardScreen(
                     MetricTileCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.Dns,
-                        title = "Connections",
+                        title = tr("Connections"),
                         value = "TCP ${status.tcpCount} · UDP ${status.udpCount}",
                     )
                     MetricTileCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.Speed,
-                        title = "Load 1·5·15m",
+                        title = tr("Load 1·5·15m"),
                         value = "%.2f·%.2f·%.2f".format(status.load1, status.load5, status.load15),
                     )
                 }
@@ -198,11 +210,11 @@ fun DashboardScreen(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             if (status.uptime > 0) {
-                                Text("Uptime ${status.uptime.formatUptime()}", style = MaterialTheme.typography.bodyMedium)
+                                Text("${tr("Uptime")} ${status.uptime.formatUptime()}", style = MaterialTheme.typography.bodyMedium)
                             }
                             if (status.publicIP.ipv4.isNotBlank() && status.publicIP.ipv4 != "N/A") {
                                 Text(
-                                    "IP ${status.publicIP.ipv4}",
+                                    "${tr("IP")} ${status.publicIP.ipv4}",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -225,12 +237,13 @@ fun DashboardScreen(
                     horizontalArrangement = Arrangement.Center,
                 ) {
                     Text(
-                        "Refreshing…",
+                        tr("Refreshing…"),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
+        }
         }
 
         SnackbarHost(
@@ -242,16 +255,33 @@ fun DashboardScreen(
     if (showRestartDialog) {
         AlertDialog(
             onDismissRequest = { showRestartDialog = false },
-            title = { Text("Restart Xray?") },
-            text = { Text("This briefly drops every active client connection.") },
+            title = { Text(tr("Restart Xray?")) },
+            text = { Text(tr("This briefly drops every active client connection.")) },
             confirmButton = {
                 TextButton(onClick = {
                     showRestartDialog = false
                     vm.restartXray()
-                }) { Text("Restart") }
+                }) { Text(tr("Restart")) }
             },
             dismissButton = {
-                TextButton(onClick = { showRestartDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showRestartDialog = false }) { Text(tr("Cancel")) }
+            },
+        )
+    }
+
+    if (showStopDialog) {
+        AlertDialog(
+            onDismissRequest = { showStopDialog = false },
+            title = { Text(tr("Stop Xray?")) },
+            text = { Text(tr("This disconnects every active client until you start Xray again.")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showStopDialog = false
+                    vm.stopXray()
+                }) { Text(tr("Stop"), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStopDialog = false }) { Text(tr("Cancel")) }
             },
         )
     }
@@ -260,7 +290,7 @@ fun DashboardScreen(
         val info = state.updateInfo
         AlertDialog(
             onDismissRequest = { showUpdateDialog = false },
-            title = { Text("Update 3x-ui?") },
+            title = { Text(tr("Update 3x-ui?")) },
             text = {
                 Text(
                     "Update the panel from ${info?.currentVersion.orEmpty()} to " +
@@ -271,9 +301,9 @@ fun DashboardScreen(
                 TextButton(onClick = {
                     showUpdateDialog = false
                     vm.updatePanel()
-                }) { Text("Update") }
+                }) { Text(tr("Update")) }
             },
-            dismissButton = { TextButton(onClick = { showUpdateDialog = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showUpdateDialog = false }) { Text(tr("Cancel")) } },
         )
     }
 
@@ -294,10 +324,10 @@ private fun OnlineListDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Online clients (${emails.size})") },
+        title = { Text("${tr("Online clients")} (${emails.size})") },
         text = {
             if (emails.isEmpty()) {
-                Text("Nobody connected right now.")
+                Text(tr("Nobody connected right now."))
             } else {
                 Column(
                     modifier = Modifier
@@ -319,7 +349,7 @@ private fun OnlineListDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Close")) } },
     )
 }
 
@@ -344,20 +374,20 @@ private fun PanelVersionCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("3x-ui panel", style = MaterialTheme.typography.labelMedium)
+                Text(tr("3x-ui panel"), style = MaterialTheme.typography.labelMedium)
                 Text(
-                    if (current.isNotBlank()) "v$current" else "version unknown",
+                    if (current.isNotBlank()) "v$current" else tr("version unknown"),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 if (updateAvailable) {
                     Text(
-                        "Update available: ${info?.latestVersion.orEmpty()}",
+                        "${tr("Update available:")} ${info?.latestVersion.orEmpty()}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                     )
                 } else if (info != null) {
                     Text(
-                        "Up to date",
+                        tr("Up to date"),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -367,7 +397,7 @@ private fun PanelVersionCard(
                 AssistChip(
                     onClick = onUpdate,
                     enabled = !updating,
-                    label = { Text(if (updating) "Updating…" else "Update") },
+                    label = { Text(if (updating) tr("Updating…") else tr("Update")) },
                     leadingIcon = {
                         if (updating) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
@@ -385,7 +415,9 @@ private fun PanelVersionCard(
 private fun XrayStatusCard(
     status: ServerStatus?,
     actionInFlight: Boolean,
-    onRestartClick: () -> Unit,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onRestart: () -> Unit,
 ) {
     val running = status?.xrayRunning == true
     Card(
@@ -398,52 +430,78 @@ private fun XrayStatusCard(
         ),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                val version = status?.xray?.version.orEmpty()
-                Text(
-                    "Xray" + if (version.isNotBlank()) "  ·  v$version" else "",
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Text(
-                    text = when {
-                        status == null -> "Status unknown"
-                        running -> "Running"
-                        else -> "Stopped"
-                    },
-                    style = MaterialTheme.typography.titleLarge,
-                )
-                val err = status?.xray?.errorMsg.orEmpty()
-                if (!running && err.isNotBlank()) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    val version = status?.xray?.version.orEmpty()
                     Text(
-                        err,
+                        tr("Xray") + if (version.isNotBlank()) "  ·  v$version" else "",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
                     )
+                    Text(
+                        text = when {
+                            status == null -> tr("Status unknown")
+                            running -> tr("Running")
+                            else -> tr("Stopped")
+                        },
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    val err = status?.xray?.errorMsg.orEmpty()
+                    if (!running && err.isNotBlank()) {
+                        Text(
+                            err,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
+                }
+                if (actionInFlight) {
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                 }
             }
-            AssistChip(
-                onClick = onRestartClick,
-                enabled = !actionInFlight,
-                label = { Text(if (actionInFlight) "Restarting…" else "Restart") },
-                leadingIcon = {
-                    if (actionInFlight) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+
+            // Controls depend on state: running → Restart + Stop; stopped → Start.
+            // The status is unknown until the first poll arrives, so show nothing then.
+            if (status != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (running) {
+                        XrayActionChip(tr("Restart"), Icons.Outlined.RestartAlt, !actionInFlight, onRestart)
+                        XrayActionChip(
+                            tr("Stop"),
+                            Icons.Outlined.Stop,
+                            !actionInFlight,
+                            onStop,
+                            tint = MaterialTheme.colorScheme.error,
+                        )
                     } else {
-                        Icon(Icons.Outlined.RestartAlt, contentDescription = null)
+                        XrayActionChip(tr("Start"), Icons.Outlined.PlayArrow, !actionInFlight, onStart)
                     }
-                },
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = Color.Transparent,
-                ),
-            )
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun XrayActionChip(
+    label: String,
+    icon: ImageVector,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    tint: Color = Color.Unspecified,
+) {
+    AssistChip(
+        onClick = onClick,
+        enabled = enabled,
+        label = { Text(label, color = tint) },
+        leadingIcon = { Icon(icon, contentDescription = null, tint = if (tint == Color.Unspecified) MaterialTheme.colorScheme.onSurfaceVariant else tint) },
+        colors = AssistChipDefaults.assistChipColors(containerColor = Color.Transparent),
+    )
 }
 
 @Composable

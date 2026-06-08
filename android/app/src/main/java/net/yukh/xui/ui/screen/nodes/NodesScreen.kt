@@ -37,8 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import net.yukh.xui.ui.components.AdjustResizeDialogWindow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.Node
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.format.formatPercent
 import net.yukh.xui.ui.format.formatUptime
 
@@ -67,7 +69,7 @@ fun NodesScreen(
             ) { Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error) }
 
             state.items.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                Text("No nodes. Tap + to add a remote panel.")
+                Text(tr("No nodes. Tap + to add a remote panel."))
             }
 
             else -> LazyColumn(
@@ -84,7 +86,7 @@ fun NodesScreen(
         FloatingActionButton(
             onClick = vm::openCreateEditor,
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        ) { Icon(Icons.Filled.Add, contentDescription = "Add node") }
+        ) { Icon(Icons.Filled.Add, contentDescription = tr("Add node")) }
 
         SnackbarHost(
             hostState = snackbarHostState,
@@ -95,8 +97,9 @@ fun NodesScreen(
     state.editor?.let { editor ->
         Dialog(
             onDismissRequest = vm::closeEditor,
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
+            AdjustResizeDialogWindow()
             NodeEditorScreen(
                 state = editor,
                 onName = vm::setName,
@@ -150,20 +153,20 @@ private fun NodeRow(node: Node, onClick: () -> Unit) {
                     )
                 }
                 Text(
-                    if (node.online) "online" else node.status.ifBlank { "offline" },
+                    if (node.online) tr("online") else node.status.ifBlank { tr("offline") },
                     style = MaterialTheme.typography.labelMedium,
                     color = if (node.online) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                 )
             }
             if (node.online) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("CPU ${node.cpuPct.formatPercent()}", style = MaterialTheme.typography.labelMedium)
-                    Text("RAM ${node.memPct.formatPercent()}", style = MaterialTheme.typography.labelMedium)
+                    Text(tr("CPU ") + "${node.cpuPct.formatPercent()}", style = MaterialTheme.typography.labelMedium)
+                    Text(tr("RAM ") + "${node.memPct.formatPercent()}", style = MaterialTheme.typography.labelMedium)
                     if (node.latencyMs > 0) Text("${node.latencyMs}ms", style = MaterialTheme.typography.labelMedium)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("${node.inboundCount} inbounds · ${node.clientCount} clients", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (node.uptimeSecs > 0) Text("up ${node.uptimeSecs.formatUptime()}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${node.inboundCount} ${tr("inbounds")} · ${node.clientCount} ${tr("clients")}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (node.uptimeSecs > 0) Text(tr("up ") + "${node.uptimeSecs.formatUptime()}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else if (node.lastError.isNotBlank()) {
                 Text(node.lastError, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error, maxLines = 2, overflow = TextOverflow.Ellipsis)

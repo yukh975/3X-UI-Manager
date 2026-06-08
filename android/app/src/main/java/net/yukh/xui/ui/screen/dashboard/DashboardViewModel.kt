@@ -21,6 +21,7 @@ data class DashboardUiState(
     val onlineEmails: List<String> = emptyList(),
     val loading: Boolean = false,
     val refreshingNow: Boolean = false,
+    val pullRefreshing: Boolean = false,
     val error: String? = null,
     val xrayActionInFlight: Boolean = false,
     val xrayActionMessage: String? = null,
@@ -66,6 +67,16 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch { fetchOnce() }
     }
 
+    /** Manual pull-to-refresh: shows the pull indicator until the fetch returns. */
+    fun onPullRefresh() {
+        viewModelScope.launch {
+            _state.update { it.copy(pullRefreshing = true) }
+            fetchOnce()
+            refreshUpdateInfo()
+            _state.update { it.copy(pullRefreshing = false) }
+        }
+    }
+
     private suspend fun fetchOnce() {
         _state.update { it.copy(refreshingNow = true) }
         val statusResult = repo.getServerStatus()
@@ -91,14 +102,32 @@ class DashboardViewModel @Inject constructor(
 
     fun openOnlineList() {
         _state.update { it.copy(showOnlineList = true) }
-        // Fetch inbound membership once so each online client shows its inbound.
+        // Resolve which inbound each online client is actually connected through.
+        //
+        // /onlines returns only emails, and the same email can be configured in
+        // several inbounds (e.g. the same user offered over vless + vmess). The
+        // panel doesn't say which one is live — but the connected inbound's
+        // per-client `lastOnline` keeps updating while the others stay stale, so
+        // we show only the inbound(s) with the most-recent lastOnline for that
+        // email. If no lastOnline data is available we fall back to listing every
+        // membership rather than hiding the info.
         viewModelScope.launch {
             val inbounds = repo.listInbounds().getOrNull().orEmpty()
-            val map = mutableMapOf<String, MutableList<String>>()
+            val byEmail = mutableMapOf<String, MutableList<Pair<String, Long>>>()
             inbounds.forEach { ib ->
                 val name = ib.remark.ifBlank { "#${ib.id}" }
                 ib.clientStats.forEach { c ->
-                    if (c.email.isNotBlank()) map.getOrPut(c.email) { mutableListOf() }.add(name)
+                    if (c.email.isNotBlank()) {
+                        byEmail.getOrPut(c.email) { mutableListOf() }.add(name to c.lastOnline)
+                    }
+                }
+            }
+            val map = byEmail.mapValues { (_, entries) ->
+                val maxLast = entries.maxOf { it.second }
+                if (maxLast <= 0L) {
+                    entries.map { it.first }.distinct()
+                } else {
+                    entries.filter { it.second == maxLast }.map { it.first }.distinct()
                 }
             }
             _state.update { it.copy(emailToInbounds = map) }
@@ -136,17 +165,28 @@ class DashboardViewModel @Inject constructor(
 
     // ---- Xray controls ----------------------------------------------------
 
-    fun restartXray() {
+    // restartXrayService also starts Xray when it's stopped, so "Start" and
+    // "Restart" both hit it; "Stop" uses stopXrayService.
+    fun startXray() = runXrayAction(start = true) { repo.restartXray() }
+    fun restartXray() = runXrayAction(start = false) { repo.restartXray() }
+    fun stopXray() = runXrayAction(start = false, stop = true) { repo.stopXray() }
+
+    private fun runXrayAction(start: Boolean, stop: Boolean = false, action: suspend () -> Result<Unit>) {
         if (_state.value.xrayActionInFlight) return
         _state.update { it.copy(xrayActionInFlight = true, xrayActionMessage = null) }
         viewModelScope.launch {
-            val result = repo.restartXray()
+            val result = action()
+            val verb = when {
+                stop -> "stop"
+                start -> "start"
+                else -> "restart"
+            }
             _state.update {
                 it.copy(
                     xrayActionInFlight = false,
                     xrayActionMessage = result.fold(
-                        onSuccess = { "Xray restart requested" },
-                        onFailure = { e -> "Restart failed: ${e.message}" },
+                        onSuccess = { "Xray $verb requested" },
+                        onFailure = { e -> "Xray $verb failed: ${e.message}" },
                     ),
                 )
             }

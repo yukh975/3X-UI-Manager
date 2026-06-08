@@ -36,9 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import net.yukh.xui.ui.components.AdjustResizeDialogWindow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.InboundSlim
+import net.yukh.xui.i18n.LocalAppLanguage
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatExpiry
 
@@ -79,7 +82,7 @@ fun InboundsScreen(
             state.items.isEmpty() -> Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
-            ) { Text("No inbounds yet.") }
+            ) { Text(tr("No inbounds yet.")) }
 
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -106,7 +109,7 @@ fun InboundsScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
         ) {
-            Icon(Icons.Filled.Add, contentDescription = "Add inbound")
+            Icon(Icons.Filled.Add, contentDescription = tr("Add inbound"))
         }
 
         SnackbarHost(
@@ -118,8 +121,9 @@ fun InboundsScreen(
     state.editor?.let { editor ->
         Dialog(
             onDismissRequest = vm::closeEditor,
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
+            AdjustResizeDialogWindow()
             InboundEditorScreen(state = editor, vm = vm)
         }
     }
@@ -186,7 +190,7 @@ private fun InboundRow(
                 )
                 if (inbound.total > 0) {
                     Text(
-                        "of ${inbound.total.formatBytes()}",
+                        tr("of ") + "${inbound.total.formatBytes()}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -206,7 +210,7 @@ private fun InboundRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Expires ${inbound.expiryTime.formatExpiry()}",
+                    tr("Expires ") + inbound.expiryTime.formatExpiry(LocalAppLanguage.current),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -214,7 +218,7 @@ private fun InboundRow(
                     onClick = {},
                     enabled = false,
                     label = {
-                        Text("${inbound.clientStats.size} clients")
+                        Text("${inbound.clientStats.size} ${tr("clients")}")
                     },
                     colors = AssistChipDefaults.assistChipColors(),
                 )

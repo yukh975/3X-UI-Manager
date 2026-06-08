@@ -41,6 +41,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.AdjustResizeDialogWindow
 import net.yukh.xui.ui.navigation.MainTabs
 import net.yukh.xui.ui.screen.clients.ClientsScreen
 import net.yukh.xui.ui.screen.dashboard.DashboardScreen
@@ -151,8 +152,9 @@ fun MainScreen(
     if (showXrayConfig) {
         Dialog(
             onDismissRequest = { showXrayConfig = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
+            AdjustResizeDialogWindow()
             XrayConfigScreen(onClose = { showXrayConfig = false })
         }
     }
@@ -160,8 +162,9 @@ fun MainScreen(
     if (showSettings) {
         Dialog(
             onDismissRequest = { showSettings = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
+            AdjustResizeDialogWindow()
             SettingsScreen(onClose = { showSettings = false })
         }
     }

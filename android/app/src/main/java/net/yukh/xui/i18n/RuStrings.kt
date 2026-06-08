@@ -26,6 +26,8 @@ val ruStrings: Map<String, String> = mapOf(
     "OK" to "OK",
     "Update" to "Обновить",
     "Restart" to "Перезапустить",
+    "Start" to "Запустить",
+    "Stop" to "Остановить",
     "Never" to "Никогда",
     "Pick date" to "Выбрать дату",
 
@@ -72,6 +74,9 @@ val ruStrings: Map<String, String> = mapOf(
     "Restart Xray?" to "Перезапустить Xray?",
     "This briefly drops every active client connection." to
         "Это кратко разорвёт все активные подключения клиентов.",
+    "Stop Xray?" to "Остановить Xray?",
+    "This disconnects every active client until you start Xray again." to
+        "Это отключит всех активных клиентов, пока вы снова не запустите Xray.",
     "Nobody connected right now." to "Сейчас никто не подключён.",
     "3x-ui panel" to "Панель 3x-ui",
     "Up to date" to "Актуальная версия",
@@ -137,4 +142,139 @@ val ruStrings: Map<String, String> = mapOf(
     "Unlock" to "Разблокировать",
     "Use passcode" to "Ввести код-пароль",
     "Use fingerprint" to "Использовать отпечаток",
+
+    // Dashboard (additional)
+    "Load 1·5·15m" to "Нагрузка 1·5·15м",
+    "cores" to "ядер",
+    "Uptime" to "Аптайм",
+    "IP" to "IP",
+    "Online clients" to "Онлайн-клиенты",
+    "Update available:" to "Доступно обновление:",
+
+    // Clients list & rows
+    "Add client" to "Добавить клиента",
+    "Clear" to "Очистить",
+    "No clients match" to "Нет клиентов по запросу",
+    "(no email)" to "(без email)",
+    "disabled" to "выключен",
+    "of" to "из",
+    "Expires" to "Истекает",
+    "Last seen" to "Был онлайн",
+
+    // Client editor (additional)
+    "Email / name" to "Email / имя",
+    "IP limit (0 = unlimited)" to "Лимит IP (0 = безлимит)",
+    "Traffic reset period (days, 0 = off)" to "Период сброса трафика (дней, 0 = выкл)",
+    "Telegram ID (optional)" to "Telegram ID (необязательно)",
+    "Group (optional)" to "Группа (необязательно)",
+    "Comment (optional)" to "Комментарий (необязательно)",
+    "Create client?" to "Создать клиента?",
+    "Create client" to "Создать клиента",
+    "Apply changes to" to "Применить изменения к",
+
+    // Inbounds list & rows
+    "No inbounds yet." to "Пока нет входящих.",
+    "Add inbound" to "Добавить входящий",
+    "of " to "из ",
+    "Expires " to "Истекает ",
+
+    // Inbound editor (additional)
+    "Listen IP (blank = all)" to "Listen IP (пусто = все)",
+    "Path" to "Путь",
+    "Host" to "Host",
+    "Service name" to "Service name",
+    "SNI (server name)" to "SNI (имя сервера)",
+    "Dest (target)" to "Dest (назначение)",
+    "Server names (comma-separated)" to "Server names (через запятую)",
+    "Short IDs (comma-separated)" to "Short IDs (через запятую)",
+    "Fingerprint" to "Отпечаток (fingerprint)",
+    "Public key" to "Публичный ключ",
+    "Private key" to "Приватный ключ",
+    "Advanced: protocol settings (JSON)" to "Расширенно: настройки протокола (JSON)",
+    "Hide" to "Скрыть",
+    "Show" to "Показать",
+    "Clients are managed on the Clients tab and are kept as-is." to
+        "Клиентами управляет вкладка Clients, здесь они не затрагиваются.",
+    "Create inbound?" to "Создать входящий?",
+    "Apply changes to this inbound? Xray will restart." to
+        "Применить изменения к этому входящему? Xray перезапустится.",
+    "This removes the inbound and all its clients. This can't be undone." to
+        "Это удалит входящий и всех его клиентов. Отменить нельзя.",
+
+    // Nodes list & rows
+    "No nodes. Tap + to add a remote panel." to
+        "Нет узлов. Нажмите +, чтобы добавить удалённую панель.",
+    "Add node?" to "Добавить узел?",
+    "online" to "онлайн",
+    "offline" to "офлайн",
+    "CPU " to "CPU ",
+    "RAM " to "RAM ",
+    "up " to "аптайм ",
+
+    // Node editor (additional)
+    "Scheme" to "Схема",
+    "Remark (optional)" to "Примечание (необязательно)",
+    "From the node panel: Settings → Security → API Token" to
+        "В панели узла: Settings → Security → API Token",
+    "TLS verify" to "Проверка TLS",
+    "Allow private address" to "Разрешить приватные адреса",
+    "Permit RFC1918 / LAN addresses" to "Разрешить адреса RFC1918 / LAN",
+    "The remote panel itself is untouched; it's just removed from this list." to
+        "Сама удалённая панель не трогается — она лишь убирается из этого списка.",
+
+    // Xray config screen (paragraphs are split across tr() calls; the Russian
+    // fragments concatenate into a coherent sentence, keep the trailing spaces)
+    "Xray configuration isn't available with an API token." to
+        "Конфигурация Xray недоступна с API-токеном.",
+    "The panel only exposes the Xray config (outbounds, routing, " to
+        "Панель отдаёт конфиг Xray (outbounds, routing, ",
+    "DNS) to a logged-in session. Reconnect with login/password " to
+        "DNS) только авторизованной сессии. Переподключитесь по логину/паролю, ",
+    "to edit it." to "чтобы редактировать его.",
+    "Full Xray config — outbounds, routing, DNS, etc. Same as the " to
+        "Полный конфиг Xray — outbounds, routing, DNS и т.д. То же, что ",
+    "panel's Xray Configuration page. Save, then restart Xray to apply." to
+        "страница Xray Configuration в панели. Сохраните и перезапустите Xray.",
+    "Outbound test URL" to "URL для теста outbound",
+    "xray config (JSON)" to "конфиг xray (JSON)",
+    "Save Xray config?" to "Сохранить конфиг Xray?",
+
+    // Client share sheet
+    "No connection links for this client." to "Нет ссылок-соединений у этого клиента.",
+    "will be removed from every attached inbound." to
+        "будет удалён из всех привязанных входящих.",
+    "No subscription URL. With an API token, set the " +
+        "\"Subscription base URL\" on the connect screen " +
+        "(e.g. https://host:2096/sub/) — or connect with " +
+        "login/password so the app can read it automatically." to
+        "Нет ссылки подписки. С API-токеном задайте «Базовый URL подписки» на " +
+            "экране подключения (напр. https://host:2096/sub/) — или войдите по " +
+            "логину/паролю, чтобы приложение прочитало её автоматически.",
+    "Collapse" to "Свернуть",
+    "Expand" to "Развернуть",
+    "Copy" to "Копировать",
+    "Share" to "Поделиться",
+    "QR code" to "QR-код",
+
+    // Connect screen (icon descriptions)
+    "Hide token" to "Скрыть токен",
+    "Show token" to "Показать токен",
+    "Hide password" to "Скрыть пароль",
+    "Show password" to "Показать пароль",
+    "This replaces the panel's Xray configuration. Restart Xray " to
+        "Это заменит конфигурацию Xray в панели. Перезапустите Xray ",
+    "afterwards to apply. A broken config can take Xray down." to
+        "после этого, чтобы применить. Сломанный конфиг может уронить Xray.",
+
+    // Count suffixes (lowercase, after a number)
+    "clients" to "клиентов",
+    "inbounds" to "входящих",
+
+    // Relative time & expiry words (from Formatters)
+    "Expired" to "Истёк",
+    "now" to "сейчас",
+    "s ago" to "с назад",
+    "m ago" to "м назад",
+    "h ago" to "ч назад",
+    "d ago" to "д назад",
 )

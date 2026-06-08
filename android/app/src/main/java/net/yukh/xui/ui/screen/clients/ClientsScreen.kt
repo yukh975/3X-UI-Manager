@@ -42,9 +42,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import net.yukh.xui.ui.components.AdjustResizeDialogWindow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.Client
+import net.yukh.xui.i18n.LocalAppLanguage
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatExpiry
 import net.yukh.xui.ui.format.formatLastOnline
@@ -87,19 +90,19 @@ fun ClientsScreen(
             state.items.isEmpty() -> Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
-            ) { Text("No clients yet.") }
+            ) { Text(tr("No clients yet.")) }
 
             else -> Column(modifier = Modifier.fillMaxSize()) {
                 OutlinedTextField(
                     value = state.searchQuery,
                     onValueChange = vm::setSearchQuery,
-                    label = { Text("Search by email") },
+                    label = { Text(tr("Search by email")) },
                     singleLine = true,
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                     trailingIcon = {
                         if (state.searchQuery.isNotEmpty()) {
                             IconButton(onClick = { vm.setSearchQuery("") }) {
-                                Icon(Icons.Filled.Clear, contentDescription = "Clear")
+                                Icon(Icons.Filled.Clear, contentDescription = tr("Clear"))
                             }
                         }
                     },
@@ -111,7 +114,7 @@ fun ClientsScreen(
                 val visible = state.visibleItems
                 if (visible.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No clients match \"${state.searchQuery}\".")
+                        Text("${tr("No clients match")} \"${state.searchQuery}\".")
                     }
                 } else {
                     LazyColumn(
@@ -137,7 +140,7 @@ fun ClientsScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
         ) {
-            Icon(Icons.Filled.Add, contentDescription = "Add client")
+            Icon(Icons.Filled.Add, contentDescription = tr("Add client"))
         }
 
         SnackbarHost(
@@ -166,8 +169,9 @@ fun ClientsScreen(
     state.editor?.let { editor ->
         Dialog(
             onDismissRequest = vm::closeEditor,
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+            properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
+            AdjustResizeDialogWindow()
             ClientEditorScreen(
                 state = editor,
                 onEmail = vm::setEditorEmail,
@@ -214,7 +218,7 @@ private fun ClientRow(
                         ),
                 )
                 Text(
-                    text = client.email.ifBlank { "(no email)" },
+                    text = client.email.ifBlank { tr("(no email)") },
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier
                         .weight(1f)
@@ -224,7 +228,7 @@ private fun ClientRow(
                 )
                 if (!client.enable) {
                     Text(
-                        "disabled",
+                        tr("disabled"),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -235,7 +239,7 @@ private fun ClientRow(
                 Text("↓ ${client.down.formatBytes()}", style = MaterialTheme.typography.labelMedium)
                 if (client.quota > 0) {
                     Text(
-                        "of ${client.quota.formatBytes()}",
+                        "${tr("of")} ${client.quota.formatBytes()}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -246,12 +250,12 @@ private fun ClientRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    "Expires ${client.expiryTime.formatExpiry()}",
+                    "${tr("Expires")} ${client.expiryTime.formatExpiry(LocalAppLanguage.current)}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "Last seen ${client.lastOnline.formatLastOnline()}",
+                    "${tr("Last seen")} ${client.lastOnline.formatLastOnline(LocalAppLanguage.current)}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

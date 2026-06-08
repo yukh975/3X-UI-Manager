@@ -169,7 +169,7 @@ private fun AuthMethodPicker(
                 selected = selected == method,
                 onClick = { onSelect(method) },
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
-            ) { Text(label) }
+            ) { Text(tr(label)) }
         }
     }
 }
@@ -180,19 +180,19 @@ private fun TokenSection(state: ConnectUiState, vm: ConnectViewModel) {
     OutlinedTextField(
         value = state.token,
         onValueChange = vm::setToken,
-        label = { Text("API token") },
+        label = { Text(tr("API token")) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         supportingText = {
-            Text("Create one in Settings → Security → API Token on the panel.")
+            Text(tr("Create one in Settings → Security → API Token on the panel."))
         },
         trailingIcon = {
             IconButton(onClick = { visible = !visible }) {
                 Icon(
                     imageVector = if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                    contentDescription = if (visible) "Hide token" else "Show token",
+                    contentDescription = if (visible) tr("Hide token") else tr("Show token"),
                 )
             }
         },
@@ -206,7 +206,7 @@ private fun CredentialsSection(state: ConnectUiState, vm: ConnectViewModel) {
     OutlinedTextField(
         value = state.username,
         onValueChange = vm::setUsername,
-        label = { Text("Username") },
+        label = { Text(tr("Username")) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -214,7 +214,7 @@ private fun CredentialsSection(state: ConnectUiState, vm: ConnectViewModel) {
     OutlinedTextField(
         value = state.password,
         onValueChange = vm::setPassword,
-        label = { Text("Password") },
+        label = { Text(tr("Password")) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -223,7 +223,7 @@ private fun CredentialsSection(state: ConnectUiState, vm: ConnectViewModel) {
             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                 Icon(
                     imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                    contentDescription = if (passwordVisible) tr("Hide password") else tr("Show password"),
                 )
             }
         },
@@ -232,13 +232,13 @@ private fun CredentialsSection(state: ConnectUiState, vm: ConnectViewModel) {
     OutlinedTextField(
         value = state.twoFactorCode,
         onValueChange = vm::setTwoFactorCode,
-        label = { Text("2FA code") },
-        placeholder = { Text("Leave empty if 2FA is disabled") },
+        label = { Text(tr("2FA code")) },
+        placeholder = { Text(tr("Leave empty if 2FA is disabled")) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         supportingText = {
-            Text("Only required if 2FA is enabled on your account.")
+            Text(tr("Only required if 2FA is enabled on your account."))
         },
     )
 

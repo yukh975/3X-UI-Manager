@@ -6,6 +6,28 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.5] — 2026-06-08
+
+### Added
+- **Pull-to-refresh on the dashboard** — swipe down from the top to manually
+  refresh server status, the online list, and the panel-update check.
+- **State-aware Xray controls** on the status card: when running, **Restart**
+  and **Stop** (both confirmed); when stopped, only **Start**.
+
+### Fixed
+- **Online clients list** now shows only the inbound a client is actually
+  connected through right now (by the most-recent `lastOnline`), instead of
+  every inbound they're a member of.
+- **Delete buttons** in the inbound and node editors are no longer hidden under
+  the Android navigation bar, and the **Comment** field in the client editor is
+  no longer covered by the keyboard — editor dialogs now honor system insets
+  and resize for the keyboard.
+
+### Changed
+- **Full Russian UI translation**: dashboard, inbounds, clients, nodes, all
+  editors, the Xray config, the share sheet, and the connect screen — previously
+  only the menu was translated.
+
 ## [0.3.4] — 2026-06-08
 
 ### Added

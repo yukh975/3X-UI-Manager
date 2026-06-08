@@ -49,6 +49,8 @@ import net.yukh.xui.data.json.bool
 import net.yukh.xui.data.json.child
 import net.yukh.xui.data.json.string
 import net.yukh.xui.data.json.strings
+import net.yukh.xui.i18n.LocalAppLanguage
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.format.formatDate
 
@@ -72,10 +74,10 @@ fun InboundEditorScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isNew) "New inbound" else "Edit inbound") },
+                title = { Text(if (state.isNew) tr("New inbound") else tr("Edit inbound")) },
                 navigationIcon = {
                     IconButton(onClick = vm::closeEditor) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Cancel"))
                     }
                 },
                 actions = {
@@ -83,7 +85,7 @@ fun InboundEditorScreen(
                         if (state.saving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
-                            Text("Save")
+                            Text(tr("Save"))
                         }
                     }
                 },
@@ -109,16 +111,16 @@ fun InboundEditorScreen(
             OutlinedTextField(
                 value = state.remark,
                 onValueChange = vm::setEditorRemark,
-                label = { Text("Remark") },
+                label = { Text(tr("Remark")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            SwitchRow("Enabled", state.enable, vm::setEditorEnable)
+            SwitchRow(tr("Enabled"), state.enable, vm::setEditorEnable)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = state.port,
                     onValueChange = vm::setEditorPort,
-                    label = { Text("Port") },
+                    label = { Text(tr("Port")) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = (state.port.toIntOrNull() ?: 0) !in 1..65535,
@@ -127,12 +129,12 @@ fun InboundEditorScreen(
                 OutlinedTextField(
                     value = state.listen,
                     onValueChange = vm::setEditorListen,
-                    label = { Text("Listen IP (blank = all)") },
+                    label = { Text(tr("Listen IP (blank = all)")) },
                     singleLine = true,
                     modifier = Modifier.weight(1.4f),
                 )
             }
-            LabeledDropdown("Protocol", state.protocol, InboundTemplates.PROTOCOLS, state.isNew, vm::setEditorProtocol)
+            LabeledDropdown(tr("Protocol"), state.protocol, InboundTemplates.PROTOCOLS, state.isNew, vm::setEditorProtocol)
 
             HorizontalDivider()
 
@@ -140,76 +142,76 @@ fun InboundEditorScreen(
             OutlinedTextField(
                 value = state.totalGb,
                 onValueChange = vm::setEditorTotalGb,
-                label = { Text("Traffic limit (GB, 0 = unlimited)") },
+                label = { Text(tr("Traffic limit (GB, 0 = unlimited)")) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
             )
-            LabeledDropdown("Traffic reset", state.trafficReset, InboundTemplates.TRAFFIC_RESET, true, vm::setEditorTrafficReset)
+            LabeledDropdown(tr("Traffic reset"), state.trafficReset, InboundTemplates.TRAFFIC_RESET, true, vm::setEditorTrafficReset)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Expiry", style = MaterialTheme.typography.labelMedium)
-                    Text(state.expiryTime.formatDate(), style = MaterialTheme.typography.bodyLarge)
+                    Text(tr("Expiry"), style = MaterialTheme.typography.labelMedium)
+                    Text(state.expiryTime.formatDate(LocalAppLanguage.current), style = MaterialTheme.typography.bodyLarge)
                 }
                 if (state.expiryTime != 0L) {
-                    OutlinedButton(onClick = { vm.setEditorExpiry(0) }) { Text("Never") }
+                    OutlinedButton(onClick = { vm.setEditorExpiry(0) }) { Text(tr("Never")) }
                 }
-                androidx.compose.material3.Button(onClick = { showDatePicker = true }) { Text("Pick date") }
+                androidx.compose.material3.Button(onClick = { showDatePicker = true }) { Text(tr("Pick date")) }
             }
 
             HorizontalDivider()
 
             // ---- Transport ----
-            SectionTitle("Transport")
-            LabeledDropdown("Network", state.network, NETWORKS, true, vm::setNetwork)
+            SectionTitle(tr("Transport"))
+            LabeledDropdown(tr("Network"), state.network, NETWORKS, true, vm::setNetwork)
             when (state.network) {
                 "ws" -> {
                     val ws = state.stream.child("wsSettings")
-                    Field("Path", ws.string("path"), vm::setWsPath)
-                    Field("Host", ws.string("host"), vm::setWsHost)
+                    Field(tr("Path"), ws.string("path"), vm::setWsPath)
+                    Field(tr("Host"), ws.string("host"), vm::setWsHost)
                 }
                 "httpupgrade" -> {
                     val hu = state.stream.child("httpupgradeSettings")
-                    Field("Path", hu.string("path"), vm::setHttpPath)
-                    Field("Host", hu.string("host"), vm::setHttpHost)
+                    Field(tr("Path"), hu.string("path"), vm::setHttpPath)
+                    Field(tr("Host"), hu.string("host"), vm::setHttpHost)
                 }
                 "grpc" -> {
                     val g = state.stream.child("grpcSettings")
-                    Field("Service name", g.string("serviceName"), vm::setGrpcService)
+                    Field(tr("Service name"), g.string("serviceName"), vm::setGrpcService)
                 }
             }
 
             HorizontalDivider()
 
             // ---- Security ----
-            SectionTitle("Security")
-            LabeledDropdown("Security", state.security, SECURITIES, true, vm::setSecurity)
+            SectionTitle(tr("Security"))
+            LabeledDropdown(tr("Security"), state.security, SECURITIES, true, vm::setSecurity)
             when (state.security) {
                 "tls" -> {
                     val tls = state.stream.child("tlsSettings")
-                    Field("SNI (server name)", tls.string("serverName"), vm::setTlsServerName)
+                    Field(tr("SNI (server name)"), tls.string("serverName"), vm::setTlsServerName)
                 }
                 "reality" -> {
                     val r = state.stream.child("realitySettings")
                     val rs = r.child("settings")
-                    Field("Dest (target)", r.string("dest"), vm::setRealityDest)
-                    Field("Server names (comma-separated)", r.strings("serverNames").joinToString(", "), vm::setRealityServerNames)
-                    Field("Short IDs (comma-separated)", r.strings("shortIds").joinToString(", "), vm::setRealityShortIds)
-                    LabeledDropdown("Fingerprint", rs.string("fingerprint").ifBlank { "chrome" }, FINGERPRINTS, true, vm::setRealityFingerprint)
-                    Field("Public key", rs.string("publicKey"), vm::setRealityPublicKey)
-                    Field("Private key", r.string("privateKey"), vm::setRealityPrivateKey)
+                    Field(tr("Dest (target)"), r.string("dest"), vm::setRealityDest)
+                    Field(tr("Server names (comma-separated)"), r.strings("serverNames").joinToString(", "), vm::setRealityServerNames)
+                    Field(tr("Short IDs (comma-separated)"), r.strings("shortIds").joinToString(", "), vm::setRealityShortIds)
+                    LabeledDropdown(tr("Fingerprint"), rs.string("fingerprint").ifBlank { "chrome" }, FINGERPRINTS, true, vm::setRealityFingerprint)
+                    Field(tr("Public key"), rs.string("publicKey"), vm::setRealityPublicKey)
+                    Field(tr("Private key"), r.string("privateKey"), vm::setRealityPrivateKey)
                 }
             }
 
             HorizontalDivider()
 
             // ---- Sniffing ----
-            SectionTitle("Sniffing")
-            SwitchRow("Enabled", state.sniffing.bool("enabled"), vm::setSniffEnabled)
+            SectionTitle(tr("Sniffing"))
+            SwitchRow(tr("Enabled"), state.sniffing.bool("enabled"), vm::setSniffEnabled)
             val dest = state.sniffing.strings("destOverride")
             SNIFF_TARGETS.forEach { target ->
                 Row(
@@ -228,12 +230,12 @@ fun InboundEditorScreen(
                 modifier = Modifier.fillMaxWidth().clickable { showAdvanced = !showAdvanced },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Advanced: protocol settings (JSON)", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Text(if (showAdvanced) "Hide" else "Show", color = MaterialTheme.colorScheme.primary)
+                Text(tr("Advanced: protocol settings (JSON)"), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(if (showAdvanced) tr("Hide") else tr("Show"), color = MaterialTheme.colorScheme.primary)
             }
             if (showAdvanced) {
                 Text(
-                    "Clients are managed on the Clients tab and are kept as-is.",
+                    tr("Clients are managed on the Clients tab and are kept as-is."),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -254,7 +256,7 @@ fun InboundEditorScreen(
                 HorizontalDivider()
                 OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Outlined.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                    Text("  Delete inbound", color = MaterialTheme.colorScheme.error)
+                    Text("  " + tr("Delete inbound"), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -262,10 +264,10 @@ fun InboundEditorScreen(
 
     if (confirmSave) {
         ConfirmDialog(
-            title = if (state.isNew) "Create inbound?" else "Save changes?",
+            title = if (state.isNew) tr("Create inbound?") else tr("Save changes?"),
             text = if (state.isNew) "Create this inbound on port ${state.port}?"
-            else "Apply changes to this inbound? Xray will restart.",
-            confirmLabel = if (state.isNew) "Create" else "Save",
+            else tr("Apply changes to this inbound? Xray will restart."),
+            confirmLabel = if (state.isNew) tr("Create") else tr("Save"),
             onConfirm = vm::saveEditor,
             onDismiss = { confirmSave = false },
         )
@@ -281,24 +283,24 @@ fun InboundEditorScreen(
                 TextButton(onClick = {
                     pickerState.selectedDateMillis?.let(vm::setEditorExpiry)
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(tr("OK")) }
             },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(tr("Cancel")) } },
         ) { androidx.compose.material3.DatePicker(state = pickerState) }
     }
 
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete inbound?") },
-            text = { Text("This removes the inbound and all its clients. This can't be undone.") },
+            title = { Text(tr("Delete inbound?")) },
+            text = { Text(tr("This removes the inbound and all its clients. This can't be undone.")) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     vm.deleteInbound(state.id)
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(tr("Delete"), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(tr("Cancel")) } },
         )
     }
 }

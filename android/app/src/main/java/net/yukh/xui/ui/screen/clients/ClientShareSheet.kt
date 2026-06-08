@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.qr.qrImageBitmap
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,18 +97,20 @@ fun ClientShareSheet(
 
             // --- Subscription -------------------------------------------------
             ExpandableSection(
-                title = "Subscription",
-                subtitle = "Auto-updating link for all configs",
+                title = tr("Subscription"),
+                subtitle = tr("Auto-updating link for all configs"),
                 initiallyExpanded = true,
             ) {
                 when {
                     !subChecked -> LoadingBlock()
                     subUrl != null -> QrAndLink(content = subUrl, context = context)
                     else -> Text(
-                        "No subscription URL. With an API token, set the " +
-                            "\"Subscription base URL\" on the connect screen " +
-                            "(e.g. https://host:2096/sub/) — or connect with " +
-                            "login/password so the app can read it automatically.",
+                        tr(
+                            "No subscription URL. With an API token, set the " +
+                                "\"Subscription base URL\" on the connect screen " +
+                                "(e.g. https://host:2096/sub/) — or connect with " +
+                                "login/password so the app can read it automatically.",
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -116,15 +119,15 @@ fun ClientShareSheet(
 
             // --- Connections --------------------------------------------------
             ExpandableSection(
-                title = "Connections" + if (links.isNotEmpty()) " (${links.size})" else "",
-                subtitle = "Individual server links",
+                title = tr("Connections") + if (links.isNotEmpty()) " (${links.size})" else "",
+                subtitle = tr("Individual server links"),
                 initiallyExpanded = false,
             ) {
                 when {
                     loading -> LoadingBlock()
                     error != null -> Text(error, color = MaterialTheme.colorScheme.error)
                     links.isEmpty() -> Text(
-                        "No connection links for this client.",
+                        tr("No connection links for this client."),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     else -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -153,33 +156,33 @@ fun ClientShareSheet(
                     ),
                 ) {
                     Icon(Icons.Outlined.Delete, contentDescription = null)
-                    Text("  Delete")
+                    Text("  " + tr("Delete"))
                 }
                 Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Outlined.Edit, contentDescription = null)
-                    Text("  Edit")
+                    Text("  " + tr("Edit"))
                 }
             }
             TextButton(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Close") }
+            ) { Text(tr("Close")) }
         }
     }
 
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete client?") },
-            text = { Text("$email will be removed from every attached inbound.") },
+            title = { Text(tr("Delete client?")) },
+            text = { Text("$email ${tr("will be removed from every attached inbound.")}") },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     onDelete()
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(tr("Delete"), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmDelete = false }) { Text(tr("Cancel")) }
             },
         )
     }
@@ -219,7 +222,7 @@ private fun ExpandableSection(
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    contentDescription = if (expanded) tr("Collapse") else tr("Expand"),
                 )
             }
             AnimatedVisibility(visible = expanded) {
@@ -287,7 +290,7 @@ private fun QrAndLink(content: String, context: Context) {
                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("link", content))
             }) {
-                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy")
+                Icon(Icons.Outlined.ContentCopy, contentDescription = tr("Copy"))
             }
             TextButton(onClick = {
                 val sendIntent = Intent(Intent.ACTION_SEND).apply {
@@ -296,7 +299,7 @@ private fun QrAndLink(content: String, context: Context) {
                 }
                 context.startActivity(Intent.createChooser(sendIntent, "Share"))
             }) {
-                Icon(Icons.Outlined.Share, contentDescription = "Share")
+                Icon(Icons.Outlined.Share, contentDescription = tr("Share"))
             }
         }
     }
@@ -314,7 +317,7 @@ private fun QrCard(content: String) {
     ) {
         Image(
             bitmap = bitmap,
-            contentDescription = "QR code",
+            contentDescription = tr("QR code"),
             modifier = Modifier.size(220.dp),
         )
     }

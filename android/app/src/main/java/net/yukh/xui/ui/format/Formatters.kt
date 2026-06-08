@@ -5,6 +5,8 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.ln
 import kotlin.math.pow
+import net.yukh.xui.i18n.LANG_EN
+import net.yukh.xui.i18n.tr
 
 private val units = arrayOf("B", "KB", "MB", "GB", "TB", "PB")
 
@@ -18,28 +20,28 @@ fun Long.formatBytes(): String {
 }
 
 /** Format an inbound/client expiry timestamp (Unix ms). 0 → "Never". */
-fun Long.formatExpiry(): String {
-    if (this == 0L) return "Never"
+fun Long.formatExpiry(lang: String = LANG_EN): String {
+    if (this == 0L) return tr(lang, "Never")
     val now = System.currentTimeMillis()
-    return if (this < now) "Expired " + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
-    else SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
+    val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
+    return if (this < now) tr(lang, "Expired") + " " + date else date
 }
 
 /** Plain calendar date for an expiry timestamp (Unix ms). 0 → "Never". */
-fun Long.formatDate(): String =
-    if (this == 0L) "Never" else SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
+fun Long.formatDate(lang: String = LANG_EN): String =
+    if (this == 0L) tr(lang, "Never") else SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
 
 /** Format a relative timestamp ("12s ago", "5m ago"). 0 → "—". */
-fun Long.formatLastOnline(): String {
+fun Long.formatLastOnline(lang: String = LANG_EN): String {
     if (this <= 0L) return "—"
     val elapsedMs = System.currentTimeMillis() - this
-    if (elapsedMs < 0) return "now"
+    if (elapsedMs < 0) return tr(lang, "now")
     val seconds = elapsedMs / 1_000
     return when {
-        seconds < 60 -> "${seconds}s ago"
-        seconds < 3_600 -> "${seconds / 60}m ago"
-        seconds < 86_400 -> "${seconds / 3_600}h ago"
-        else -> "${seconds / 86_400}d ago"
+        seconds < 60 -> "${seconds}${tr(lang, "s ago")}"
+        seconds < 3_600 -> "${seconds / 60}${tr(lang, "m ago")}"
+        seconds < 86_400 -> "${seconds / 3_600}${tr(lang, "h ago")}"
+        else -> "${seconds / 86_400}${tr(lang, "d ago")}"
     }
 }
 

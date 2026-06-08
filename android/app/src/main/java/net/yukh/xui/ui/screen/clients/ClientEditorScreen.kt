@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import net.yukh.xui.i18n.LocalAppLanguage
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.format.formatDate
 
@@ -66,10 +68,10 @@ fun ClientEditorScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isNew) "New client" else "Edit client") },
+                title = { Text(if (state.isNew) tr("New client") else tr("Edit client")) },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Cancel"))
                     }
                 },
                 actions = {
@@ -77,7 +79,7 @@ fun ClientEditorScreen(
                         if (state.saving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
-                            Text("Save")
+                            Text(tr("Save"))
                         }
                     }
                 },
@@ -96,7 +98,7 @@ fun ClientEditorScreen(
             OutlinedTextField(
                 value = state.email,
                 onValueChange = onEmail,
-                label = { Text("Email / name") },
+                label = { Text(tr("Email / name")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -106,14 +108,14 @@ fun ClientEditorScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Enabled", style = MaterialTheme.typography.bodyLarge)
+                Text(tr("Enabled"), style = MaterialTheme.typography.bodyLarge)
                 Switch(checked = state.enable, onCheckedChange = onEnable)
             }
 
             HorizontalDivider()
 
             // Inbound membership — editable on create, shown on edit.
-            Text("Inbounds", style = MaterialTheme.typography.titleSmall)
+            Text(tr("Inbounds"), style = MaterialTheme.typography.titleSmall)
             if (state.inboundsLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
             } else {
@@ -136,7 +138,7 @@ fun ClientEditorScreen(
             OutlinedTextField(
                 value = state.totalGb,
                 onValueChange = onTotalGb,
-                label = { Text("Traffic limit (GB, 0 = unlimited)") },
+                label = { Text(tr("Traffic limit (GB, 0 = unlimited)")) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
@@ -145,7 +147,7 @@ fun ClientEditorScreen(
             OutlinedTextField(
                 value = state.limitIp,
                 onValueChange = onLimitIp,
-                label = { Text("IP limit (0 = unlimited)") },
+                label = { Text(tr("IP limit (0 = unlimited)")) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -154,7 +156,7 @@ fun ClientEditorScreen(
             OutlinedTextField(
                 value = state.reset,
                 onValueChange = onReset,
-                label = { Text("Traffic reset period (days, 0 = off)") },
+                label = { Text(tr("Traffic reset period (days, 0 = off)")) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -166,19 +168,19 @@ fun ClientEditorScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Expiry", style = MaterialTheme.typography.labelMedium)
-                    Text(state.expiryTime.formatDate(), style = MaterialTheme.typography.bodyLarge)
+                    Text(tr("Expiry"), style = MaterialTheme.typography.labelMedium)
+                    Text(state.expiryTime.formatDate(LocalAppLanguage.current), style = MaterialTheme.typography.bodyLarge)
                 }
                 if (state.expiryTime != 0L) {
-                    OutlinedButton(onClick = { onExpiry(0) }) { Text("Never") }
+                    OutlinedButton(onClick = { onExpiry(0) }) { Text(tr("Never")) }
                 }
-                Button(onClick = { showDatePicker = true }) { Text("Pick date") }
+                Button(onClick = { showDatePicker = true }) { Text(tr("Pick date")) }
             }
 
             OutlinedTextField(
                 value = state.tgId,
                 onValueChange = onTgId,
-                label = { Text("Telegram ID (optional)") },
+                label = { Text(tr("Telegram ID (optional)")) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -187,7 +189,7 @@ fun ClientEditorScreen(
             OutlinedTextField(
                 value = state.group,
                 onValueChange = onGroup,
-                label = { Text("Group (optional)") },
+                label = { Text(tr("Group (optional)")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -195,7 +197,7 @@ fun ClientEditorScreen(
             OutlinedTextField(
                 value = state.comment,
                 onValueChange = onComment,
-                label = { Text("Comment (optional)") },
+                label = { Text(tr("Comment (optional)")) },
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -207,10 +209,10 @@ fun ClientEditorScreen(
 
     if (confirmSave) {
         ConfirmDialog(
-            title = if (state.isNew) "Create client?" else "Save changes?",
-            text = if (state.isNew) "Create client \"${state.email}\"?"
-            else "Apply changes to \"${state.email}\"?",
-            confirmLabel = if (state.isNew) "Create" else "Save",
+            title = if (state.isNew) tr("Create client?") else tr("Save changes?"),
+            text = if (state.isNew) "${tr("Create client")} \"${state.email}\"?"
+            else "${tr("Apply changes to")} \"${state.email}\"?",
+            confirmLabel = if (state.isNew) tr("Create") else tr("Save"),
             onConfirm = onSave,
             onDismiss = { confirmSave = false },
         )
@@ -238,9 +240,9 @@ private fun ExpiryDatePickerDialog(
     androidx.compose.material3.DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { pickerState.selectedDateMillis?.let(onPick) }) { Text("OK") }
+            TextButton(onClick = { pickerState.selectedDateMillis?.let(onPick) }) { Text(tr("OK")) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     ) {
         androidx.compose.material3.DatePicker(state = pickerState)
     }

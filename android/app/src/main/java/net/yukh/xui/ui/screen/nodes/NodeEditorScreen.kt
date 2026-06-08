@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,10 +68,10 @@ fun NodeEditorScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isNew) "Add node" else "Edit node") },
+                title = { Text(if (state.isNew) tr("Add node") else tr("Edit node")) },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Cancel"))
                     }
                 },
                 actions = {
@@ -78,7 +79,7 @@ fun NodeEditorScreen(
                         if (state.saving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
-                            Text("Save")
+                            Text(tr("Save"))
                         }
                     }
                 },
@@ -97,14 +98,14 @@ fun NodeEditorScreen(
             OutlinedTextField(
                 value = state.name,
                 onValueChange = onName,
-                label = { Text("Name") },
+                label = { Text(tr("Name")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = state.remark,
                 onValueChange = onRemark,
-                label = { Text("Remark (optional)") },
+                label = { Text(tr("Remark (optional)")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -118,7 +119,7 @@ fun NodeEditorScreen(
                 OutlinedTextField(
                     value = state.port,
                     onValueChange = onPort,
-                    label = { Text("Port") },
+                    label = { Text(tr("Port")) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = (state.port.toIntOrNull() ?: 0) !in 1..65535,
@@ -129,30 +130,30 @@ fun NodeEditorScreen(
             OutlinedTextField(
                 value = state.address,
                 onValueChange = onAddress,
-                label = { Text("Address (IP or domain)") },
+                label = { Text(tr("Address (IP or domain)")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = state.basePath,
                 onValueChange = onBasePath,
-                label = { Text("Base path") },
+                label = { Text(tr("Base path")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = state.apiToken,
                 onValueChange = onApiToken,
-                label = { Text("API token") },
+                label = { Text(tr("API token")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                supportingText = { Text("From the node panel: Settings → Security → API Token") },
+                supportingText = { Text(tr("From the node panel: Settings → Security → API Token")) },
             )
 
             SchemeDropdown(
                 value = state.tlsVerifyMode,
                 onSelect = onTlsVerifyMode,
-                label = "TLS verify",
+                label = tr("TLS verify"),
                 options = listOf("verify", "skip", "pin"),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -162,7 +163,7 @@ fun NodeEditorScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Enabled", style = MaterialTheme.typography.bodyLarge)
+                Text(tr("Enabled"), style = MaterialTheme.typography.bodyLarge)
                 Switch(checked = state.enable, onCheckedChange = onEnable)
             }
             Row(
@@ -171,9 +172,9 @@ fun NodeEditorScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Allow private address", style = MaterialTheme.typography.bodyLarge)
+                    Text(tr("Allow private address"), style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "Permit RFC1918 / LAN addresses",
+                        tr("Permit RFC1918 / LAN addresses"),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -189,7 +190,7 @@ fun NodeEditorScreen(
                 HorizontalDivider()
                 OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Outlined.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                    Text("  Delete node", color = MaterialTheme.colorScheme.error)
+                    Text("  " + tr("Delete node"), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -197,10 +198,10 @@ fun NodeEditorScreen(
 
     if (confirmSave) {
         ConfirmDialog(
-            title = if (state.isNew) "Add node?" else "Save changes?",
+            title = if (state.isNew) tr("Add node?") else tr("Save changes?"),
             text = if (state.isNew) "Add node \"${state.name}\"?"
             else "Apply changes to \"${state.name}\"?",
-            confirmLabel = if (state.isNew) "Add" else "Save",
+            confirmLabel = if (state.isNew) tr("Add") else tr("Save"),
             onConfirm = onSave,
             onDismiss = { confirmSave = false },
         )
@@ -209,14 +210,14 @@ fun NodeEditorScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete node?") },
-            text = { Text("The remote panel itself is untouched; it's just removed from this list.") },
+            title = { Text(tr("Delete node?")) },
+            text = { Text(tr("The remote panel itself is untouched; it's just removed from this list.")) },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; onDelete() }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(tr("Delete"), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(tr("Cancel")) } },
         )
     }
 }
@@ -227,7 +228,7 @@ private fun SchemeDropdown(
     value: String,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Scheme",
+    label: String = tr("Scheme"),
     options: List<String> = listOf("https", "http"),
 ) {
     var expanded by remember { mutableStateOf(false) }
