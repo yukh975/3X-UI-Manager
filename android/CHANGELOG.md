@@ -6,6 +6,20 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.2] — 2026-06-08
+
+### Changed
+- Inbound editor is now structured instead of raw JSON: transport (network +
+  ws/grpc/httpupgrade fields), security (TLS SNI; Reality dest/serverNames/
+  shortIds/fingerprint/keys), and sniffing (switch + checkboxes) are edited
+  with dropdowns, switches and fields. Unmodeled config keys are preserved.
+  Protocol `settings` (decryption/fallbacks/…) remains under an Advanced
+  JSON section.
+
+### Fixed
+- The inbound editor no longer shows the inbound's client list. Clients are
+  managed on the Clients tab and are kept untouched when an inbound is saved.
+
 ## [0.3.1] — 2026-06-08
 
 ### Added
