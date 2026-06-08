@@ -1,5 +1,6 @@
 package net.yukh.xui.ui.screen.inbounds
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,38 +45,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import net.yukh.xui.data.api.dto.InboundTemplates
+import net.yukh.xui.data.json.bool
+import net.yukh.xui.data.json.child
+import net.yukh.xui.data.json.string
+import net.yukh.xui.data.json.strings
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.format.formatDate
+
+private val NETWORKS = listOf("tcp", "ws", "grpc", "httpupgrade", "xhttp", "kcp")
+private val SECURITIES = listOf("none", "tls", "reality")
+private val FINGERPRINTS = listOf("chrome", "firefox", "safari", "ios", "android", "edge", "random", "randomized")
+private val SNIFF_TARGETS = listOf("http", "tls", "quic", "fakedns")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InboundEditorScreen(
     state: InboundEditorState,
-    onRemark: (String) -> Unit,
-    onEnable: (Boolean) -> Unit,
-    onListen: (String) -> Unit,
-    onPort: (String) -> Unit,
-    onProtocol: (String) -> Unit,
-    onTotalGb: (String) -> Unit,
-    onExpiry: (Long) -> Unit,
-    onTrafficReset: (String) -> Unit,
-    onSettings: (String) -> Unit,
-    onStream: (String) -> Unit,
-    onSniffing: (String) -> Unit,
-    onSave: () -> Unit,
-    onDelete: () -> Unit,
-    onClose: () -> Unit,
+    vm: InboundsViewModel,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmSave by remember { mutableStateOf(false) }
+    var showAdvanced by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (state.isNew) "New inbound" else "Edit inbound") },
                 navigationIcon = {
-                    IconButton(onClick = onClose) {
+                    IconButton(onClick = vm::closeEditor) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel")
                     }
                 },
@@ -106,67 +104,47 @@ fun InboundEditorScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            // ---- Basics ----
             OutlinedTextField(
                 value = state.remark,
-                onValueChange = onRemark,
+                onValueChange = vm::setEditorRemark,
                 label = { Text("Remark") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Enabled", style = MaterialTheme.typography.bodyLarge)
-                Switch(checked = state.enable, onCheckedChange = onEnable)
-            }
-
+            SwitchRow("Enabled", state.enable, vm::setEditorEnable)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = state.port,
-                    onValueChange = onPort,
+                    onValueChange = vm::setEditorPort,
                     label = { Text("Port") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
                     isError = (state.port.toIntOrNull() ?: 0) !in 1..65535,
+                    modifier = Modifier.weight(1f),
                 )
                 OutlinedTextField(
                     value = state.listen,
-                    onValueChange = onListen,
+                    onValueChange = vm::setEditorListen,
                     label = { Text("Listen IP (blank = all)") },
                     singleLine = true,
                     modifier = Modifier.weight(1.4f),
                 )
             }
+            LabeledDropdown("Protocol", state.protocol, InboundTemplates.PROTOCOLS, state.isNew, vm::setEditorProtocol)
 
-            LabeledDropdown(
-                label = "Protocol",
-                value = state.protocol,
-                options = InboundTemplates.PROTOCOLS,
-                enabled = state.isNew, // changing protocol of an existing inbound is rarely safe
-                onSelect = onProtocol,
-            )
+            HorizontalDivider()
 
+            // ---- Limits ----
             OutlinedTextField(
                 value = state.totalGb,
-                onValueChange = onTotalGb,
+                onValueChange = vm::setEditorTotalGb,
                 label = { Text("Traffic limit (GB, 0 = unlimited)") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
             )
-
-            LabeledDropdown(
-                label = "Traffic reset",
-                value = state.trafficReset,
-                options = InboundTemplates.TRAFFIC_RESET,
-                enabled = true,
-                onSelect = onTrafficReset,
-            )
-
+            LabeledDropdown("Traffic reset", state.trafficReset, InboundTemplates.TRAFFIC_RESET, true, vm::setEditorTrafficReset)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -177,17 +155,95 @@ fun InboundEditorScreen(
                     Text(state.expiryTime.formatDate(), style = MaterialTheme.typography.bodyLarge)
                 }
                 if (state.expiryTime != 0L) {
-                    OutlinedButton(onClick = { onExpiry(0) }) { Text("Never") }
+                    OutlinedButton(onClick = { vm.setEditorExpiry(0) }) { Text("Never") }
                 }
-                Button(onClick = { showDatePicker = true }) { Text("Pick date") }
+                androidx.compose.material3.Button(onClick = { showDatePicker = true }) { Text("Pick date") }
             }
 
             HorizontalDivider()
-            Text("Advanced (raw JSON)", style = MaterialTheme.typography.titleSmall)
 
-            JsonField(label = "settings", value = state.settingsText, onValueChange = onSettings)
-            JsonField(label = "streamSettings", value = state.streamText, onValueChange = onStream)
-            JsonField(label = "sniffing", value = state.sniffingText, onValueChange = onSniffing)
+            // ---- Transport ----
+            SectionTitle("Transport")
+            LabeledDropdown("Network", state.network, NETWORKS, true, vm::setNetwork)
+            when (state.network) {
+                "ws" -> {
+                    val ws = state.stream.child("wsSettings")
+                    Field("Path", ws.string("path"), vm::setWsPath)
+                    Field("Host", ws.string("host"), vm::setWsHost)
+                }
+                "httpupgrade" -> {
+                    val hu = state.stream.child("httpupgradeSettings")
+                    Field("Path", hu.string("path"), vm::setHttpPath)
+                    Field("Host", hu.string("host"), vm::setHttpHost)
+                }
+                "grpc" -> {
+                    val g = state.stream.child("grpcSettings")
+                    Field("Service name", g.string("serviceName"), vm::setGrpcService)
+                }
+            }
+
+            HorizontalDivider()
+
+            // ---- Security ----
+            SectionTitle("Security")
+            LabeledDropdown("Security", state.security, SECURITIES, true, vm::setSecurity)
+            when (state.security) {
+                "tls" -> {
+                    val tls = state.stream.child("tlsSettings")
+                    Field("SNI (server name)", tls.string("serverName"), vm::setTlsServerName)
+                }
+                "reality" -> {
+                    val r = state.stream.child("realitySettings")
+                    val rs = r.child("settings")
+                    Field("Dest (target)", r.string("dest"), vm::setRealityDest)
+                    Field("Server names (comma-separated)", r.strings("serverNames").joinToString(", "), vm::setRealityServerNames)
+                    Field("Short IDs (comma-separated)", r.strings("shortIds").joinToString(", "), vm::setRealityShortIds)
+                    LabeledDropdown("Fingerprint", rs.string("fingerprint").ifBlank { "chrome" }, FINGERPRINTS, true, vm::setRealityFingerprint)
+                    Field("Public key", rs.string("publicKey"), vm::setRealityPublicKey)
+                    Field("Private key", r.string("privateKey"), vm::setRealityPrivateKey)
+                }
+            }
+
+            HorizontalDivider()
+
+            // ---- Sniffing ----
+            SectionTitle("Sniffing")
+            SwitchRow("Enabled", state.sniffing.bool("enabled"), vm::setSniffEnabled)
+            val dest = state.sniffing.strings("destOverride")
+            SNIFF_TARGETS.forEach { target ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { vm.toggleDestOverride(target) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = target in dest, onCheckedChange = { vm.toggleDestOverride(target) })
+                    Text(target, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+
+            HorizontalDivider()
+
+            // ---- Advanced (protocol settings, clients excluded) ----
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { showAdvanced = !showAdvanced },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Advanced: protocol settings (JSON)", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(if (showAdvanced) "Hide" else "Show", color = MaterialTheme.colorScheme.primary)
+            }
+            if (showAdvanced) {
+                Text(
+                    "Clients are managed on the Clients tab and are kept as-is.",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = state.settingsText,
+                    onValueChange = vm::setEditorSettings,
+                    label = { Text("settings") },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
+                    textStyle = MaterialTheme.typography.bodySmall,
+                )
+            }
 
             state.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
@@ -195,10 +251,7 @@ fun InboundEditorScreen(
 
             if (!state.isNew) {
                 HorizontalDivider()
-                OutlinedButton(
-                    onClick = { confirmDelete = true },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Outlined.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                     Text("  Delete inbound", color = MaterialTheme.colorScheme.error)
                 }
@@ -212,7 +265,7 @@ fun InboundEditorScreen(
             text = if (state.isNew) "Create this inbound on port ${state.port}?"
             else "Apply changes to this inbound? Xray will restart.",
             confirmLabel = if (state.isNew) "Create" else "Save",
-            onConfirm = onSave,
+            onConfirm = vm::saveEditor,
             onDismiss = { confirmSave = false },
         )
     }
@@ -225,7 +278,7 @@ fun InboundEditorScreen(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let(onExpiry)
+                    pickerState.selectedDateMillis?.let(vm::setEditorExpiry)
                     showDatePicker = false
                 }) { Text("OK") }
             },
@@ -241,12 +294,40 @@ fun InboundEditorScreen(
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
-                    onDelete()
+                    vm.deleteInbound(state.id)
                 }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
         )
     }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleSmall)
+}
+
+@Composable
+private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+        Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+@Composable
+private fun Field(label: String, value: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        label = { Text(label) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -270,30 +351,12 @@ private fun LabeledDropdown(
             enabled = enabled,
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(),
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
         )
         ExposedDropdownMenu(expanded = expanded && enabled, onDismissRequest = { expanded = false }) {
             options.forEach { opt ->
-                DropdownMenuItem(
-                    text = { Text(opt) },
-                    onClick = { onSelect(opt); expanded = false },
-                )
+                DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
             }
         }
     }
-}
-
-@Composable
-private fun JsonField(label: String, value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 120.dp),
-        textStyle = MaterialTheme.typography.bodySmall,
-    )
 }

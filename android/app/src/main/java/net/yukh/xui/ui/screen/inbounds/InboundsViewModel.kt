@@ -10,10 +10,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.InboundTemplates
+import net.yukh.xui.data.json.asObject
+import net.yukh.xui.data.json.bool
+import net.yukh.xui.data.json.child
+import net.yukh.xui.data.json.parseCsv
+import net.yukh.xui.data.json.put
+import net.yukh.xui.data.json.putBool
+import net.yukh.xui.data.json.putString
+import net.yukh.xui.data.json.putStrings
+import net.yukh.xui.data.json.string
+import net.yukh.xui.data.json.strings
 import net.yukh.xui.data.repo.PanelRepository
 
 private const val BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0
@@ -29,8 +41,13 @@ data class InboundsUiState(
     val editor: InboundEditorState? = null,
 )
 
-/** Inbound create/edit form. Scalars are structured; settings/streamSettings/
- *  sniffing are edited as raw JSON text. */
+/**
+ * Inbound create/edit form. Scalars are plain fields; transport (streamSettings)
+ * and sniffing are edited through structured controls that mutate a live
+ * JsonObject (so unmodeled keys are preserved). The protocol `settings` minus
+ * its clients array stays as advanced raw JSON; clients are managed on the
+ * Clients tab and preserved via [originalClients].
+ */
 data class InboundEditorState(
     val isNew: Boolean,
     val id: Int = 0,
@@ -43,14 +60,18 @@ data class InboundEditorState(
     val totalGb: String = "0",
     val expiryTime: Long = 0,
     val trafficReset: String = "never",
+    val stream: JsonObject = JsonObject(emptyMap()),
+    val sniffing: JsonObject = JsonObject(emptyMap()),
     val settingsText: String = "",
-    val streamText: String = "",
-    val sniffingText: String = "",
+    val originalClients: JsonElement? = null,
     val saving: Boolean = false,
     val error: String? = null,
 ) {
     val canSave: Boolean
         get() = !saving && !loading && (port.toIntOrNull() ?: 0) in 1..65535
+
+    val network: String get() = stream.string("network").ifBlank { "tcp" }
+    val security: String get() = stream.string("security").ifBlank { "none" }
 }
 
 @HiltViewModel
@@ -66,37 +87,22 @@ class InboundsViewModel @Inject constructor(
         if (current.refreshing) return
         val firstLoad = current.items.isEmpty() && current.error == null
         _state.update {
-            it.copy(
-                refreshing = true,
-                loading = it.loading || firstLoad,
-                error = if (force) null else it.error,
-            )
+            it.copy(refreshing = true, loading = it.loading || firstLoad, error = if (force) null else it.error)
         }
         viewModelScope.launch {
             repo.listInbounds()
                 .onSuccess { list ->
                     _state.update {
-                        it.copy(
-                            items = list.sortedBy { ib -> ib.id },
-                            loading = false,
-                            refreshing = false,
-                            error = null,
-                        )
+                        it.copy(items = list.sortedBy { ib -> ib.id }, loading = false, refreshing = false, error = null)
                     }
                 }
                 .onFailure { e ->
-                    _state.update {
-                        it.copy(loading = false, refreshing = false, error = e.message)
-                    }
+                    _state.update { it.copy(loading = false, refreshing = false, error = e.message) }
                 }
         }
     }
 
-    /**
-     * Optimistic flip: update local state first, call the API, revert on failure.
-     * The user gets immediate feedback for the common (success) case and a clear
-     * snackbar message for the rare (failure) case.
-     */
+    /** Optimistic enable/disable; revert + toast on failure. */
     fun toggle(id: Int, target: Boolean) {
         if (id in _state.value.toggleInFlight) return
         val previous = _state.value.items
@@ -118,17 +124,13 @@ class InboundsViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     _state.update {
-                        it.copy(
-                            items = previous,
-                            toggleInFlight = it.toggleInFlight - id,
-                            transientMessage = "Toggle failed: ${e.message}",
-                        )
+                        it.copy(items = previous, toggleInFlight = it.toggleInFlight - id, transientMessage = "Toggle failed: ${e.message}")
                     }
                 }
         }
     }
 
-    // ---- Editor -----------------------------------------------------------
+    // ---- Editor: open/close -----------------------------------------------
 
     fun openCreateEditor() {
         val proto = "vless"
@@ -137,9 +139,10 @@ class InboundsViewModel @Inject constructor(
                 editor = InboundEditorState(
                     isNew = true,
                     protocol = proto,
-                    settingsText = InboundTemplates.settings(proto),
-                    streamText = InboundTemplates.streamSettings(proto),
-                    sniffingText = InboundTemplates.sniffing(),
+                    stream = JsonObject(emptyMap()).putString("network", "tcp").putString("security", "none"),
+                    sniffing = defaultSniffing(),
+                    settingsText = settingsWithoutClients(parse(InboundTemplates.settings(proto))),
+                    originalClients = null,
                 ),
             )
         }
@@ -150,6 +153,7 @@ class InboundsViewModel @Inject constructor(
         viewModelScope.launch {
             repo.getInbound(id)
                 .onSuccess { ib ->
+                    val settingsObj = ib.settings.asObject()
                     val gb = if (ib.total > 0) {
                         (ib.total / BYTES_PER_GB).let { v -> if (v % 1.0 == 0.0) v.toLong().toString() else "%.2f".format(v) }
                     } else "0"
@@ -167,61 +171,86 @@ class InboundsViewModel @Inject constructor(
                                 totalGb = gb,
                                 expiryTime = ib.expiryTime,
                                 trafficReset = ib.trafficReset.ifBlank { "never" },
-                                settingsText = ib.settings.pretty(),
-                                streamText = ib.streamSettings.pretty(),
-                                sniffingText = ib.sniffing.pretty(),
+                                stream = ib.streamSettings.asObject(),
+                                sniffing = ib.sniffing.asObject(),
+                                settingsText = settingsWithoutClients(settingsObj),
+                                originalClients = settingsObj["clients"],
                             ),
                         )
                     }
                 }
                 .onFailure { e ->
-                    _state.update { s ->
-                        s.copy(editor = s.editor?.copy(loading = false, error = e.message))
-                    }
+                    _state.update { s -> s.copy(editor = s.editor?.copy(loading = false, error = e.message)) }
                 }
         }
     }
 
     fun closeEditor() = _state.update { it.copy(editor = null) }
 
-    private fun updateEditor(t: (InboundEditorState) -> InboundEditorState) {
+    // ---- Editor: scalar setters -------------------------------------------
+
+    private fun edit(t: (InboundEditorState) -> InboundEditorState) {
         _state.update { s -> s.editor?.let { s.copy(editor = t(it).copy(error = null)) } ?: s }
     }
 
-    fun setEditorRemark(v: String) = updateEditor { it.copy(remark = v) }
-    fun setEditorEnable(v: Boolean) = updateEditor { it.copy(enable = v) }
-    fun setEditorListen(v: String) = updateEditor { it.copy(listen = v) }
-    fun setEditorPort(v: String) = updateEditor { it.copy(port = v.filter(Char::isDigit)) }
-    fun setEditorTotalGb(v: String) = updateEditor { it.copy(totalGb = v.filter { c -> c.isDigit() || c == '.' }) }
-    fun setEditorExpiry(ms: Long) = updateEditor { it.copy(expiryTime = ms) }
-    fun setEditorTrafficReset(v: String) = updateEditor { it.copy(trafficReset = v) }
-    fun setEditorSettings(v: String) = updateEditor { it.copy(settingsText = v) }
-    fun setEditorStream(v: String) = updateEditor { it.copy(streamText = v) }
-    fun setEditorSniffing(v: String) = updateEditor { it.copy(sniffingText = v) }
+    fun setEditorRemark(v: String) = edit { it.copy(remark = v) }
+    fun setEditorEnable(v: Boolean) = edit { it.copy(enable = v) }
+    fun setEditorListen(v: String) = edit { it.copy(listen = v) }
+    fun setEditorPort(v: String) = edit { it.copy(port = v.filter(Char::isDigit)) }
+    fun setEditorTotalGb(v: String) = edit { it.copy(totalGb = v.filter { c -> c.isDigit() || c == '.' }) }
+    fun setEditorExpiry(ms: Long) = edit { it.copy(expiryTime = ms) }
+    fun setEditorTrafficReset(v: String) = edit { it.copy(trafficReset = v) }
+    fun setEditorSettings(v: String) = edit { it.copy(settingsText = v) }
 
-    /** On create, switching protocol swaps in that protocol's default JSON. */
-    fun setEditorProtocol(v: String) = updateEditor {
-        if (it.isNew) {
-            it.copy(
-                protocol = v,
-                settingsText = InboundTemplates.settings(v),
-                streamText = InboundTemplates.streamSettings(v),
-            )
-        } else {
-            it.copy(protocol = v)
-        }
+    fun setEditorProtocol(v: String) = edit {
+        if (it.isNew) it.copy(protocol = v, settingsText = settingsWithoutClients(parse(InboundTemplates.settings(v))))
+        else it.copy(protocol = v)
     }
+
+    // ---- Editor: structured transport / security --------------------------
+
+    private fun editStream(t: (JsonObject) -> JsonObject) = edit { it.copy(stream = t(it.stream)) }
+    private fun editSniff(t: (JsonObject) -> JsonObject) = edit { it.copy(sniffing = t(it.sniffing)) }
+
+    fun setNetwork(v: String) = editStream { it.putString("network", v) }
+    fun setSecurity(v: String) = editStream { it.putString("security", v) }
+
+    fun setWsPath(v: String) = editStream { it.put("wsSettings", it.child("wsSettings").putString("path", v)) }
+    fun setWsHost(v: String) = editStream { it.put("wsSettings", it.child("wsSettings").putString("host", v)) }
+    fun setGrpcService(v: String) = editStream { it.put("grpcSettings", it.child("grpcSettings").putString("serviceName", v)) }
+    fun setHttpPath(v: String) = editStream { it.put("httpupgradeSettings", it.child("httpupgradeSettings").putString("path", v)) }
+    fun setHttpHost(v: String) = editStream { it.put("httpupgradeSettings", it.child("httpupgradeSettings").putString("host", v)) }
+
+    fun setTlsServerName(v: String) = editStream { it.put("tlsSettings", it.child("tlsSettings").putString("serverName", v)) }
+
+    fun setRealityDest(v: String) = editReality { it.putString("dest", v) }
+    fun setRealityServerNames(v: String) = editReality { it.putStrings("serverNames", parseCsv(v)) }
+    fun setRealityShortIds(v: String) = editReality { it.putStrings("shortIds", parseCsv(v)) }
+    fun setRealityPrivateKey(v: String) = editReality { it.putString("privateKey", v) }
+    fun setRealityPublicKey(v: String) = editReality { it.put("settings", it.child("settings").putString("publicKey", v)) }
+    fun setRealityFingerprint(v: String) = editReality { it.put("settings", it.child("settings").putString("fingerprint", v)) }
+
+    private fun editReality(t: (JsonObject) -> JsonObject) =
+        editStream { it.put("realitySettings", t(it.child("realitySettings"))) }
+
+    // ---- Editor: sniffing -------------------------------------------------
+
+    fun setSniffEnabled(v: Boolean) = editSniff { it.putBool("enabled", v) }
+    fun toggleDestOverride(item: String) = editSniff {
+        val cur = it.strings("destOverride")
+        it.putStrings("destOverride", if (item in cur) cur - item else cur + item)
+    }
+
+    // ---- Editor: save / delete --------------------------------------------
 
     fun saveEditor() {
         val e = _state.value.editor ?: return
         if (!e.canSave) return
 
-        val settings = parseJsonOrNull(e.settingsText)
+        val settingsBase = parse(e.settingsText.ifBlank { "{}" })
             ?: return failEditor("Settings is not valid JSON")
-        val stream = parseJsonOrNull(e.streamText)
-            ?: return failEditor("Stream settings is not valid JSON")
-        val sniffing = parseJsonOrNull(e.sniffingText)
-            ?: return failEditor("Sniffing is not valid JSON")
+        // Re-attach the clients array we hid from the editor (create → empty).
+        val settings = settingsBase.put("clients", e.originalClients ?: JsonArray(emptyList()))
 
         val gbBytes = (e.totalGb.toDoubleOrNull() ?: 0.0).let { (it * BYTES_PER_GB).toLong() }
         val model = InboundModel(
@@ -235,8 +264,8 @@ class InboundsViewModel @Inject constructor(
             total = gbBytes,
             trafficReset = e.trafficReset,
             settings = settings,
-            streamSettings = stream,
-            sniffing = sniffing,
+            streamSettings = e.stream,
+            sniffing = e.sniffing,
         )
         _state.update { s -> s.editor?.let { s.copy(editor = it.copy(saving = true, error = null)) } ?: s }
         viewModelScope.launch {
@@ -259,32 +288,34 @@ class InboundsViewModel @Inject constructor(
             repo.deleteInbound(id)
                 .onSuccess {
                     _state.update {
-                        it.copy(
-                            editor = null,
-                            items = it.items.filterNot { ib -> ib.id == id },
-                            transientMessage = "Inbound deleted",
-                        )
+                        it.copy(editor = null, items = it.items.filterNot { ib -> ib.id == id }, transientMessage = "Inbound deleted")
                     }
                 }
                 .onFailure { e -> _state.update { it.copy(transientMessage = "Delete failed: ${e.message}") } }
         }
     }
 
+    // ---- Helpers ----------------------------------------------------------
+
     private fun failEditor(msg: String) {
         _state.update { s -> s.editor?.let { s.copy(editor = it.copy(error = msg)) } ?: s }
     }
 
-    private fun parseJsonOrNull(text: String): JsonElement? = try {
-        prettyJson.parseToJsonElement(text.ifBlank { "{}" })
+    private fun parse(text: String): JsonObject? = try {
+        prettyJson.parseToJsonElement(text.ifBlank { "{}" }) as? JsonObject
     } catch (_: Exception) {
         null
     }
 
-    private fun JsonElement.pretty(): String = try {
-        prettyJson.encodeToString(JsonElement.serializer(), this)
-    } catch (_: Exception) {
-        toString()
+    private fun settingsWithoutClients(settings: JsonObject?): String {
+        val obj = (settings ?: JsonObject(emptyMap())).put("clients", null)
+        return prettyJson.encodeToString(JsonObject.serializer(), obj)
     }
+
+    private fun defaultSniffing(): JsonObject =
+        JsonObject(emptyMap())
+            .putBool("enabled", false)
+            .putStrings("destOverride", listOf("http", "tls", "quic"))
 
     fun dismissMessage() = _state.update { it.copy(transientMessage = null) }
 }

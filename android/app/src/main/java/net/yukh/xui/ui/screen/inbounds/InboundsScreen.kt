@@ -120,23 +120,7 @@ fun InboundsScreen(
             onDismissRequest = vm::closeEditor,
             properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
         ) {
-            InboundEditorScreen(
-                state = editor,
-                onRemark = vm::setEditorRemark,
-                onEnable = vm::setEditorEnable,
-                onListen = vm::setEditorListen,
-                onPort = vm::setEditorPort,
-                onProtocol = vm::setEditorProtocol,
-                onTotalGb = vm::setEditorTotalGb,
-                onExpiry = vm::setEditorExpiry,
-                onTrafficReset = vm::setEditorTrafficReset,
-                onSettings = vm::setEditorSettings,
-                onStream = vm::setEditorStream,
-                onSniffing = vm::setEditorSniffing,
-                onSave = vm::saveEditor,
-                onDelete = { vm.deleteInbound(editor.id) },
-                onClose = vm::closeEditor,
-            )
+            InboundEditorScreen(state = editor, vm = vm)
         }
     }
 }
