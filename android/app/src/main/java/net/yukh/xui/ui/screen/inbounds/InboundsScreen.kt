@@ -3,6 +3,7 @@ package net.yukh.xui.ui.screen.inbounds
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,11 +11,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
@@ -29,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.InboundSlim
@@ -87,15 +94,50 @@ fun InboundsScreen(
                         inbound = inbound,
                         toggling = inbound.id in state.toggleInFlight,
                         onToggle = { vm.toggle(inbound.id, !inbound.enable) },
+                        onClick = { vm.openEditEditor(inbound.id) },
                     )
                 }
             }
+        }
+
+        FloatingActionButton(
+            onClick = vm::openCreateEditor,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = "Add inbound")
         }
 
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter),
         ) { Snackbar { Text(it.visuals.message) } }
+    }
+
+    state.editor?.let { editor ->
+        Dialog(
+            onDismissRequest = vm::closeEditor,
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            InboundEditorScreen(
+                state = editor,
+                onRemark = vm::setEditorRemark,
+                onEnable = vm::setEditorEnable,
+                onListen = vm::setEditorListen,
+                onPort = vm::setEditorPort,
+                onProtocol = vm::setEditorProtocol,
+                onTotalGb = vm::setEditorTotalGb,
+                onExpiry = vm::setEditorExpiry,
+                onTrafficReset = vm::setEditorTrafficReset,
+                onSettings = vm::setEditorSettings,
+                onStream = vm::setEditorStream,
+                onSniffing = vm::setEditorSniffing,
+                onSave = vm::saveEditor,
+                onDelete = { vm.deleteInbound(editor.id) },
+                onClose = vm::closeEditor,
+            )
+        }
     }
 }
 
@@ -104,6 +146,7 @@ private fun InboundRow(
     inbound: InboundSlim,
     toggling: Boolean,
     onToggle: () -> Unit,
+    onClick: () -> Unit,
 ) {
     val totalUsed = inbound.up + inbound.down
     val quotaProgress = if (inbound.total > 0) {
@@ -111,7 +154,9 @@ private fun InboundRow(
     } else 0f
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = if (inbound.enable) MaterialTheme.colorScheme.surfaceVariant
             else MaterialTheme.colorScheme.surface,

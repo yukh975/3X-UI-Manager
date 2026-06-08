@@ -5,6 +5,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
+import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
 import net.yukh.xui.data.api.dto.PanelSettings
@@ -47,6 +48,18 @@ interface XuiApi {
     // UI shows. The heavy settings JSON the full list adds is ignored.
     @GET("panel/api/inbounds/list")
     suspend fun listInbounds(): ApiResponse<List<InboundSlim>>
+
+    @GET("panel/api/inbounds/get/{id}")
+    suspend fun getInbound(@Path("id") id: Int): ApiResponse<InboundModel>
+
+    @POST("panel/api/inbounds/add")
+    suspend fun addInbound(@Body inbound: InboundModel): ApiAck
+
+    @POST("panel/api/inbounds/update/{id}")
+    suspend fun updateInbound(@Path("id") id: Int, @Body inbound: InboundModel): ApiAck
+
+    @POST("panel/api/inbounds/del/{id}")
+    suspend fun deleteInbound(@Path("id") id: Int): ApiAck
 
     @POST("panel/api/inbounds/setEnable/{id}")
     suspend fun setInboundEnable(

@@ -13,6 +13,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
+import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
 import net.yukh.xui.data.api.dto.PanelSettings
@@ -146,6 +147,18 @@ class PanelRepository @Inject constructor(
 
     suspend fun listInbounds(): Result<List<InboundSlim>> =
         authedData { it.listInbounds() }
+
+    suspend fun getInbound(id: Int): Result<InboundModel> =
+        authedData { it.getInbound(id) }
+
+    suspend fun addInbound(inbound: InboundModel): Result<Unit> =
+        authedAck { it.addInbound(inbound) }
+
+    suspend fun updateInbound(id: Int, inbound: InboundModel): Result<Unit> =
+        authedAck { it.updateInbound(id, inbound) }
+
+    suspend fun deleteInbound(id: Int): Result<Unit> =
+        authedAck { it.deleteInbound(id) }
 
     suspend fun setInboundEnable(id: Int, enable: Boolean): Result<Unit> =
         authedAck { it.setInboundEnable(id, EnableRequest(enable)) }
