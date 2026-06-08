@@ -14,8 +14,9 @@ uses [Semantic Versioning](https://semver.org/).
 - Optional "Subscription base URL" on the connect screen — enables per-client
   subscription links + QR when using an API token (the token can't read the
   panel's subscription settings).
-- Confirmation dialog on every save and on the inbound enable/disable toggle,
-  so nothing is changed by accident. Deletes were already confirmed.
+- Confirmation dialog on every save, so nothing is changed by accident.
+  Deletes were already confirmed. (The inbound enable/disable toggle stays
+  one-tap — it's quick and reversible.)
 
 ### Fixed
 - Editor dialogs no longer draw under the Android navigation bar — the

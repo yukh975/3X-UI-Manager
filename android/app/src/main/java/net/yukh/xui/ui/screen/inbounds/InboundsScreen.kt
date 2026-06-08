@@ -30,9 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -41,7 +39,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.InboundSlim
-import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatExpiry
 
@@ -51,8 +48,6 @@ fun InboundsScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    // Pending enable/disable toggle awaiting confirmation: (id, remark, target).
-    var pendingToggle by remember { mutableStateOf<Triple<Int, String, Boolean>?>(null) }
 
     LaunchedEffect(Unit) { vm.load() }
 
@@ -98,13 +93,7 @@ fun InboundsScreen(
                     InboundRow(
                         inbound = inbound,
                         toggling = inbound.id in state.toggleInFlight,
-                        onToggle = {
-                            pendingToggle = Triple(
-                                inbound.id,
-                                inbound.remark.ifBlank { "#${inbound.id}" },
-                                !inbound.enable,
-                            )
-                        },
+                        onToggle = { vm.toggle(inbound.id, !inbound.enable) },
                         onClick = { vm.openEditEditor(inbound.id) },
                     )
                 }
@@ -124,17 +113,6 @@ fun InboundsScreen(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter),
         ) { Snackbar { Text(it.visuals.message) } }
-    }
-
-    pendingToggle?.let { (id, remark, target) ->
-        ConfirmDialog(
-            title = if (target) "Enable inbound?" else "Disable inbound?",
-            text = if (target) "Enable \"$remark\"?" else "Disable \"$remark\"? Its clients lose access.",
-            confirmLabel = if (target) "Enable" else "Disable",
-            destructive = !target,
-            onConfirm = { vm.toggle(id, target) },
-            onDismiss = { pendingToggle = null },
-        )
     }
 
     state.editor?.let { editor ->
