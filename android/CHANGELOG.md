@@ -6,6 +6,22 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.1] — 2026-06-08
+
+### Added
+- Client email/name is now editable when editing a client (rename).
+- Client inbound membership is editable on edit (attach/detach the delta).
+- Optional "Subscription base URL" on the connect screen — enables per-client
+  subscription links + QR when using an API token (the token can't read the
+  panel's subscription settings).
+- Confirmation dialog on every save and on the inbound enable/disable toggle,
+  so nothing is changed by accident. Deletes were already confirmed.
+
+### Fixed
+- Editor dialogs no longer draw under the Android navigation bar — the
+  "Delete" button and the last form field are fully visible again.
+- The on-screen keyboard no longer covers the focused field in editors.
+
 ## [0.3.0] — 2026-06-08
 
 ### Added
