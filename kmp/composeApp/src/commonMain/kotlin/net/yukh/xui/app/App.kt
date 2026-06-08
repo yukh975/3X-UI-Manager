@@ -28,8 +28,9 @@ import net.yukh.xui.shared.dto.ServerStatus
 /**
  * Root of the shared iOS/Android Compose Multiplatform app. Connect → tabbed
  * dashboard (Dashboard / Inbounds / Clients / Nodes), all in commonMain driving
- * the shared Ktor PanelApi. No DI framework yet; the Android app keeps its own
- * richer Hilt-based UI. Proves the shared networking + UI work on iOS.
+ * the shared Ktor PanelApi. The connection is persisted (SessionStore) and
+ * auto-restored on launch. No DI framework yet; the Android app keeps its own
+ * richer Hilt-based UI.
  */
 @Composable
 fun App() {
@@ -47,7 +48,36 @@ fun App() {
             var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
             var nodes by remember { mutableStateOf<List<Node>>(emptyList()) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
+            val store = remember { SessionStore() }
             val scope = rememberCoroutineScope()
+
+            // Validate URL+token by fetching status; on success keep the client,
+            // mark connected and persist the session. Returns success.
+            suspend fun connect(url: String, tok: String): Boolean {
+                busy = true
+                error = null
+                val a = PanelApi(url.trim(), tok.trim())
+                val ok = try {
+                    val resp = a.serverStatus()
+                    if (resp.success) {
+                        api = a
+                        status = resp.obj
+                        connected = true
+                        true
+                    } else {
+                        error = resp.msg.ifBlank { "Login failed — check URL / token" }
+                        a.close()
+                        false
+                    }
+                } catch (e: Throwable) {
+                    error = e.message ?: "Network error"
+                    a.close()
+                    false
+                }
+                busy = false
+                if (ok) store.save(url.trim(), tok.trim())
+                return ok
+            }
 
             suspend fun refreshAll() {
                 val a = api ?: return
@@ -62,6 +92,17 @@ fun App() {
                 }
             }
 
+            // Auto-restore a saved session on first launch.
+            LaunchedEffect(Unit) {
+                if (!connected) {
+                    store.load()?.let { saved ->
+                        baseUrl = saved.baseUrl
+                        token = saved.token
+                        connect(saved.baseUrl, saved.token)
+                    }
+                }
+            }
+
             if (!connected) {
                 ConnectScreen(
                     baseUrl = baseUrl,
@@ -70,28 +111,7 @@ fun App() {
                     error = error,
                     onBaseUrl = { baseUrl = it; error = null },
                     onToken = { token = it; error = null },
-                    onConnect = {
-                        scope.launch {
-                            busy = true
-                            error = null
-                            val a = PanelApi(baseUrl.trim(), token.trim())
-                            try {
-                                val resp = a.serverStatus()
-                                if (resp.success) {
-                                    api = a
-                                    status = resp.obj
-                                    connected = true
-                                } else {
-                                    error = resp.msg.ifBlank { "Login failed — check URL / token" }
-                                    a.close()
-                                }
-                            } catch (e: Throwable) {
-                                error = e.message ?: "Network error"
-                                a.close()
-                            }
-                            busy = false
-                        }
-                    },
+                    onConnect = { scope.launch { connect(baseUrl, token) } },
                 )
             } else {
                 val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes")
@@ -125,6 +145,7 @@ fun App() {
                                     inbounds = emptyList(); clients = emptyList(); nodes = emptyList()
                                     tab = 0
                                     connected = false
+                                    store.clear()
                                 },
                             )
                             1 -> InboundsListScreen(inbounds)
