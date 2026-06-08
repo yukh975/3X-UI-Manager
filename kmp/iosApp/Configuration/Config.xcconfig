@@ -1,0 +1,4 @@
+// Fill TEAM_ID with your Apple Developer Team ID to run on a real device.
+TEAM_ID=
+BUNDLE_ID=net.yukh.xui.ios
+APP_NAME=3X-UI Manager
