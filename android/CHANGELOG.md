@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.11] — 2026-06-08
+
+### Fixed
+- After **Start/Stop/Restart Xray** the status card no longer flickers:
+  previously the button briefly showed the new state, snapped back to the old
+  one, then took ~3 s (next poll) to settle. The panel keeps reporting the old
+  Xray state for a moment, and the immediate refresh overwrote the optimistic
+  value. Now the expected state is pinned for a few seconds (until Xray actually
+  switches) while the dashboard refreshes immediately — no snap-back, no delay.
+
 ## [0.3.10] — 2026-06-08
 
 ### Changed

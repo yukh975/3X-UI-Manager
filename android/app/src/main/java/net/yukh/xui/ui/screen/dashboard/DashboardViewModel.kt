@@ -56,6 +56,14 @@ class DashboardViewModel @Inject constructor(
 
     private var pollJob: Job? = null
 
+    // After a start/stop/restart, the panel keeps reporting the OLD Xray state
+    // for a beat (Xray hasn't settled yet). Without this, the immediate refresh
+    // would overwrite our optimistic state and the button would flip back for ~3s.
+    // So we pin the expected state for a short window; polls update everything
+    // else but keep this Xray state until Xray actually settles.
+    private var xrayOverrideState: String? = null
+    private var xrayOverrideUntil: Long = 0L
+
     fun startPolling() {
         if (pollJob?.isActive == true) return
         _state.update { it.copy(loading = it.status == null) }
@@ -92,7 +100,8 @@ class DashboardViewModel @Inject constructor(
         val statusResult = repo.getServerStatus()
         val onlines = repo.listOnlines().getOrNull()
         statusResult
-            .onSuccess { s ->
+            .onSuccess { raw ->
+                val s = applyXrayOverride(raw)
                 _state.update {
                     it.copy(
                         status = s,
@@ -106,6 +115,18 @@ class DashboardViewModel @Inject constructor(
             .onFailure { e ->
                 _state.update { it.copy(loading = false, refreshingNow = false, error = e.message) }
             }
+    }
+
+    /** While the post-action window is open, force the Xray state we expect so a
+     *  lagging poll doesn't flip the button back. */
+    private fun applyXrayOverride(s: ServerStatus): ServerStatus {
+        val want = xrayOverrideState ?: return s
+        return if (System.currentTimeMillis() < xrayOverrideUntil) {
+            s.copy(xray = s.xray.copy(state = want))
+        } else {
+            xrayOverrideState = null
+            s
+        }
     }
 
     // ---- Online list ------------------------------------------------------
@@ -187,10 +208,12 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             action()
                 .onSuccess {
-                    // Reflect the new state immediately so the right control shows
-                    // even if the next poll never returns (e.g. a stop that cuts
-                    // off a proxied-through-Xray panel).
+                    // Reflect the new state immediately AND pin it for a few
+                    // seconds so the forced refresh below (and the next poll)
+                    // can't flip the button back while Xray is still settling.
                     val newState = if (resultRunning) "running" else "stop"
+                    xrayOverrideState = newState
+                    xrayOverrideUntil = System.currentTimeMillis() + XRAY_OVERRIDE_MS
                     _state.update { st ->
                         st.copy(
                             xrayActionInFlight = false,
@@ -217,5 +240,8 @@ class DashboardViewModel @Inject constructor(
 
     private companion object {
         const val POLL_INTERVAL_MS = 3_000L
+        // How long after a start/stop/restart to trust the optimistic Xray state
+        // over polled status (enough for Xray to actually settle).
+        const val XRAY_OVERRIDE_MS = 6_000L
     }
 }
