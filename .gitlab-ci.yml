@@ -54,35 +54,9 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "api"
 
-build:debug:
-  stage: build
-  script:
-    # The gradle:8.10.2-jdk21 image already has the right Gradle. Skip the
-    # wrapper step entirely — `gradle wrapper --gradle-version` does a HEAD
-    # request to services.gradle.org which the runner can't reach.
-    - gradle assembleDebug --no-daemon --stacktrace --warning-mode=summary
-    - |
-      if [ -n "$CI_COMMIT_TAG" ]; then
-        PKG_VERSION="${CI_COMMIT_TAG#v}"
-        echo ">>> Uploading app-debug.apk to generic package registry @ $PKG_VERSION"
-        # cwd is $CI_PROJECT_DIR/android (set in before_script).
-        curl --fail --silent --show-error --request PUT \
-          --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-          --upload-file app/build/outputs/apk/debug/app-debug.apk \
-          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/app-debug.apk"
-        echo
-      fi
-  artifacts:
-    name: "xui-android-debug-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - android/app/build/outputs/apk/debug/app-debug.apk
-      - android/app/build/outputs/mapping/
-    expire_in: 2 weeks
-    when: on_success
-
 test:unit:
   stage: test
-  needs: ["build:debug"]
+  needs: ["build:release"]
   script:
     - gradle testDebugUnitTest --no-daemon --stacktrace --warning-mode=summary
   artifacts:
@@ -95,19 +69,16 @@ test:unit:
     when: always
     expire_in: 1 week
 
-# Signed release APK — runs only after build:debug succeeds (the "green build"
-# gate), so a broken commit never produces a release artifact. The keystore
-# is decoded from RELEASE_KEYSTORE_B64 (set as a project CI variable) into a
-# scratch file outside the work tree; app/build.gradle.kts reads it via
-# RELEASE_KEYSTORE_FILE + the three password/alias env vars.
+# Signed release APK — the only APK we ship. The keystore is decoded from
+# RELEASE_KEYSTORE_B64 (a project CI variable) into a scratch file outside the
+# work tree; app/build.gradle.kts reads it via RELEASE_KEYSTORE_FILE + the
+# three password/alias env vars.
 #
-# For tag builds, the APK is also pushed to the project's Generic Package
-# Registry so the Release page can link to a URL that survives artifact
-# expiration and pipeline cleanup. The job-level artifact stays around as a
-# 26-week safety net but isn't the canonical download.
+# For tag builds, the APK is pushed to the project's Generic Package Registry
+# so the Release page can link to a URL that survives artifact expiration and
+# pipeline cleanup. The job-level artifact stays around as a 26-week safety net.
 build:release:
   stage: build
-  needs: ["build:debug"]
   variables:
     RELEASE_KEYSTORE_FILE: "$CI_PROJECT_DIR/.release-keystore.p12"
   script:
@@ -144,17 +115,13 @@ build:release:
 # release-page editing — to ship a new build to the Releases page, push a
 # new tag, full stop.
 #
-# `release:` keyword is handled by GitLab's release-cli, which is why this
-# job uses that image and overrides the default before_script (the Android
-# SDK installer would otherwise try to run in a non-apt-equipped image).
-# `needs:` waits for both APK builds to succeed without downloading their
-# artifacts here — release-cli only needs the link URLs.
+# release-cli (separate image) builds the GitLab Release. It waits for the
+# release APK build without downloading its artifact — it only needs the
+# package-registry URL.
 release:publish:
   stage: publish
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   needs:
-    - job: build:debug
-      artifacts: false
     - job: build:release
       artifacts: false
   rules:
@@ -176,8 +143,6 @@ release:publish:
         --description "Built by [pipeline #$CI_PIPELINE_ID]($CI_PIPELINE_URL) from $CI_COMMIT_SHORT_SHA.
 
       - \`app-release.apk\` — signed, ready to sideload.
-      - \`app-debug.apk\` — debug build (applicationId \`net.yukh.xui.debug\`, installs side-by-side with release).
 
-      APKs live in the project's [Generic Package Registry]($CI_PROJECT_URL/-/packages) — these links keep working after pipeline artifacts expire and after pipelines are cleaned up." \
-        --assets-link "{\"name\":\"app-release.apk (signed)\",\"url\":\"$PKG_BASE/app-release.apk\",\"link_type\":\"package\"}" \
-        --assets-link "{\"name\":\"app-debug.apk\",\"url\":\"$PKG_BASE/app-debug.apk\",\"link_type\":\"package\"}"
+      The APK lives in the project's [Generic Package Registry]($CI_PROJECT_URL/-/packages) — this link keeps working after pipeline artifacts expire and after pipelines are cleaned up." \
+        --assets-link "{\"name\":\"app-release.apk (signed)\",\"url\":\"$PKG_BASE/app-release.apk\",\"link_type\":\"package\"}"

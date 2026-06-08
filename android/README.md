@@ -106,7 +106,7 @@ gradle wrapper --gradle-version 8.10.2   # one-time
 
 ## CI / releases
 
-[`.gitlab-ci.yml`](../.gitlab-ci.yml) builds **only** on a version tag (`vX.Y.Z`) or a manual trigger — branch pushes don't build. A tag pipeline builds debug + signed release APKs, runs tests, uploads both APKs to the project's Generic Package Registry, and auto-creates a GitLab Release. `versionName`/`versionCode` derive from the tag.
+[`.gitlab-ci.yml`](../.gitlab-ci.yml) builds **only** on a version tag (`vX.Y.Z`) or a manual trigger — branch pushes don't build. A tag pipeline builds the **signed release APK**, runs unit tests, uploads the APK to the project's Generic Package Registry, and auto-creates a GitLab Release. `versionName`/`versionCode` derive from the tag.
 
 To cut a release: push a `vX.Y.Z` tag.
 

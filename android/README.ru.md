@@ -106,7 +106,7 @@ gradle wrapper --gradle-version 8.10.2   # один раз
 
 ## CI / релизы
 
-[`.gitlab-ci.yml`](../.gitlab-ci.yml) собирает **только** по тегу версии (`vX.Y.Z`) или ручному запуску — пуши в ветку сборку не запускают. Пайплайн по тегу собирает debug + подписанный release APK, прогоняет тесты, загружает оба APK в Generic Package Registry и автоматически создаёт GitLab Release. `versionName`/`versionCode` берутся из тега.
+[`.gitlab-ci.yml`](../.gitlab-ci.yml) собирает **только** по тегу версии (`vX.Y.Z`) или ручному запуску — пуши в ветку сборку не запускают. Пайплайн по тегу собирает **подписанный release APK**, прогоняет юнит-тесты, загружает APK в Generic Package Registry и автоматически создаёт GitLab Release. `versionName`/`versionCode` берутся из тега.
 
 Чтобы выпустить релиз: запушьте тег `vX.Y.Z`.
 
