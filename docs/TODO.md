@@ -29,9 +29,9 @@ the counter == this month). Label with `lastTrafficResetTime` ("since 01.06").
 - Assumes every inbound is `trafficReset = "monthly"`. If any isn't, its number
   is its all-time counter, not this month — optionally flag such inbounds.
 - Switching an inbound `never → monthly` does **not** zero it immediately; the
-  counter keeps its accumulated value until the next 1st-of-month cron (or a
-  manual reset via `POST /panel/api/inbounds/:id/resetTraffic`). The 3 WS-*
-  inbounds were reset manually once to start clean.
+  counter keeps its accumulated value until the next 1st-of-month cron. User is
+  fine with this (non-critical) — the WS-* figures self-correct on the 1st, or
+  can be reset manually via `POST /panel/api/inbounds/:id/resetTraffic`.
 - Do **NOT** use `netTraffic` from `/server/status` — NIC counter since OS boot.
 - Node metric history (`/nodes/history`) is cpu/mem only — no traffic series.
 
