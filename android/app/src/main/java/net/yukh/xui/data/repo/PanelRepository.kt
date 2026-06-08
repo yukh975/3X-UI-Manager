@@ -20,6 +20,7 @@ import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.ServerStatus
+import net.yukh.xui.data.api.dto.XraySettingEnvelope
 import net.yukh.xui.data.auth.CsrfState
 import net.yukh.xui.data.auth.InMemoryCookieJar
 import net.yukh.xui.data.prefs.ConnectionAuth
@@ -215,6 +216,27 @@ class PanelRepository @Inject constructor(
 
     suspend fun setNodeEnable(id: Int, enable: Boolean): Result<Unit> =
         authedAck { it.setNodeEnable(id, EnableRequest(enable)) }
+
+    // ---- Xray config (session-auth only) ----------------------------------
+
+    /** Fetch the full Xray config (outbounds/routing/dns) + test URL. The
+     *  endpoint double-wraps it: response obj is a JSON string that itself
+     *  holds the config object. */
+    suspend fun getXraySetting(): Result<XraySettingEnvelope> {
+        val current = api ?: return Result.failure(PanelError.NotConnected)
+        return catching {
+            val resp = current.getXraySetting()
+            val objStr = resp.obj
+            if (!resp.success || objStr.isNullOrBlank()) {
+                Result.failure(PanelError.Rejected(resp.msg.ifBlank { "Request rejected" }))
+            } else {
+                Result.success(json.decodeFromString(XraySettingEnvelope.serializer(), objStr))
+            }
+        }
+    }
+
+    suspend fun updateXraySetting(configJson: String, testUrl: String): Result<Unit> =
+        authedAck { it.updateXraySetting(configJson, testUrl) }
 
     // ---- Internals --------------------------------------------------------
 

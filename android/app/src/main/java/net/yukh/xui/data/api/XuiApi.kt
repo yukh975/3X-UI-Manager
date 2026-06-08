@@ -13,6 +13,8 @@ import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.ServerStatus
 import retrofit2.http.Body
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -110,8 +112,19 @@ interface XuiApi {
     @POST("panel/api/nodes/setEnable/{id}")
     suspend fun setNodeEnable(@Path("id") id: Int, @Body body: EnableRequest): ApiAck
 
-    // ---- Settings (session-auth only; token gets redirected to login) -----
+    // ---- Settings & Xray config (session-auth only; token → login redirect) ---
 
     @POST("panel/setting/all")
     suspend fun getAllSettings(): ApiResponse<PanelSettings>
+
+    /** Returns the wrapped config as a JSON string in `obj` (parse twice). */
+    @POST("panel/xray/")
+    suspend fun getXraySetting(): ApiResponse<String>
+
+    @FormUrlEncoded
+    @POST("panel/xray/update")
+    suspend fun updateXraySetting(
+        @Field("xraySetting") xraySetting: String,
+        @Field("outboundTestUrl") outboundTestUrl: String,
+    ): ApiAck
 }
