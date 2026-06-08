@@ -9,6 +9,7 @@ import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -39,11 +40,13 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.navigation.MainTabs
 import net.yukh.xui.ui.screen.clients.ClientsScreen
 import net.yukh.xui.ui.screen.dashboard.DashboardScreen
 import net.yukh.xui.ui.screen.inbounds.InboundsScreen
 import net.yukh.xui.ui.screen.nodes.NodesScreen
+import net.yukh.xui.ui.screen.settings.SettingsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
 
 @HiltViewModel
@@ -78,23 +81,29 @@ fun MainScreen(
     val currentTab = tabs.firstOrNull { it.route == currentRoute } ?: tabs.first()
     var menuOpen by remember { mutableStateOf(false) }
     var showXrayConfig by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentTab.label) },
+                title = { Text(tr(currentTab.label)) },
                 actions = {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Outlined.MoreVert, contentDescription = "Menu")
+                        Icon(Icons.Outlined.MoreVert, contentDescription = tr("Menu"))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
-                            text = { Text("Xray config") },
+                            text = { Text(tr("Xray config")) },
                             leadingIcon = { Icon(Icons.Outlined.Tune, contentDescription = null) },
                             onClick = { menuOpen = false; showXrayConfig = true },
                         )
                         DropdownMenuItem(
-                            text = { Text("Disconnect") },
+                            text = { Text(tr("Settings")) },
+                            leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                            onClick = { menuOpen = false; showSettings = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("Disconnect")) },
                             leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null) },
                             onClick = {
                                 menuOpen = false
@@ -121,7 +130,7 @@ fun MainScreen(
                             }
                         },
                         icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { Text(tab.label) },
+                        label = { Text(tr(tab.label)) },
                     )
                 }
             }
@@ -145,6 +154,15 @@ fun MainScreen(
             properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
         ) {
             XrayConfigScreen(onClose = { showXrayConfig = false })
+        }
+    }
+
+    if (showSettings) {
+        Dialog(
+            onDismissRequest = { showSettings = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+        ) {
+            SettingsScreen(onClose = { showSettings = false })
         }
     }
 }

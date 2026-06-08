@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.yukh.xui.i18n.tr
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +53,7 @@ fun ConnectScreen(
     val state by vm.state.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Connect to panel") }) },
+        topBar = { TopAppBar(title = { Text(tr("Connect to panel")) }) },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -65,12 +66,12 @@ fun ConnectScreen(
             OutlinedTextField(
                 value = state.url,
                 onValueChange = vm::setUrl,
-                label = { Text("Panel URL") },
+                label = { Text(tr("Panel URL")) },
                 placeholder = { Text("https://panel.example.com:2053/") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                supportingText = { Text("Include the webBasePath if your admin set one") },
+                supportingText = { Text(tr("Include the webBasePath if your admin set one")) },
             )
 
             AuthMethodPicker(
@@ -89,9 +90,9 @@ fun ConnectScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Allow self-signed TLS", style = MaterialTheme.typography.bodyLarge)
+                    Text(tr("Allow self-signed TLS"), style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "Disable certificate verification — only enable for your own panel.",
+                        tr("Disable certificate verification — only enable for your own panel."),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -105,16 +106,19 @@ fun ConnectScreen(
             OutlinedTextField(
                 value = state.subBaseUrl,
                 onValueChange = vm::setSubBaseUrl,
-                label = { Text("Subscription base URL (optional)") },
+                label = { Text(tr("Subscription base URL (optional)")) },
                 placeholder = { Text("https://panel.example.com:2096/sub/") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                 supportingText = {
                     Text(
-                        "Needed for subscription links/QR when using an API token " +
-                            "(the token can't read panel sub settings). Leave empty " +
-                            "with login/password.",
+                        tr(
+                            "For subscription links/QR with an API token, enter your " +
+                                "reverse-proxy URI (if you use one) or the panel's " +
+                                "Subscription URL, e.g. https://host:2096/sub/. Leave " +
+                                "empty with login/password.",
+                        ),
                     )
                 },
             )
@@ -132,9 +136,9 @@ fun ConnectScreen(
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
-                    Text("  Signing in…")
+                    Text("  " + tr("Signing in…"))
                 } else {
-                    Text(if (state.method == AuthMethod.Token) "Connect" else "Sign in")
+                    Text(if (state.method == AuthMethod.Token) tr("Connect") else tr("Sign in"))
                 }
             }
 
