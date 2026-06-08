@@ -51,6 +51,10 @@ data class Node(
     )
 }
 
+/** Body for POST /panel/api/nodes/updatePanel — node ids to self-update. */
+@Serializable
+data class NodeIdsRequest(val ids: List<Int>)
+
 /** Editable subset sent to POST /nodes/add and /nodes/update/:id. */
 @Serializable
 data class NodeModel(

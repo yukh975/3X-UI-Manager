@@ -200,7 +200,7 @@ private fun InboundRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    tr("Expires ") + inbound.expiryTime.formatExpiry(LocalAppLanguage.current),
+                    "${tr("Expires")}: ${inbound.expiryTime.formatExpiry(LocalAppLanguage.current)}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

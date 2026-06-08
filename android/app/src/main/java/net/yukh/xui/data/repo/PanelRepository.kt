@@ -18,6 +18,7 @@ import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
 import net.yukh.xui.data.api.dto.Node
+import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
@@ -262,6 +263,10 @@ class PanelRepository @Inject constructor(
 
     suspend fun setNodeEnable(id: Int, enable: Boolean): Result<Unit> =
         authedAck { it.setNodeEnable(id, EnableRequest(enable)) }
+
+    /** Trigger a 3x-ui self-update on the given node(s) via the central panel. */
+    suspend fun updateNodes(ids: List<Int>): Result<Unit> =
+        authedAck { it.updateNodePanel(NodeIdsRequest(ids)) }
 
     /**
      * Online clients on a specific node, queried directly against that node's own

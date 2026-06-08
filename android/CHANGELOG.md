@@ -6,6 +6,26 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.12] — 2026-06-09
+
+### Changed
+- **Dashboard:** every metric is now its own full-width row, in order — CPU,
+  Memory, Disk, Load, Net, Connections, Online (previously Load/Net/Connections/
+  Online were cramped half-width tiles).
+- **Nodes:** redesigned the node card — after the URL, each fact is on its own
+  line: CPU · RAM, **Ping** (the ms value is now labelled), inbounds · clients,
+  uptime, and the node's 3x-ui version.
+- **Clients:** "Expires" now shows the number of **days remaining** (not a date)
+  and gets a colon; "Last seen" moved to its own line, also with a colon.
+- **Inbounds:** colon after "Expires".
+
+### Added
+- **Nodes:** when a node runs an older 3x-ui than the latest, an **Update**
+  button appears that triggers the node's self-update via the central panel
+  (`POST /panel/api/nodes/updatePanel`).
+- **Release:** the published APK filename now includes the version
+  (`3x-ui-manager-<version>.apk`).
+
 ## [0.3.11] — 2026-06-08
 
 ### Fixed
