@@ -1,11 +1,13 @@
 package net.yukh.xui.ui.screen.dashboard
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapVert
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -62,6 +65,7 @@ fun DashboardScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     var showRestartDialog by remember { mutableStateOf(false) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     DisposableEffect(lifecycleOwner) {
@@ -80,6 +84,12 @@ fun DashboardScreen(
         state.xrayActionMessage?.let {
             snackbarHostState.showSnackbar(it)
             vm.dismissActionMessage()
+        }
+    }
+    LaunchedEffect(state.updateMessage) {
+        state.updateMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            vm.dismissUpdateMessage()
         }
     }
 
@@ -154,8 +164,9 @@ fun DashboardScreen(
                     MetricTileCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.People,
-                        title = "Online",
+                        title = "Online (tap)",
                         value = state.onlineCount.toString(),
+                        onClick = vm::openOnlineList,
                     )
                     MetricTileCard(
                         modifier = Modifier.weight(1f),
@@ -183,25 +194,15 @@ fun DashboardScreen(
                     )
                 }
 
-                if (status.uptime > 0 || status.panelVersion.isNotBlank()) {
+                if (status.uptime > 0 || status.publicIP.ipv4.isNotBlank()) {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             if (status.uptime > 0) {
-                                Text(
-                                    "Uptime ${status.uptime.formatUptime()}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
+                                Text("Uptime ${status.uptime.formatUptime()}", style = MaterialTheme.typography.bodyMedium)
                             }
-                            val meta = buildList {
-                                if (status.panelVersion.isNotBlank()) add("panel ${status.panelVersion}")
-                                if (status.xray.version.isNotBlank()) add("xray ${status.xray.version}")
-                                if (status.publicIP.ipv4.isNotBlank() && status.publicIP.ipv4 != "N/A") {
-                                    add(status.publicIP.ipv4)
-                                }
-                            }
-                            if (meta.isNotEmpty()) {
+                            if (status.publicIP.ipv4.isNotBlank() && status.publicIP.ipv4 != "N/A") {
                                 Text(
-                                    meta.joinToString(" · "),
+                                    "IP ${status.publicIP.ipv4}",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -209,6 +210,13 @@ fun DashboardScreen(
                         }
                     }
                 }
+
+                PanelVersionCard(
+                    statusVersion = status.panelVersion,
+                    info = state.updateInfo,
+                    updating = state.updating,
+                    onUpdate = { showUpdateDialog = true },
+                )
             }
 
             if (state.refreshingNow) {
@@ -247,6 +255,130 @@ fun DashboardScreen(
             },
         )
     }
+
+    if (showUpdateDialog) {
+        val info = state.updateInfo
+        AlertDialog(
+            onDismissRequest = { showUpdateDialog = false },
+            title = { Text("Update 3x-ui?") },
+            text = {
+                Text(
+                    "Update the panel from ${info?.currentVersion.orEmpty()} to " +
+                        "${info?.latestVersion.orEmpty()}? The panel restarts during the update.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showUpdateDialog = false
+                    vm.updatePanel()
+                }) { Text("Update") }
+            },
+            dismissButton = { TextButton(onClick = { showUpdateDialog = false }) { Text("Cancel") } },
+        )
+    }
+
+    if (state.showOnlineList) {
+        OnlineListDialog(
+            emails = state.onlineEmails,
+            emailToInbounds = state.emailToInbounds,
+            onDismiss = vm::closeOnlineList,
+        )
+    }
+}
+
+@Composable
+private fun OnlineListDialog(
+    emails: List<String>,
+    emailToInbounds: Map<String, List<String>>,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Online clients (${emails.size})") },
+        text = {
+            if (emails.isEmpty()) {
+                Text("Nobody connected right now.")
+            } else {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    emails.sorted().forEach { email ->
+                        Column {
+                            Text(email, style = MaterialTheme.typography.bodyLarge)
+                            val inbs = emailToInbounds[email].orEmpty()
+                            Text(
+                                if (inbs.isNotEmpty()) inbs.joinToString(", ") else "—",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
+private fun PanelVersionCard(
+    statusVersion: String,
+    info: net.yukh.xui.data.api.dto.PanelUpdateInfo?,
+    updating: Boolean,
+    onUpdate: () -> Unit,
+) {
+    val current = info?.currentVersion?.takeIf { it.isNotBlank() } ?: statusVersion
+    val updateAvailable = info?.updateAvailable == true
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (updateAvailable) MaterialTheme.colorScheme.tertiaryContainer
+            else MaterialTheme.colorScheme.surfaceVariant,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("3x-ui panel", style = MaterialTheme.typography.labelMedium)
+                Text(
+                    if (current.isNotBlank()) "v$current" else "version unknown",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                if (updateAvailable) {
+                    Text(
+                        "Update available: ${info?.latestVersion.orEmpty()}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                } else if (info != null) {
+                    Text(
+                        "Up to date",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (updateAvailable) {
+                AssistChip(
+                    onClick = onUpdate,
+                    enabled = !updating,
+                    label = { Text(if (updating) "Updating…" else "Update") },
+                    leadingIcon = {
+                        if (updating) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Outlined.SystemUpdate, contentDescription = null)
+                        }
+                    },
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -273,7 +405,11 @@ private fun XrayStatusCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Xray", style = MaterialTheme.typography.labelMedium)
+                val version = status?.xray?.version.orEmpty()
+                Text(
+                    "Xray" + if (version.isNotBlank()) "  ·  v$version" else "",
+                    style = MaterialTheme.typography.labelMedium,
+                )
                 Text(
                     text = when {
                         status == null -> "Status unknown"
@@ -353,9 +489,10 @@ private fun MetricTileCard(
     title: String,
     value: String,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     Card(
-        modifier = modifier,
+        modifier = if (onClick != null) modifier.clickable(onClick = onClick) else modifier,
         shape = RoundedCornerShape(12.dp),
     ) {
         Column(

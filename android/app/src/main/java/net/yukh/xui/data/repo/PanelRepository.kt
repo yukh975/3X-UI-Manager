@@ -20,6 +20,7 @@ import net.yukh.xui.data.api.dto.LoginRequest
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
+import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.data.api.dto.XraySettingEnvelope
 import net.yukh.xui.data.auth.CsrfState
@@ -156,6 +157,12 @@ class PanelRepository @Inject constructor(
 
     suspend fun stopXray(): Result<Unit> =
         authedAck { it.stopXray() }
+
+    suspend fun getPanelUpdateInfo(): Result<PanelUpdateInfo> =
+        authedData { it.getPanelUpdateInfo() }
+
+    suspend fun updatePanel(): Result<Unit> =
+        authedAck { it.updatePanel() }
 
     // ---- Inbounds ---------------------------------------------------------
 

@@ -12,6 +12,7 @@ import net.yukh.xui.data.api.dto.LoginRequest
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
+import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
 import retrofit2.http.Body
 import retrofit2.http.Field
@@ -46,6 +47,12 @@ interface XuiApi {
 
     @POST("panel/api/server/stopXrayService")
     suspend fun stopXray(): ApiAck
+
+    @GET("panel/api/server/getPanelUpdateInfo")
+    suspend fun getPanelUpdateInfo(): ApiResponse<PanelUpdateInfo>
+
+    @POST("panel/api/server/updatePanel")
+    suspend fun updatePanel(): ApiAck
 
     // ---- Inbounds ---------------------------------------------------------
 
