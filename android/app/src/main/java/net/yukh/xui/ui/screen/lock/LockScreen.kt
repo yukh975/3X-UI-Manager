@@ -48,12 +48,18 @@ fun LockScreen(
         lockState.isBiometricEnabled() &&
         BiometricAuth.canAuthenticate(context)
 
+    // tr() is @Composable, so resolve the prompt labels here (in composable
+    // scope) and capture them — promptBiometric() itself is a plain function
+    // and cannot call composables.
+    val promptTitle = tr("Unlock")
+    val promptNegative = tr("Use passcode")
+
     fun promptBiometric() {
         if (activity == null) return
         BiometricAuth.prompt(
             activity = activity,
-            title = tr("Unlock"),
-            negativeLabel = tr("Use passcode"),
+            title = promptTitle,
+            negativeLabel = promptNegative,
             onSuccess = { lockState.unlock(); onUnlocked() },
             onError = {},
         )
