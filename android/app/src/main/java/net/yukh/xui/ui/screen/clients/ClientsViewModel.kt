@@ -251,7 +251,20 @@ class ClientsViewModel @Inject constructor(
             val result = if (e.isNew) {
                 repo.addClient(model, e.selectedInboundIds.toList())
             } else {
-                repo.updateClient(e.source?.email ?: e.email.trim(), model)
+                // Update by the ORIGINAL email (the lookup key); model.email carries
+                // the possibly-renamed value. Then reconcile inbound membership.
+                val origEmail = e.source?.email ?: e.email.trim()
+                val newEmail = model.email
+                repo.updateClient(origEmail, model).also { r ->
+                    if (r.isSuccess) {
+                        val original = e.source?.inboundIds?.toSet().orEmpty()
+                        val selected = e.selectedInboundIds
+                        val added = (selected - original).toList()
+                        val removed = (original - selected).toList()
+                        if (added.isNotEmpty()) repo.attachClient(newEmail, added)
+                        if (removed.isNotEmpty()) repo.detachClient(newEmail, removed)
+                    }
+                }
             }
             result
                 .onSuccess {

@@ -13,6 +13,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
+import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
@@ -47,6 +48,9 @@ class PanelRepository @Inject constructor(
     private var csrf: CsrfState? = null
     private var currentBaseUrl: String? = null
 
+    /** Optional user-set subscription base URL from the active profile. */
+    private var currentSubBase: String? = null
+
     /** Cached panel settings (sub config). Null until first successful fetch. */
     private var cachedSettings: PanelSettings? = null
 
@@ -54,6 +58,7 @@ class PanelRepository @Inject constructor(
         val stored = store.getProfile()
         if (stored != null && stored.auth is ConnectionAuth.Token) {
             bindTokenInternal(stored.baseUrl, stored.allowInsecureTls, stored.auth.token)
+            currentSubBase = stored.subBaseUrl
         }
     }
 
@@ -63,17 +68,19 @@ class PanelRepository @Inject constructor(
         baseUrl: String,
         allowInsecureTls: Boolean,
         token: String,
+        subBaseUrl: String = "",
     ): Result<ServerStatus> {
         val candidate = XuiApiFactory.tokenAuthed(baseUrl, allowInsecureTls, token, json)
         return safeData { candidate.getServerStatus() }.onSuccess {
             store.saveProfile(
-                ConnectionProfile(baseUrl, allowInsecureTls, ConnectionAuth.Token(token)),
+                ConnectionProfile(baseUrl, allowInsecureTls, ConnectionAuth.Token(token), subBaseUrl),
             )
             cookieJar?.clear()
             cookieJar = null
             csrf = null
             api = candidate
             currentBaseUrl = baseUrl
+            currentSubBase = subBaseUrl
             cachedSettings = null
             _connected.value = true
         }
@@ -85,6 +92,7 @@ class PanelRepository @Inject constructor(
         username: String,
         password: String,
         twoFactorCode: String?,
+        subBaseUrl: String = "",
     ): Result<ServerStatus> {
         val jar = InMemoryCookieJar()
         val csrfHolder = CsrfState()
@@ -113,12 +121,14 @@ class PanelRepository @Inject constructor(
                 ConnectionProfile(
                     baseUrl, allowInsecureTls,
                     ConnectionAuth.Credentials(username, password),
+                    subBaseUrl,
                 ),
             )
             api = candidate
             cookieJar = jar
             csrf = csrfHolder
             currentBaseUrl = baseUrl
+            currentSubBase = subBaseUrl
             cachedSettings = null
             _connected.value = true
         }
@@ -130,6 +140,7 @@ class PanelRepository @Inject constructor(
         cookieJar = null
         csrf = null
         currentBaseUrl = null
+        currentSubBase = null
         cachedSettings = null
         _connected.value = false
         store.clear()
@@ -181,6 +192,13 @@ class PanelRepository @Inject constructor(
      * is cached so repeated share-sheet opens don't re-fetch settings.
      */
     suspend fun getSubscriptionUrl(client: Client): String? {
+        if (client.subId.isBlank()) return null
+        // Prefer the user-set subscription base (works with API token).
+        currentSubBase?.takeIf { it.isNotBlank() }?.let { base ->
+            val b = if (base.endsWith("/")) base else "$base/"
+            return b + client.subId
+        }
+        // Fall back to reading panel sub settings (login/password only).
         val host = currentBaseUrl?.let { PanelSettings.hostOf(it) } ?: return null
         val settings = cachedSettings ?: authedData { it.getAllSettings() }
             .getOrNull()
@@ -196,6 +214,12 @@ class PanelRepository @Inject constructor(
 
     suspend fun updateClient(email: String, client: ClientModel): Result<Unit> =
         authedAck { it.updateClient(email, client) }
+
+    suspend fun attachClient(email: String, inboundIds: List<Int>): Result<Unit> =
+        authedAck { it.attachClient(email, InboundIdsRequest(inboundIds)) }
+
+    suspend fun detachClient(email: String, inboundIds: List<Int>): Result<Unit> =
+        authedAck { it.detachClient(email, InboundIdsRequest(inboundIds)) }
 
     suspend fun listOnlines(): Result<List<String>> =
         authedData { it.listOnlines() }

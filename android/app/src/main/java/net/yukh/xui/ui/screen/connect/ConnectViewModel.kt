@@ -24,6 +24,7 @@ data class ConnectUiState(
     val password: String = "",
     val twoFactorCode: String = "",
     val allowInsecureTls: Boolean = false,
+    val subBaseUrl: String = "",
     val submitting: Boolean = false,
     val error: String? = null,
 ) {
@@ -51,12 +52,14 @@ class ConnectViewModel @Inject constructor(
             is ConnectionAuth.Token -> ConnectUiState(
                 url = stored.baseUrl,
                 allowInsecureTls = stored.allowInsecureTls,
+                subBaseUrl = stored.subBaseUrl,
                 method = AuthMethod.Token,
                 token = auth.token,
             )
             is ConnectionAuth.Credentials -> ConnectUiState(
                 url = stored.baseUrl,
                 allowInsecureTls = stored.allowInsecureTls,
+                subBaseUrl = stored.subBaseUrl,
                 method = AuthMethod.Credentials,
                 username = auth.username,
                 password = auth.password,
@@ -73,6 +76,7 @@ class ConnectViewModel @Inject constructor(
         _state.update { it.copy(twoFactorCode = value.filter { c -> c.isDigit() }.take(6), error = null) }
     fun setAllowInsecureTls(value: Boolean) =
         _state.update { it.copy(allowInsecureTls = value, error = null) }
+    fun setSubBaseUrl(value: String) = _state.update { it.copy(subBaseUrl = value, error = null) }
 
     fun submit(onSuccess: () -> Unit) {
         val s = _state.value
@@ -86,6 +90,7 @@ class ConnectViewModel @Inject constructor(
                     baseUrl = normalizedUrl,
                     allowInsecureTls = s.allowInsecureTls,
                     token = s.token.trim(),
+                    subBaseUrl = s.subBaseUrl.trim(),
                 )
                 AuthMethod.Credentials -> repo.connectWithCredentials(
                     baseUrl = normalizedUrl,
@@ -93,6 +98,7 @@ class ConnectViewModel @Inject constructor(
                     username = s.username.trim(),
                     password = s.password,
                     twoFactorCode = s.twoFactorCode.takeIf { it.isNotBlank() },
+                    subBaseUrl = s.subBaseUrl.trim(),
                 )
             }
             result

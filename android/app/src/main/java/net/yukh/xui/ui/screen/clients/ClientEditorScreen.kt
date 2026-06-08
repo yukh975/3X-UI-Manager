@@ -95,11 +95,7 @@ fun ClientEditorScreen(
                 onValueChange = onEmail,
                 label = { Text("Email / name") },
                 singleLine = true,
-                enabled = state.isNew, // email is the identity key; rename out of scope
                 modifier = Modifier.fillMaxWidth(),
-                supportingText = if (!state.isNew) {
-                    { Text("Email can't be changed here") }
-                } else null,
             )
 
             Row(
@@ -123,20 +119,12 @@ fun ClientEditorScreen(
                         val selected = ib.id in state.selectedInboundIds
                         FilterChip(
                             selected = selected,
-                            onClick = { if (state.isNew) onToggleInbound(ib.id) },
-                            enabled = state.isNew,
+                            onClick = { onToggleInbound(ib.id) },
                             label = {
                                 Text(ib.remark.ifBlank { "#${ib.id}" } + " · ${ib.protocol}")
                             },
                         )
                     }
-                }
-                if (!state.isNew) {
-                    Text(
-                        "Attach/detach from inbounds isn't editable here yet.",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
 

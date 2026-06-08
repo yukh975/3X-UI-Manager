@@ -5,6 +5,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
+import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
@@ -91,6 +92,18 @@ interface XuiApi {
 
     @POST("panel/api/clients/del/{email}")
     suspend fun deleteClient(@Path("email") email: String): ApiAck
+
+    @POST("panel/api/clients/{email}/attach")
+    suspend fun attachClient(
+        @Path("email") email: String,
+        @Body body: InboundIdsRequest,
+    ): ApiAck
+
+    @POST("panel/api/clients/{email}/detach")
+    suspend fun detachClient(
+        @Path("email") email: String,
+        @Body body: InboundIdsRequest,
+    ): ApiAck
 
     @POST("panel/api/clients/onlines")
     suspend fun listOnlines(): ApiResponse<List<String>>

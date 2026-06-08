@@ -15,6 +15,14 @@ data class ConnectionProfile(
     val baseUrl: String,
     val allowInsecureTls: Boolean = false,
     val auth: ConnectionAuth,
+    /**
+     * Optional subscription base URL, e.g. `https://panel.example.com:2096/sub/`.
+     * The subscription server's host/port/path aren't reachable with an API
+     * token (they live behind the panel's session-only settings), so the user
+     * can set this once to enable subscription links + QR in token mode. When
+     * blank, the app falls back to reading sub settings (login/password only).
+     */
+    val subBaseUrl: String = "",
 ) {
     companion object {
         fun normalizeUrl(input: String): String {

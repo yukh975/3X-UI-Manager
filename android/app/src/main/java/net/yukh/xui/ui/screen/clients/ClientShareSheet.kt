@@ -104,9 +104,10 @@ fun ClientShareSheet(
                     !subChecked -> LoadingBlock()
                     subUrl != null -> QrAndLink(content = subUrl, context = context)
                     else -> Text(
-                        "Subscription URL is unavailable. It requires panel " +
-                            "settings access — connect with login/password " +
-                            "(an API token can't read panel settings).",
+                        "No subscription URL. With an API token, set the " +
+                            "\"Subscription base URL\" on the connect screen " +
+                            "(e.g. https://host:2096/sub/) — or connect with " +
+                            "login/password so the app can read it automatically.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

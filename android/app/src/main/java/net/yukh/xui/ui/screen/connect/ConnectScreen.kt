@@ -102,6 +102,23 @@ fun ConnectScreen(
                 )
             }
 
+            OutlinedTextField(
+                value = state.subBaseUrl,
+                onValueChange = vm::setSubBaseUrl,
+                label = { Text("Subscription base URL (optional)") },
+                placeholder = { Text("https://panel.example.com:2096/sub/") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                supportingText = {
+                    Text(
+                        "Needed for subscription links/QR when using an API token " +
+                            "(the token can't read panel sub settings). Leave empty " +
+                            "with login/password.",
+                    )
+                },
+            )
+
             HorizontalDivider()
 
             Button(

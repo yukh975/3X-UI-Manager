@@ -45,3 +45,7 @@ data class ClientStat(
 
 @Serializable
 data class EnableRequest(val enable: Boolean)
+
+/** Body for client attach/detach: the inbounds to add/remove the client from. */
+@Serializable
+data class InboundIdsRequest(val inboundIds: List<Int>)
