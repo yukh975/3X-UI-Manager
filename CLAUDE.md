@@ -6,6 +6,8 @@ plus iOS groundwork on the `ios-app` branch.
 
 👉 **Read [`docs/ANDROID-HANDOFF.md`](docs/ANDROID-HANDOFF.md) first** — full
 state, architecture, hard-won API facts, build/signing, and what's next.
+👉 Resuming on a new machine? See
+[`docs/RESUME-NEXT-SESSION.md`](docs/RESUME-NEXT-SESSION.md) (step-by-step, RU).
 
 ## Standing rules (do these without being re-asked)
 1. Work on branch **`android-app`**. After each meaningful change: focused commit
