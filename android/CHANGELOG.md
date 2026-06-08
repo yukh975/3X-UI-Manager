@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.10] — 2026-06-08
+
+### Changed
+- **Restored the Xray Start / Stop buttons** on the dashboard (for all auth
+  methods — token and login/password), alongside Restart. The connection loss on
+  stop appears to happen only when the panel itself is reverse-proxied through
+  Xray; on a direct connection, stopping is safe. The card optimistically shows
+  the correct button after an action even if the poll doesn't return.
+
 ## [0.3.9] — 2026-06-08
 
 ### Added

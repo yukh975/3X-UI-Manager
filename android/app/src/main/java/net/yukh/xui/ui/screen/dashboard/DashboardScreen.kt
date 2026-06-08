@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,8 +19,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.SystemUpdate
@@ -67,6 +71,7 @@ fun DashboardScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     var showRestartDialog by remember { mutableStateOf(false) }
+    var showStopDialog by remember { mutableStateOf(false) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -126,6 +131,8 @@ fun DashboardScreen(
             XrayStatusCard(
                 status = state.status,
                 actionInFlight = state.xrayActionInFlight,
+                onStart = vm::startXray,
+                onStop = { showStopDialog = true },
                 onRestart = { showRestartDialog = true },
             )
 
@@ -260,6 +267,23 @@ fun DashboardScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRestartDialog = false }) { Text(tr("Cancel")) }
+            },
+        )
+    }
+
+    if (showStopDialog) {
+        AlertDialog(
+            onDismissRequest = { showStopDialog = false },
+            title = { Text(tr("Stop Xray?")) },
+            text = { Text(tr("This disconnects every active client until you start Xray again.")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showStopDialog = false
+                    vm.stopXray()
+                }) { Text(tr("Stop"), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStopDialog = false }) { Text(tr("Cancel")) }
             },
         )
     }
@@ -406,10 +430,13 @@ private fun PanelVersionCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun XrayStatusCard(
     status: ServerStatus?,
     actionInFlight: Boolean,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
     onRestart: () -> Unit,
 ) {
     val running = status?.xrayRunning == true
@@ -462,17 +489,30 @@ private fun XrayStatusCard(
                 }
             }
 
-            // Only Restart — no Start/Stop. Stopping Xray cuts off a panel that's
-            // reverse-proxied through Xray (confirmed with token AND login/password),
-            // and the app can't bring it back. Restart is safe.
+            // running → Restart + Stop; stopped → Start. (Stopping Xray can cut
+            // off a panel reverse-proxied through Xray — safe only on a direct
+            // connection.) FlowRow wraps the two chips to a centered second line
+            // when they don't fit one row (e.g. RU "Перезапустить"+"Остановить").
             if (status != null) {
-                Row(
+                FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    XrayActionChip(tr("Restart"), Icons.Outlined.RestartAlt, !actionInFlight, onRestart)
+                    if (running) {
+                        XrayActionChip(tr("Restart"), Icons.Outlined.RestartAlt, !actionInFlight, onRestart)
+                        XrayActionChip(
+                            tr("Stop"),
+                            Icons.Outlined.Stop,
+                            !actionInFlight,
+                            onStop,
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                    } else {
+                        XrayActionChip(tr("Start"), Icons.Outlined.PlayArrow, !actionInFlight, onStart)
+                    }
                 }
             }
         }

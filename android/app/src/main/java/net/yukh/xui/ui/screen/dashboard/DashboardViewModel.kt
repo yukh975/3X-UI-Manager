@@ -167,24 +167,41 @@ class DashboardViewModel @Inject constructor(
 
     // ---- Xray controls ----------------------------------------------------
 
-    // Only Restart is exposed. There is deliberately NO Start/Stop: panels are
-    // commonly reverse-proxied through Xray, so stopping Xray also cuts off the
-    // panel/API (confirmed with both token and login/password sessions) and the
-    // app can't bring it back — recovery needs a host-level panel restart.
-    // restartXrayService is safe: Xray comes back up and the connection returns.
-    fun restartXray() {
+    // Start/Restart both call restartXrayService (starts Xray when down, restarts
+    // when up); Stop uses stopXrayService. NOTE: if the panel is reached *through*
+    // Xray (reverse-proxied), stopping Xray cuts off the panel/API and the app
+    // can't bring it back. With a direct (non-proxied) connection that's not an
+    // issue — so all three are offered and the user picks what's safe for their
+    // setup.
+    fun startXray() = runXrayAction(verb = "start", resultRunning = true) { repo.restartXray() }
+    fun restartXray() = runXrayAction(verb = "restart", resultRunning = true) { repo.restartXray() }
+    fun stopXray() = runXrayAction(verb = "stop", resultRunning = false) { repo.stopXray() }
+
+    private fun runXrayAction(
+        verb: String,
+        resultRunning: Boolean,
+        action: suspend () -> Result<Unit>,
+    ) {
         if (_state.value.xrayActionInFlight) return
         _state.update { it.copy(xrayActionInFlight = true, xrayActionMessage = null) }
         viewModelScope.launch {
-            repo.restartXray()
+            action()
                 .onSuccess {
-                    _state.update {
-                        it.copy(xrayActionInFlight = false, xrayActionMessage = "Xray restart requested")
+                    // Reflect the new state immediately so the right control shows
+                    // even if the next poll never returns (e.g. a stop that cuts
+                    // off a proxied-through-Xray panel).
+                    val newState = if (resultRunning) "running" else "stop"
+                    _state.update { st ->
+                        st.copy(
+                            xrayActionInFlight = false,
+                            xrayActionMessage = "Xray $verb requested",
+                            status = st.status?.let { it.copy(xray = it.xray.copy(state = newState)) },
+                        )
                     }
                 }
                 .onFailure { e ->
                     _state.update {
-                        it.copy(xrayActionInFlight = false, xrayActionMessage = "Xray restart failed: ${e.message}")
+                        it.copy(xrayActionInFlight = false, xrayActionMessage = "Xray $verb failed: ${e.message}")
                     }
                 }
             refreshNow()
