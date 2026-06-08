@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import net.yukh.xui.data.api.dto.InboundTemplates
+import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.format.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +68,7 @@ fun InboundEditorScreen(
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var confirmSave by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -78,7 +80,7 @@ fun InboundEditorScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = onSave, enabled = state.canSave) {
+                    TextButton(onClick = { confirmSave = true }, enabled = state.canSave) {
                         if (state.saving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
@@ -202,6 +204,17 @@ fun InboundEditorScreen(
                 }
             }
         }
+    }
+
+    if (confirmSave) {
+        ConfirmDialog(
+            title = if (state.isNew) "Create inbound?" else "Save changes?",
+            text = if (state.isNew) "Create this inbound on port ${state.port}?"
+            else "Apply changes to this inbound? Xray will restart.",
+            confirmLabel = if (state.isNew) "Create" else "Save",
+            onConfirm = onSave,
+            onDismiss = { confirmSave = false },
+        )
     }
 
     if (showDatePicker) {

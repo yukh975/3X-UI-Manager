@@ -29,12 +29,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.yukh.xui.ui.components.ConfirmDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +47,7 @@ fun XrayConfigScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var confirmSave by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { vm.load() }
     LaunchedEffect(state.savedMessage) {
@@ -64,7 +68,7 @@ fun XrayConfigScreen(
                 },
                 actions = {
                     if (state.available) {
-                        TextButton(onClick = vm::save, enabled = !state.saving) {
+                        TextButton(onClick = { confirmSave = true }, enabled = !state.saving) {
                             if (state.saving) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                             } else {
@@ -136,5 +140,17 @@ fun XrayConfigScreen(
                 }
             }
         }
+    }
+
+    if (confirmSave) {
+        ConfirmDialog(
+            title = "Save Xray config?",
+            text = "This replaces the panel's Xray configuration. Restart Xray " +
+                "afterwards to apply. A broken config can take Xray down.",
+            confirmLabel = "Save",
+            onConfirm = vm::save,
+            onDismiss = { confirmSave = false },
+            destructive = true,
+        )
     }
 }

@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.format.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -59,6 +60,7 @@ fun ClientEditorScreen(
     onClose: () -> Unit,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
+    var confirmSave by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -70,7 +72,7 @@ fun ClientEditorScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = onSave, enabled = state.canSave) {
+                    TextButton(onClick = { confirmSave = true }, enabled = state.canSave) {
                         if (state.saving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
@@ -200,6 +202,17 @@ fun ClientEditorScreen(
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
         }
+    }
+
+    if (confirmSave) {
+        ConfirmDialog(
+            title = if (state.isNew) "Create client?" else "Save changes?",
+            text = if (state.isNew) "Create client \"${state.email}\"?"
+            else "Apply changes to \"${state.email}\"?",
+            confirmLabel = if (state.isNew) "Create" else "Save",
+            onConfirm = onSave,
+            onDismiss = { confirmSave = false },
+        )
     }
 
     if (showDatePicker) {

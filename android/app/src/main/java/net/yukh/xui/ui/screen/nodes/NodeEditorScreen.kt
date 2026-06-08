@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import net.yukh.xui.ui.components.ConfirmDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +61,7 @@ fun NodeEditorScreen(
     onClose: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    var confirmSave by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -71,7 +73,7 @@ fun NodeEditorScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = onSave, enabled = state.canSave) {
+                    TextButton(onClick = { confirmSave = true }, enabled = state.canSave) {
                         if (state.saving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
@@ -190,6 +192,17 @@ fun NodeEditorScreen(
                 }
             }
         }
+    }
+
+    if (confirmSave) {
+        ConfirmDialog(
+            title = if (state.isNew) "Add node?" else "Save changes?",
+            text = if (state.isNew) "Add node \"${state.name}\"?"
+            else "Apply changes to \"${state.name}\"?",
+            confirmLabel = if (state.isNew) "Add" else "Save",
+            onConfirm = onSave,
+            onDismiss = { confirmSave = false },
+        )
     }
 
     if (confirmDelete) {
