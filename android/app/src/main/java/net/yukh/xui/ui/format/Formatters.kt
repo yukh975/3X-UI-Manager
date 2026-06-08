@@ -25,6 +25,10 @@ fun Long.formatExpiry(): String {
     else SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
 }
 
+/** Plain calendar date for an expiry timestamp (Unix ms). 0 → "Never". */
+fun Long.formatDate(): String =
+    if (this == 0L) "Never" else SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
+
 /** Format a relative timestamp ("12s ago", "5m ago"). 0 → "—". */
 fun Long.formatLastOnline(): String {
     if (this <= 0L) return "—"

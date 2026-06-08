@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -64,6 +65,7 @@ fun ClientShareSheet(
     subChecked: Boolean,
     sheetState: SheetState,
     onDismiss: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
@@ -152,10 +154,15 @@ fun ClientShareSheet(
                     Icon(Icons.Outlined.Delete, contentDescription = null)
                     Text("  Delete")
                 }
-                Button(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                    Text("Close")
+                Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Outlined.Edit, contentDescription = null)
+                    Text("  Edit")
                 }
             }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Close") }
         }
     }
 

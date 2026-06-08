@@ -10,6 +10,8 @@ import net.yukh.xui.data.api.XuiApi
 import net.yukh.xui.data.api.XuiApiFactory
 import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.Client
+import net.yukh.xui.data.api.dto.ClientCreatePayload
+import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
@@ -172,6 +174,12 @@ class PanelRepository @Inject constructor(
 
     suspend fun deleteClient(email: String): Result<Unit> =
         authedAck { it.deleteClient(email) }
+
+    suspend fun addClient(client: ClientModel, inboundIds: List<Int>): Result<Unit> =
+        authedAck { it.addClient(ClientCreatePayload(client, inboundIds)) }
+
+    suspend fun updateClient(email: String, client: ClientModel): Result<Unit> =
+        authedAck { it.updateClient(email, client) }
 
     suspend fun listOnlines(): Result<List<String>> =
         authedData { it.listOnlines() }

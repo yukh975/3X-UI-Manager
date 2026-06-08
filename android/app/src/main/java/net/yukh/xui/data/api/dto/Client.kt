@@ -17,6 +17,9 @@ data class Client(
     val uuid: String = "",
     val subId: String = "",
     val flow: String = "",
+    val security: String = "",
+    val password: String = "",
+    val auth: String = "",
     val enable: Boolean = true,
     val tgId: Long = 0,
     val limitIp: Int = 0,
@@ -35,4 +38,30 @@ data class Client(
     /** Quota in bytes; 0 means unlimited. Prefer the traffic counter, fall back to totalGB. */
     val quota: Long get() = traffic?.total?.takeIf { it > 0 } ?: totalGB
     val lastOnline: Long get() = traffic?.lastOnline ?: 0
+
+    /**
+     * Rebuild the model.Client shape the panel expects for create/update.
+     * The panel's `id` field is the protocol UUID (our `uuid`), NOT the
+     * record id. Carries password/auth/security forward so an update of one
+     * field doesn't blank the credentials.
+     */
+    fun toModel(): ClientModel = ClientModel(
+        id = uuid,
+        email = email,
+        password = password,
+        auth = auth,
+        security = security,
+        flow = flow,
+        limitIp = limitIp,
+        totalGB = totalGB,
+        expiryTime = expiryTime,
+        enable = enable,
+        tgId = tgId,
+        subId = subId,
+        group = group,
+        comment = comment,
+        reset = reset,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
 }

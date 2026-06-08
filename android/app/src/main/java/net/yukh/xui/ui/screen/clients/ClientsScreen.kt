@@ -14,10 +14,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -32,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.Client
@@ -94,6 +100,15 @@ fun ClientsScreen(
             }
         }
 
+        FloatingActionButton(
+            onClick = vm::openCreateEditor,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = "Add client")
+        }
+
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter),
@@ -111,8 +126,33 @@ fun ClientsScreen(
             subChecked = state.subUrlChecked,
             sheetState = sheetState,
             onDismiss = vm::closeShareSheet,
+            onEdit = { vm.openEditEditor(selectedEmail) },
             onDelete = { vm.deleteClient(selectedEmail) },
         )
+    }
+
+    // Full-screen editor over the tab UI (Dialog escapes the bottom-nav scaffold).
+    state.editor?.let { editor ->
+        Dialog(
+            onDismissRequest = vm::closeEditor,
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            ClientEditorScreen(
+                state = editor,
+                onEmail = vm::setEditorEmail,
+                onEnable = vm::setEditorEnable,
+                onLimitIp = vm::setEditorLimitIp,
+                onTotalGb = vm::setEditorTotalGb,
+                onReset = vm::setEditorReset,
+                onTgId = vm::setEditorTgId,
+                onGroup = vm::setEditorGroup,
+                onComment = vm::setEditorComment,
+                onExpiry = vm::setEditorExpiry,
+                onToggleInbound = vm::toggleEditorInbound,
+                onSave = vm::saveEditor,
+                onClose = vm::closeEditor,
+            )
+        }
     }
 }
 

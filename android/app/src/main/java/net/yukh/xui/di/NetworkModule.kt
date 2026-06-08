@@ -18,5 +18,9 @@ object NetworkModule {
         coerceInputValues = true
         explicitNulls = false
         isLenient = true
+        // Request bodies must include zero/false/empty fields verbatim — the
+        // panel relies on e.g. id="" to auto-generate a UUID and enable=false
+        // to actually disable. Without this kotlinx omits default-valued fields.
+        encodeDefaults = true
     }
 }

@@ -2,6 +2,8 @@ package net.yukh.xui.data.api
 
 import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.Client
+import net.yukh.xui.data.api.dto.ClientCreatePayload
+import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
@@ -56,6 +58,15 @@ interface XuiApi {
 
     @GET("panel/api/clients/list")
     suspend fun listClients(): ApiResponse<List<Client>>
+
+    @POST("panel/api/clients/add")
+    suspend fun addClient(@Body payload: ClientCreatePayload): ApiAck
+
+    @POST("panel/api/clients/update/{email}")
+    suspend fun updateClient(
+        @Path("email") email: String,
+        @Body client: ClientModel,
+    ): ApiAck
 
     // obj is an array of subscription link strings, e.g. ["vless://…"].
     @GET("panel/api/clients/links/{email}")

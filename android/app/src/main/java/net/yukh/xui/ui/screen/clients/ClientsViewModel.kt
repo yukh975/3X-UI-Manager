@@ -10,7 +10,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.Client
+import net.yukh.xui.data.api.dto.ClientModel
+import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.repo.PanelRepository
+
+private const val BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0
 
 data class ClientsUiState(
     val items: List<Client> = emptyList(),
@@ -25,7 +29,32 @@ data class ClientsUiState(
     val linksError: String? = null,
     val selectedSubUrl: String? = null,
     val subUrlChecked: Boolean = false,
+    val editor: ClientEditorState? = null,
 )
+
+/** Form state for creating or editing a client. Numeric inputs are kept as
+ *  strings so partial/empty typing doesn't fight the user. */
+data class ClientEditorState(
+    val isNew: Boolean,
+    val source: Client? = null,
+    val email: String = "",
+    val enable: Boolean = true,
+    val limitIp: String = "0",
+    val totalGb: String = "0",
+    val expiryTime: Long = 0,
+    val reset: String = "0",
+    val tgId: String = "",
+    val group: String = "",
+    val comment: String = "",
+    val selectedInboundIds: Set<Int> = emptySet(),
+    val availableInbounds: List<InboundSlim> = emptyList(),
+    val inboundsLoading: Boolean = false,
+    val saving: Boolean = false,
+    val error: String? = null,
+) {
+    val canSave: Boolean
+        get() = !saving && email.isNotBlank() && (!isNew || selectedInboundIds.isNotEmpty())
+}
 
 @HiltViewModel
 class ClientsViewModel @Inject constructor(
@@ -129,6 +158,113 @@ class ClientsViewModel @Inject constructor(
                     _state.update {
                         it.copy(transientMessage = "Delete failed: ${e.message}")
                     }
+                }
+        }
+    }
+
+    // ---- Editor -----------------------------------------------------------
+
+    fun openCreateEditor() {
+        _state.update { it.copy(editor = ClientEditorState(isNew = true, inboundsLoading = true)) }
+        loadInboundsForEditor()
+    }
+
+    fun openEditEditor(email: String) {
+        val client = _state.value.items.firstOrNull { it.email == email } ?: return
+        val gb = if (client.totalGB > 0) {
+            (client.totalGB / BYTES_PER_GB).let { v -> if (v % 1.0 == 0.0) v.toLong().toString() else "%.2f".format(v) }
+        } else "0"
+        _state.update {
+            it.copy(
+                selectedClientEmail = null, // close share sheet if open
+                editor = ClientEditorState(
+                    isNew = false,
+                    source = client,
+                    email = client.email,
+                    enable = client.enable,
+                    limitIp = client.limitIp.toString(),
+                    totalGb = gb,
+                    expiryTime = client.expiryTime,
+                    reset = client.reset.toString(),
+                    tgId = if (client.tgId != 0L) client.tgId.toString() else "",
+                    group = client.group,
+                    comment = client.comment,
+                    selectedInboundIds = client.inboundIds.toSet(),
+                    inboundsLoading = true,
+                ),
+            )
+        }
+        loadInboundsForEditor()
+    }
+
+    private fun loadInboundsForEditor() {
+        viewModelScope.launch {
+            val inbounds = repo.listInbounds().getOrNull().orEmpty()
+            _state.update { s ->
+                s.editor?.let { e ->
+                    s.copy(editor = e.copy(availableInbounds = inbounds, inboundsLoading = false))
+                } ?: s
+            }
+        }
+    }
+
+    fun closeEditor() = _state.update { it.copy(editor = null) }
+
+    private fun updateEditor(transform: (ClientEditorState) -> ClientEditorState) {
+        _state.update { s -> s.editor?.let { s.copy(editor = transform(it).copy(error = null)) } ?: s }
+    }
+
+    fun setEditorEmail(v: String) = updateEditor { it.copy(email = v) }
+    fun setEditorEnable(v: Boolean) = updateEditor { it.copy(enable = v) }
+    fun setEditorLimitIp(v: String) = updateEditor { it.copy(limitIp = v.filter(Char::isDigit)) }
+    fun setEditorTotalGb(v: String) = updateEditor { it.copy(totalGb = v.filter { c -> c.isDigit() || c == '.' }) }
+    fun setEditorReset(v: String) = updateEditor { it.copy(reset = v.filter(Char::isDigit)) }
+    fun setEditorTgId(v: String) = updateEditor { it.copy(tgId = v.filter(Char::isDigit)) }
+    fun setEditorGroup(v: String) = updateEditor { it.copy(group = v) }
+    fun setEditorComment(v: String) = updateEditor { it.copy(comment = v) }
+    fun setEditorExpiry(ms: Long) = updateEditor { it.copy(expiryTime = ms) }
+    fun toggleEditorInbound(id: Int) = updateEditor {
+        it.copy(
+            selectedInboundIds = if (id in it.selectedInboundIds) it.selectedInboundIds - id
+            else it.selectedInboundIds + id,
+        )
+    }
+
+    fun saveEditor() {
+        val e = _state.value.editor ?: return
+        if (!e.canSave) return
+        val gbBytes = (e.totalGb.toDoubleOrNull() ?: 0.0).let { (it * BYTES_PER_GB).toLong() }
+        val base = e.source?.toModel() ?: ClientModel()
+        val model = base.copy(
+            email = e.email.trim(),
+            enable = e.enable,
+            limitIp = e.limitIp.toIntOrNull() ?: 0,
+            totalGB = gbBytes,
+            expiryTime = e.expiryTime,
+            reset = e.reset.toIntOrNull() ?: 0,
+            tgId = e.tgId.toLongOrNull() ?: 0,
+            group = e.group.trim(),
+            comment = e.comment.trim(),
+        )
+        _state.update { s -> s.editor?.let { s.copy(editor = it.copy(saving = true, error = null)) } ?: s }
+        viewModelScope.launch {
+            val result = if (e.isNew) {
+                repo.addClient(model, e.selectedInboundIds.toList())
+            } else {
+                repo.updateClient(e.source?.email ?: e.email.trim(), model)
+            }
+            result
+                .onSuccess {
+                    _state.update {
+                        it.copy(
+                            editor = null,
+                            transientMessage = if (e.isNew) "Client created" else "Client updated",
+                        )
+                    }
+                    load(force = true)
+                }
+                .onFailure { ex ->
+                    _state.update { s -> s.editor?.let { s.copy(editor = it.copy(saving = false, error = ex.message)) } ?: s }
                 }
         }
     }
