@@ -94,18 +94,18 @@ build:release:
     - |
       if [ -n "$CI_COMMIT_TAG" ]; then
         PKG_VERSION="${CI_COMMIT_TAG#v}"
-        echo ">>> Uploading app-release.apk to generic package registry @ $PKG_VERSION"
+        echo ">>> Uploading 3x-ui-manager-release.apk to generic package registry @ $PKG_VERSION"
         # cwd is $CI_PROJECT_DIR/android (set in before_script).
         curl --fail --silent --show-error --request PUT \
           --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-          --upload-file app/build/outputs/apk/release/app-release.apk \
-          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/app-release.apk"
+          --upload-file app/build/outputs/apk/release/3x-ui-manager-release.apk \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/3x-ui-manager-release.apk"
         echo
       fi
   artifacts:
     name: "xui-android-release-${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}"
     paths:
-      - android/app/build/outputs/apk/release/app-release.apk
+      - android/app/build/outputs/apk/release/3x-ui-manager-release.apk
       - android/app/build/outputs/mapping/release/mapping.txt
     expire_in: 26 weeks
     when: on_success
@@ -142,7 +142,7 @@ release:publish:
         --name "$CI_COMMIT_TAG" \
         --description "Built by [pipeline #$CI_PIPELINE_ID]($CI_PIPELINE_URL) from $CI_COMMIT_SHORT_SHA.
 
-      - \`app-release.apk\` — signed, ready to sideload.
+      - \`3x-ui-manager-release.apk\` — signed, ready to sideload.
 
       The APK lives in the project's [Generic Package Registry]($CI_PROJECT_URL/-/packages) — this link keeps working after pipeline artifacts expire and after pipelines are cleaned up." \
-        --assets-link "{\"name\":\"app-release.apk (signed)\",\"url\":\"$PKG_BASE/app-release.apk\",\"link_type\":\"package\"}"
+        --assets-link "{\"name\":\"3x-ui-manager-release.apk (signed)\",\"url\":\"$PKG_BASE/3x-ui-manager-release.apk\",\"link_type\":\"package\"}"

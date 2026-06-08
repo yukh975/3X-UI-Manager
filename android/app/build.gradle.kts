@@ -118,6 +118,13 @@ val signingKeyPassword: String? = System.getenv("RELEASE_KEY_PASSWORD")
     ?: localPasswords.getProperty("key_password")
     ?: signingStorePassword
 
+// APK base name — the output is "<archivesName>-<buildType>.apk", so the
+// release APK becomes "3x-ui-manager-release.apk" (instead of the default
+// "app-release.apk"), matching the project rather than the Gradle module.
+base {
+    archivesName.set("3x-ui-manager")
+}
+
 android {
     namespace = "net.yukh.xui"
     compileSdk = 35
