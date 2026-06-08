@@ -225,8 +225,10 @@ private fun ClientRow(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            val lastSeen = if (client.lastOnline <= 0L) tr("Never")
+                else client.lastOnline.formatLastOnline(LocalAppLanguage.current)
             Text(
-                "${tr("Last seen")}: ${client.lastOnline.formatLastOnline(LocalAppLanguage.current)}",
+                "${tr("Last seen")}: $lastSeen",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

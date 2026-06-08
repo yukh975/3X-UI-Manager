@@ -16,7 +16,8 @@ uses [Semantic Versioning](https://semver.org/).
   line: CPU · RAM, **Ping** (the ms value is now labelled), inbounds · clients,
   uptime, and the node's 3x-ui version.
 - **Clients:** "Expires" now shows the number of **days remaining** (not a date)
-  and gets a colon; "Last seen" moved to its own line, also with a colon.
+  and gets a colon; "Last seen" moved to its own line, also with a colon, and
+  reads "Never" for clients that have never connected (was a bare dash).
 - **Inbounds:** colon after "Expires".
 
 ### Added
