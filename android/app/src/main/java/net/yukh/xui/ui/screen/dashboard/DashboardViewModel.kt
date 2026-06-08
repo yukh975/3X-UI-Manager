@@ -137,22 +137,41 @@ class DashboardViewModel @Inject constructor(
     // true per-server breakdown (and reveals a client connected to several nodes
     // at once). Node queries run in parallel.
     fun openOnlineList() {
-        _state.update {
-            it.copy(
-                showOnlineList = true,
-                onlineLoading = true,
-                onlineGroups = listOf(OnlineGroup("", isMain = true, emails = it.onlineEmails.sorted())),
-            )
-        }
+        _state.update { it.copy(showOnlineList = true, onlineLoading = true, onlineGroups = emptyList()) }
         viewModelScope.launch {
+            val online = _state.value.onlineEmails.toSet()
+
+            // The central /clients/onlines returns online emails across the WHOLE
+            // tree (main + every node), so it can't be used as-is for the "main
+            // server" group — it would list node-only clients (e.g. an outbound
+            // credential that's only a member of a node inbound). Attribute online
+            // emails to a server by inbound ownership (nodeId): 0/absent = main.
+            val inbounds = repo.listInbounds().getOrNull().orEmpty()
+            fun membersOf(nodeId: Int): Set<String> =
+                inbounds.filter { (it.nodeId ?: 0) == nodeId }
+                    .flatMap { ib -> ib.clientStats.map { cs -> cs.email } }
+                    .toSet()
+
+            val main = OnlineGroup(
+                "", isMain = true,
+                emails = online.filter { it in membersOf(0) }.sorted(),
+            )
+
             val nodes = repo.listNodes().getOrNull().orEmpty().filter { it.enable }
             val nodeGroups = nodes.map { node ->
                 async {
-                    val emails = repo.listNodeOnlines(node).getOrNull().orEmpty().sorted()
-                    OnlineGroup(node.remark.ifBlank { node.name }, isMain = false, emails = emails)
+                    // Prefer the node's own live "who's connected to me" list. If the
+                    // node isn't directly reachable from the device, fall back to
+                    // membership so its online clients aren't silently dropped.
+                    val direct = repo.listNodeOnlines(node)
+                    val emails = if (direct.isSuccess) {
+                        direct.getOrNull().orEmpty()
+                    } else {
+                        online.filter { it in membersOf(node.id) }
+                    }
+                    OnlineGroup(node.remark.ifBlank { node.name }, isMain = false, emails = emails.sorted())
                 }
             }.awaitAll()
-            val main = OnlineGroup("", isMain = true, emails = _state.value.onlineEmails.sorted())
             _state.update { it.copy(onlineGroups = listOf(main) + nodeGroups, onlineLoading = false) }
         }
     }
