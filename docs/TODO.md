@@ -5,62 +5,42 @@ changelogs; this file is only the backlog.)
 
 ---
 
-## Dashboard: traffic block — total + this month, main panel + per node
+## Dashboard: traffic this month — main node + per node
 **Status:** analysed ✅, feasible without backend changes — implement next.
+**Decision:** user sets **all** inbounds to `trafficReset = "monthly"` and only
+cares about the **current** month (past months are billed/closed). So we show a
+single figure per group — traffic this month — no all-time, no app-side history.
 
-Add a separate full-width metric card (styled like CPU/Memory) showing proxied
-(VPN) traffic **both ways**:
-- **Total** (all-time) and
-- **This month** (since the 1st of the current calendar month),
-
-for the **main panel alone** (NOT aggregating sub-nodes), and the same pair
-**per node**.
+Add a full-width metric card (styled like CPU/Memory) showing proxied (VPN)
+**traffic for the current month**, for the **main node alone** (its own inbounds,
+not aggregating sub-nodes) and **per node**.
 
 ### How (client-side only, no panel changes)
-The central `GET /panel/api/inbounds/list` **already includes node inbounds**,
-each tagged with a `nodeId` (absent/0 = the main node's own inbounds; `N` = node
-with that id). So **no per-node queries are needed** — group the one list by
-`nodeId`:
-- **Main node** = inbounds with no/zero `nodeId` (e.g. NETADM, FAM).
+`GET /panel/api/inbounds/list` already includes node inbounds, each tagged with
+`nodeId` (absent/0 = main node's own inbounds; `N` = node id). Group the one list
+by `nodeId` — **no per-node queries needed**:
+- **Main node** = inbounds with no/zero `nodeId` (NETADM, FAM).
 - **Node N** = inbounds with `nodeId == N`; map id→name via `/nodes/list`.
 
-Per group, traffic = Σ(up + down). Each inbound also carries
-`lastTrafficResetTime` (unix) — use it to label the figure ("since 01.06").
+Per group: traffic this month = **Σ(up + down)** (every inbound is monthly, so
+the counter == this month). Label with `lastTrafficResetTime` ("since 01.06").
 
-### ⚠️ Hard limit: one counter per inbound (total XOR monthly)
-An inbound stores a **single** up/down counter; its `trafficReset` mode decides
-what that counter means — you cannot read both all-time and this-month from it:
-- `trafficReset == "monthly"` → counter = **this month** (panel's `@monthly`
-  cron zeroes it on the 1st); all-time is **discarded**, not stored.
-- `trafficReset == "never"` → counter = **all-time total**; there is **no**
-  monthly breakdown.
-
-Live-panel reality (user's setup):
-- **Main node** NETADM + FAM are `monthly` → "this month" is exact; "total
-  all-time" is NOT kept (equals the monthly number).
-- **Nodes** WS-* are `never` → "total all-time" is exact; "this month" is NOT
-  available unless those inbounds switch to monthly reset.
-
-So "Total **and** This-month for everything" is not possible from the API alone.
-Options to decide with the user:
-1. Show whichever is available per group, labelled honestly (main → monthly;
-   nodes → total) + the reset date. Simplest, no surprises.
-2. Ask the user to set all inbounds to `monthly` → then everything shows
-   this-month (but loses all-time).
-3. App-side history: persist a per-inbound counter snapshot at month start and
-   compute the delta → gives both, but is fragile (storage, counter resets,
-   inbound add/remove, first-month has no baseline).
-
-### Other caveats
+### Caveats
+- Assumes every inbound is `trafficReset = "monthly"`. If any isn't, its number
+  is its all-time counter, not this month — optionally flag such inbounds.
+- Switching an inbound `never → monthly` does **not** zero it immediately; the
+  counter keeps its accumulated value until the next 1st-of-month cron (or a
+  manual reset via `POST /panel/api/inbounds/:id/resetTraffic`). The 3 WS-*
+  inbounds were reset manually once to start clean.
 - Do **NOT** use `netTraffic` from `/server/status` — NIC counter since OS boot.
-- Node metric history (`/nodes/history`) is **cpu/mem only** — no traffic series.
+- Node metric history (`/nodes/history`) is cpu/mem only — no traffic series.
 
 ### Files to touch
-- `data/api/dto` — add `nodeId` + `lastTrafficResetTime` to the inbound DTO.
+- `data/api/dto` — add `nodeId` (+ optional `lastTrafficResetTime`) to inbound DTO.
 - `data/repo/PanelRepository.kt` — group inbounds by `nodeId`, sum up+down.
 - `ui/screen/dashboard/DashboardViewModel.kt` + `DashboardScreen.kt` — new card.
 - `ui/screen/nodes/NodesScreen.kt` / `NodesViewModel.kt` — per-node line.
-- i18n: `RuStrings.kt` ("Traffic" / "This month" / "Total" → RU).
+- i18n: `RuStrings.kt` ("Traffic this month" → "Трафик за месяц", etc.).
 
 ---
 
