@@ -52,6 +52,7 @@ workflow:
     #   - a manual web/API trigger → on-demand checkpoint compile when needed
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
     - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"
 
 build:debug:
   stage: build
