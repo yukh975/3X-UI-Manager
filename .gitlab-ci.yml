@@ -45,20 +45,11 @@ cache:
 
 workflow:
   rules:
-    # Branch and MR builds trigger only on android/** changes. yaml-only
-    # tweaks don't change the APK, so spawning a pipeline just bumps
-    # CI_PIPELINE_IID and pollutes versionCode space without producing
-    # anything useful. To force a rebuild after a yaml change, push a tag
-    # or trigger from the web UI.
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      changes:
-        - android/**/*
-    - if: $CI_COMMIT_BRANCH
-      changes:
-        - android/**/*
-    # Tag pushes always build — no `changes:` filter — so v1.2.3 tags get a
-    # fresh APK with a clean versionName instead of reusing whatever the last
-    # branch commit produced.
+    # Development commits are pushed to the branch freely WITHOUT triggering a
+    # build — intermediate APKs aren't wanted, we only build a release when a
+    # feature set is complete. Builds run only on:
+    #   - a version tag (v1.2.3) → full build + signed release, for testing
+    #   - a manual web/API trigger → on-demand checkpoint compile when needed
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
     - if: $CI_PIPELINE_SOURCE == "web"
 
