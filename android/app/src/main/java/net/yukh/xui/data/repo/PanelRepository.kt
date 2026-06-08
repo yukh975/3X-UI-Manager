@@ -13,6 +13,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
+import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.data.auth.CsrfState
 import net.yukh.xui.data.auth.InMemoryCookieJar
@@ -38,6 +39,10 @@ class PanelRepository @Inject constructor(
     private var api: XuiApi? = null
     private var cookieJar: InMemoryCookieJar? = null
     private var csrf: CsrfState? = null
+    private var currentBaseUrl: String? = null
+
+    /** Cached panel settings (sub config). Null until first successful fetch. */
+    private var cachedSettings: PanelSettings? = null
 
     init {
         val stored = store.getProfile()
@@ -62,6 +67,8 @@ class PanelRepository @Inject constructor(
             cookieJar = null
             csrf = null
             api = candidate
+            currentBaseUrl = baseUrl
+            cachedSettings = null
             _connected.value = true
         }
     }
@@ -105,6 +112,8 @@ class PanelRepository @Inject constructor(
             api = candidate
             cookieJar = jar
             csrf = csrfHolder
+            currentBaseUrl = baseUrl
+            cachedSettings = null
             _connected.value = true
         }
     }
@@ -114,6 +123,8 @@ class PanelRepository @Inject constructor(
         cookieJar?.clear()
         cookieJar = null
         csrf = null
+        currentBaseUrl = null
+        cachedSettings = null
         _connected.value = false
         store.clear()
     }
@@ -145,6 +156,20 @@ class PanelRepository @Inject constructor(
     suspend fun getClientLinks(email: String): Result<List<String>> =
         authedData { it.getClientLinks(email) }
 
+    /**
+     * Build a client's subscription URL. Needs panel sub settings, which are
+     * only reachable with session (login/password) auth — with a token the
+     * settings call is redirected to login and this returns null. The result
+     * is cached so repeated share-sheet opens don't re-fetch settings.
+     */
+    suspend fun getSubscriptionUrl(client: Client): String? {
+        val host = currentBaseUrl?.let { PanelSettings.hostOf(it) } ?: return null
+        val settings = cachedSettings ?: authedData { it.getAllSettings() }
+            .getOrNull()
+            ?.also { cachedSettings = it }
+        return settings?.subscriptionUrl(host, client.subId)
+    }
+
     suspend fun deleteClient(email: String): Result<Unit> =
         authedAck { it.deleteClient(email) }
 
@@ -157,6 +182,8 @@ class PanelRepository @Inject constructor(
         api = XuiApiFactory.tokenAuthed(baseUrl, allowInsecureTls, token, json)
         cookieJar = null
         csrf = null
+        currentBaseUrl = baseUrl
+        cachedSettings = null
         _connected.value = true
     }
 

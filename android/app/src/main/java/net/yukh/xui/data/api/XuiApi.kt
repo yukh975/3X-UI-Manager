@@ -5,6 +5,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
+import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.ServerStatus
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -65,4 +66,9 @@ interface XuiApi {
 
     @POST("panel/api/clients/onlines")
     suspend fun listOnlines(): ApiResponse<List<String>>
+
+    // ---- Settings (session-auth only; token gets redirected to login) -----
+
+    @POST("panel/setting/all")
+    suspend fun getAllSettings(): ApiResponse<PanelSettings>
 }

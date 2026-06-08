@@ -107,6 +107,8 @@ fun ClientsScreen(
             links = state.selectedLinks,
             loading = state.linksLoading,
             error = state.linksError,
+            subUrl = state.selectedSubUrl,
+            subChecked = state.subUrlChecked,
             sheetState = sheetState,
             onDismiss = vm::closeShareSheet,
             onDelete = { vm.deleteClient(selectedEmail) },

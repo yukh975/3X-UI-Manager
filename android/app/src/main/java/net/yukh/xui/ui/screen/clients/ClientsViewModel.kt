@@ -23,6 +23,8 @@ data class ClientsUiState(
     val selectedLinks: List<String> = emptyList(),
     val linksLoading: Boolean = false,
     val linksError: String? = null,
+    val selectedSubUrl: String? = null,
+    val subUrlChecked: Boolean = false,
 )
 
 @HiltViewModel
@@ -69,12 +71,15 @@ class ClientsViewModel @Inject constructor(
     }
 
     fun openShareSheet(email: String) {
+        val client = _state.value.items.firstOrNull { it.email == email }
         _state.update {
             it.copy(
                 selectedClientEmail = email,
                 selectedLinks = emptyList(),
                 linksLoading = true,
                 linksError = null,
+                selectedSubUrl = null,
+                subUrlChecked = false,
             )
         }
         viewModelScope.launch {
@@ -86,6 +91,12 @@ class ClientsViewModel @Inject constructor(
                     _state.update { it.copy(linksLoading = false, linksError = e.message) }
                 }
         }
+        // Subscription URL needs panel settings (session auth) — fetch in
+        // parallel and degrade silently if unavailable (token mode).
+        viewModelScope.launch {
+            val subUrl = client?.let { repo.getSubscriptionUrl(it) }
+            _state.update { it.copy(selectedSubUrl = subUrl, subUrlChecked = true) }
+        }
     }
 
     fun closeShareSheet() {
@@ -95,6 +106,8 @@ class ClientsViewModel @Inject constructor(
                 selectedLinks = emptyList(),
                 linksLoading = false,
                 linksError = null,
+                selectedSubUrl = null,
+                subUrlChecked = false,
             )
         }
     }
