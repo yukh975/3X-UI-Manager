@@ -28,8 +28,6 @@ uses [Semantic Versioning](https://semver.org/).
   editor** and the auto-derived **subscription URL** now work in **API-token**
   mode too (previously login/password only). ⚠️ Requires the panel on **v3.3.0+**.
 
-## [0.3.13] — 2026-06-09
-
 ### Fixed
 - **Online by server:** the main-server group no longer lists node-only clients.
   The central onlines endpoint reports online emails across the whole node tree,
