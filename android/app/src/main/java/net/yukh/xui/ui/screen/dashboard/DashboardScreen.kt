@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DataUsage
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.People
@@ -61,6 +62,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.format.formatBytes
+import net.yukh.xui.ui.format.formatDayMonth
 import net.yukh.xui.ui.format.formatPercent
 import net.yukh.xui.ui.format.formatUptime
 
@@ -171,8 +173,25 @@ fun DashboardScreen(
                     )
                 }
 
+                // Proxied (VPN) traffic this month for the main panel's own
+                // inbounds (sub-nodes are shown per-node on the Nodes tab).
+                state.mainTraffic?.let { t ->
+                    MetricTileCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        icon = Icons.Outlined.DataUsage,
+                        title = tr("Traffic this month"),
+                        value = t.bytes.formatBytes(),
+                        caption = if (!t.allMonthly) {
+                            tr("not all inbounds reset monthly")
+                        } else {
+                            t.sinceMillis.formatDayMonth().takeIf { it.isNotBlank() }
+                                ?.let { "${tr("since")} $it" }
+                        },
+                    )
+                }
+
                 // Each metric is its own full-width card, in this order:
-                // CPU, Memory, (Disk), Load, Net, Connections, Online.
+                // CPU, Memory, (Disk), Traffic, Load, Net, Connections, Online.
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Outlined.Speed,
@@ -570,6 +589,7 @@ private fun MetricTileCard(
     title: String,
     value: String,
     modifier: Modifier = Modifier,
+    caption: String? = null,
     onClick: (() -> Unit)? = null,
 ) {
     Card(
@@ -588,6 +608,13 @@ private fun MetricTileCard(
                 )
             }
             Text(value, style = MaterialTheme.typography.titleMedium)
+            if (caption != null) {
+                Text(
+                    caption,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

@@ -6,6 +6,17 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.14] — 2026-06-09
+
+### Added
+- **Dashboard:** a "Traffic this month" card showing proxied (VPN) traffic for
+  the current month for the **main panel's own inbounds** (sub-nodes excluded),
+  with the period start date ("since 01.06"). Computed client-side by grouping
+  `/inbounds/list` by `nodeId` and summing up+down — no extra panel calls.
+- **Nodes:** each node card now shows its **traffic this month** (that node's own
+  inbounds). A trailing `*` flags a group where not every inbound resets monthly
+  (its figure then counts all-time, not just this month).
+
 ## [0.3.13] — 2026-06-09
 
 ### Fixed

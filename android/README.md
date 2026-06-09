@@ -17,6 +17,7 @@ Native Android client for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) 
 ### Dashboard
 - Live server status, polled every 3 s: **Xray** running/stopped + version, one-tap **Restart Xray** (confirmed).
 - **CPU**, **Memory**, **Disk** with used/total; **Online** clients, **Net ↑/↓** per second, **TCP/UDP** connection counts, **load average**, **uptime**, public IP.
+- **Traffic this month** — proxied (VPN) traffic for the current month, for the main panel's own inbounds (with the period start date).
 - Tap **Online** → list of currently-connected clients, each with the inbound(s) they belong to (refreshes every 3 s).
 - **3x-ui panel version** card at the bottom; if an update is available, an **Update** button (confirmed) triggers the panel self-update.
 
@@ -37,7 +38,7 @@ Native Android client for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) 
 - **Share sheet** (tap a client): a **Subscription** section (QR + link) and an expandable **Connections** section where each server link has its own QR + copy/share.
 
 ### Nodes
-- Manage remote panels (multi-panel): online status, CPU/RAM/latency, inbound/client counts.
+- Manage remote panels (multi-panel): online status, CPU/RAM/latency, inbound/client counts, **traffic this month** per node.
 - **Add / edit / delete**: name, address, port, scheme, base path, API token, TLS verify mode, allow-private-address.
 
 ### Xray config

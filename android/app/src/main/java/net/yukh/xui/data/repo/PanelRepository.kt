@@ -185,6 +185,29 @@ class PanelRepository @Inject constructor(
     suspend fun listInbounds(): Result<List<InboundSlim>> =
         authedData { it.listInbounds() }
 
+    /**
+     * Proxied (VPN) traffic for the current month, grouped by server. The central
+     * /inbounds/list already mixes main-panel and node inbounds (each tagged with
+     * `nodeId`), so one call yields every group with no per-node queries:
+     *   - key 0  = the main panel's own inbounds (nodeId null/0),
+     *   - key N  = the sub-node with that id.
+     * Every inbound is expected to be trafficReset="monthly", so up+down == this
+     * month; [ServerTraffic.allMonthly] flags a group where that doesn't hold (the
+     * sum then includes all-time counters for the offending inbounds).
+     */
+    suspend fun monthlyTrafficByServer(): Result<Map<Int, ServerTraffic>> =
+        listInbounds().map { inbounds ->
+            inbounds.groupBy { it.nodeId ?: 0 }.mapValues { (nodeId, group) ->
+                ServerTraffic(
+                    nodeId = nodeId,
+                    bytes = group.sumOf { it.up + it.down },
+                    sinceMillis = group.mapNotNull { it.lastTrafficResetTime.takeIf { t -> t > 0 } }
+                        .maxOrNull() ?: 0L,
+                    allMonthly = group.all { it.trafficReset.equals("monthly", ignoreCase = true) },
+                )
+            }
+        }
+
     suspend fun getInbound(id: Int): Result<InboundModel> =
         authedData { it.getInbound(id) }
 
@@ -410,6 +433,20 @@ class PanelRepository @Inject constructor(
         Result.failure(e)
     }
 }
+
+/**
+ * One server's proxied traffic for the current month (Σ up+down over its
+ * inbounds). [nodeId] 0 = the main panel; otherwise the sub-node id.
+ */
+data class ServerTraffic(
+    val nodeId: Int,
+    val bytes: Long,
+    /** Start of the accounting period (latest inbound reset, Unix ms; 0 if unknown). */
+    val sinceMillis: Long,
+    /** False if any inbound in the group isn't trafficReset="monthly" — then
+     *  [bytes] mixes this-month and all-time counters and should be flagged. */
+    val allMonthly: Boolean,
+)
 
 sealed class PanelError(message: String) : RuntimeException(message) {
     data object NotConnected : PanelError("Not connected to a panel")

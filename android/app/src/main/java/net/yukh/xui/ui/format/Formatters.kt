@@ -32,6 +32,10 @@ fun Long.formatExpiry(lang: String = LANG_EN): String {
 fun Long.formatDate(lang: String = LANG_EN): String =
     if (this == 0L) tr(lang, "Never") else SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))
 
+/** Short day.month for a period start, e.g. "01.06" (Unix ms). 0 → "". */
+fun Long.formatDayMonth(): String =
+    if (this <= 0L) "" else SimpleDateFormat("dd.MM", Locale.US).format(Date(this))
+
 /** Days remaining until expiry (Unix ms). 0 → "Never"; already past → "Expired";
  *  otherwise the whole-day count with a short unit ("12 d" / "12 дн."). */
 fun Long.formatExpiryDays(lang: String = LANG_EN): String {

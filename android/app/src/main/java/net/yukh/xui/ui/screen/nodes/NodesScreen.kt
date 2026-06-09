@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.Node
+import net.yukh.xui.data.repo.ServerTraffic
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatPercent
 import net.yukh.xui.ui.format.formatUptime
 
@@ -81,6 +83,7 @@ fun NodesScreen(
                     NodeRow(
                         node = node,
                         latestVersion = state.latestVersion,
+                        traffic = state.trafficByNode[node.id],
                         updating = node.id in state.updatingIds,
                         onUpdate = { vm.updateNode(node.id) },
                         onClick = { vm.openEditEditor(node.id) },
@@ -108,6 +111,7 @@ fun NodesScreen(
 private fun NodeRow(
     node: Node,
     latestVersion: String,
+    traffic: ServerTraffic?,
     updating: Boolean,
     onUpdate: () -> Unit,
     onClick: () -> Unit,
@@ -180,6 +184,16 @@ private fun NodeRow(
                 }
             } else if (node.lastError.isNotBlank()) {
                 Text(node.lastError, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            // Proxied traffic this month (central counter, shown even if the node
+            // is momentarily offline). A trailing "*" flags a non-monthly inbound.
+            traffic?.let { t ->
+                val flag = if (t.allMonthly) "" else " *"
+                Text(
+                    "${tr("Traffic this month")}: ${t.bytes.formatBytes()}$flag",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

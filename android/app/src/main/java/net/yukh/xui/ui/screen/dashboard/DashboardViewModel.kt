@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.ServerTraffic
 
 data class DashboardUiState(
     val status: ServerStatus? = null,
@@ -35,6 +36,8 @@ data class DashboardUiState(
     val updateInfo: PanelUpdateInfo? = null,
     val updating: Boolean = false,
     val updateMessage: String? = null,
+    // Proxied traffic this month for the main panel's own inbounds (nodeId 0).
+    val mainTraffic: ServerTraffic? = null,
 ) {
     val onlineCount: Int get() = onlineEmails.size
 }
@@ -68,6 +71,7 @@ class DashboardViewModel @Inject constructor(
         if (pollJob?.isActive == true) return
         _state.update { it.copy(loading = it.status == null) }
         if (_state.value.updateInfo == null) refreshUpdateInfo()
+        if (_state.value.mainTraffic == null) refreshMonthlyTraffic()
         pollJob = viewModelScope.launch {
             while (isActive) {
                 fetchOnce()
@@ -91,6 +95,7 @@ class DashboardViewModel @Inject constructor(
             _state.update { it.copy(pullRefreshing = true) }
             fetchOnce()
             refreshUpdateInfo()
+            refreshMonthlyTraffic()
             _state.update { it.copy(pullRefreshing = false) }
         }
     }
@@ -183,6 +188,17 @@ class DashboardViewModel @Inject constructor(
     private fun refreshUpdateInfo() {
         viewModelScope.launch {
             repo.getPanelUpdateInfo().onSuccess { info -> _state.update { it.copy(updateInfo = info) } }
+        }
+    }
+
+    // Monthly traffic changes slowly, so (like update info) it's fetched once on
+    // start and on pull-to-refresh — not on every 3s status poll, which would pull
+    // the whole inbounds list each tick.
+    private fun refreshMonthlyTraffic() {
+        viewModelScope.launch {
+            repo.monthlyTrafficByServer().onSuccess { byServer ->
+                _state.update { it.copy(mainTraffic = byServer[0]) }
+            }
         }
     }
 
