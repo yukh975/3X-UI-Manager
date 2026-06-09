@@ -10,6 +10,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,7 @@ fun App() {
             var refreshing by remember { mutableStateOf(false) }
             var error by remember { mutableStateOf<String?>(null) }
             var tab by remember { mutableStateOf(0) }
+            var lang by remember { mutableStateOf(LANG_EN) }
             var status by remember { mutableStateOf<ServerStatus?>(null) }
             var inbounds by remember { mutableStateOf<List<InboundSlim>>(emptyList()) }
             var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
@@ -92,8 +94,9 @@ fun App() {
                 }
             }
 
-            // Auto-restore a saved session on first launch.
+            // Auto-restore a saved session + language on first launch.
             LaunchedEffect(Unit) {
+                lang = store.loadLang() ?: LANG_EN
                 if (!connected) {
                     store.load()?.let { saved ->
                         baseUrl = saved.baseUrl
@@ -103,62 +106,72 @@ fun App() {
                 }
             }
 
-            if (!connected) {
-                ConnectScreen(
-                    baseUrl = baseUrl,
-                    token = token,
-                    busy = busy,
-                    error = error,
-                    onBaseUrl = { baseUrl = it; error = null },
-                    onToken = { token = it; error = null },
-                    onConnect = { scope.launch { connect(baseUrl, token) } },
-                )
-            } else {
-                val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes")
-                val icons = listOf("📊", "🔌", "👥", "🌐")
-                Scaffold(
-                    bottomBar = {
-                        NavigationBar {
-                            tabs.forEachIndexed { i, label ->
-                                NavigationBarItem(
-                                    selected = tab == i,
-                                    onClick = { tab = i },
-                                    icon = { Text(icons[i]) },
-                                    label = { Text(label) },
+            val doDisconnect: () -> Unit = {
+                api?.close()
+                api = null
+                status = null
+                inbounds = emptyList(); clients = emptyList(); nodes = emptyList()
+                tab = 0
+                connected = false
+                store.clear()
+            }
+
+            CompositionLocalProvider(LocalAppLanguage provides lang) {
+                if (!connected) {
+                    ConnectScreen(
+                        baseUrl = baseUrl,
+                        token = token,
+                        busy = busy,
+                        error = error,
+                        onBaseUrl = { baseUrl = it; error = null },
+                        onToken = { token = it; error = null },
+                        onConnect = { scope.launch { connect(baseUrl, token) } },
+                    )
+                } else {
+                    val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes", "More")
+                    val icons = listOf("📊", "🔌", "👥", "🌐", "⚙️")
+                    Scaffold(
+                        bottomBar = {
+                            NavigationBar {
+                                tabs.forEachIndexed { i, label ->
+                                    NavigationBarItem(
+                                        selected = tab == i,
+                                        onClick = { tab = i },
+                                        icon = { Text(icons[i]) },
+                                        label = { Text(tr(label)) },
+                                    )
+                                }
+                            }
+                        },
+                    ) { inner ->
+                        Box(modifier = Modifier.fillMaxSize().padding(inner)) {
+                            when (tab) {
+                                0 -> DashboardScreen(
+                                    host = baseUrl,
+                                    status = status,
+                                    refreshing = refreshing,
+                                    error = error,
+                                    onRefresh = { scope.launch { refreshing = true; refreshAll(); refreshing = false } },
+                                    onDisconnect = doDisconnect,
+                                )
+                                1 -> InboundsListScreen(inbounds)
+                                2 -> ClientsListScreen(clients)
+                                3 -> NodesListScreen(nodes)
+                                else -> MoreScreen(
+                                    host = baseUrl,
+                                    lang = lang,
+                                    onLang = { lang = it; store.saveLang(it) },
+                                    onDisconnect = doDisconnect,
                                 )
                             }
                         }
-                    },
-                ) { inner ->
-                    Box(modifier = Modifier.fillMaxSize().padding(inner)) {
-                        when (tab) {
-                            0 -> DashboardScreen(
-                                host = baseUrl,
-                                status = status,
-                                refreshing = refreshing,
-                                error = error,
-                                onRefresh = { scope.launch { refreshing = true; refreshAll(); refreshing = false } },
-                                onDisconnect = {
-                                    api?.close()
-                                    api = null
-                                    status = null
-                                    inbounds = emptyList(); clients = emptyList(); nodes = emptyList()
-                                    tab = 0
-                                    connected = false
-                                    store.clear()
-                                },
-                            )
-                            1 -> InboundsListScreen(inbounds)
-                            2 -> ClientsListScreen(clients)
-                            else -> NodesListScreen(nodes)
-                        }
                     }
-                }
-                LaunchedEffect(connected) {
-                    if (connected) refreshAll()
-                    while (connected) {
-                        delay(5_000)
-                        refreshAll()
+                    LaunchedEffect(connected) {
+                        if (connected) refreshAll()
+                        while (connected) {
+                            delay(5_000)
+                            refreshAll()
+                        }
                     }
                 }
             }

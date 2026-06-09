@@ -40,7 +40,7 @@ fun ConnectScreen(
         Text("3X-UI Manager", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(4.dp))
         Text(
-            "Connect to your panel",
+            tr("Connect to your panel"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -49,7 +49,7 @@ fun ConnectScreen(
         OutlinedTextField(
             value = baseUrl,
             onValueChange = onBaseUrl,
-            label = { Text("Panel URL") },
+            label = { Text(tr("Panel URL")) },
             placeholder = { Text("https://host:port/path") },
             singleLine = true,
             enabled = !busy,
@@ -60,7 +60,7 @@ fun ConnectScreen(
         OutlinedTextField(
             value = token,
             onValueChange = onToken,
-            label = { Text("API token") },
+            label = { Text(tr("API token")) },
             singleLine = true,
             enabled = !busy,
             modifier = Modifier.fillMaxWidth().widthIn(max = 480.dp),
@@ -80,7 +80,7 @@ fun ConnectScreen(
             if (busy) {
                 CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
             } else {
-                Text("Connect")
+                Text(tr("Connect"))
             }
         }
     }

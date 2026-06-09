@@ -38,7 +38,7 @@ fun DashboardScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Dashboard", style = MaterialTheme.typography.headlineSmall)
+                Text(tr("Dashboard"), style = MaterialTheme.typography.headlineSmall)
                 Text(
                     host,
                     style = MaterialTheme.typography.labelMedium,
@@ -46,9 +46,9 @@ fun DashboardScreen(
                 )
             }
             TextButton(onClick = onRefresh, enabled = !refreshing) {
-                Text(if (refreshing) "…" else "Refresh")
+                Text(if (refreshing) "…" else tr("Refresh"))
             }
-            TextButton(onClick = onDisconnect) { Text("Disconnect") }
+            TextButton(onClick = onDisconnect) { Text(tr("Disconnect")) }
         }
 
         Spacer(Modifier.height(8.dp))
@@ -59,7 +59,7 @@ fun DashboardScreen(
         }
 
         if (status == null) {
-            Text("Loading…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(tr("Loading…"), color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@Column
         }
 
@@ -68,23 +68,23 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             XrayCard(status)
-            BarCard("CPU" + if (status.cpuCores > 0) " · ${status.cpuCores} cores" else "",
+            BarCard(tr("CPU") + if (status.cpuCores > 0) " · ${status.cpuCores} ${tr("cores")}" else "",
                 status.cpu.formatPercent(), (status.cpu / 100.0).toFloat())
-            BarCard("Memory", status.memPercent.formatPercent(),
+            BarCard(tr("Memory"), status.memPercent.formatPercent(),
                 (status.memPercent / 100.0).toFloat(),
                 "${status.mem.current.formatBytes()} / ${status.mem.total.formatBytes()}")
             if (status.disk.total > 0) {
-                BarCard("Disk", status.diskPercent.formatPercent(),
+                BarCard(tr("Disk"), status.diskPercent.formatPercent(),
                     (status.diskPercent / 100.0).toFloat(),
                     "${status.disk.current.formatBytes()} / ${status.disk.total.formatBytes()}")
             }
-            ValueCard("Load 1·5·15m",
+            ValueCard(tr("Load 1·5·15m"),
                 "${oneDp(status.load1)}·${oneDp(status.load5)}·${oneDp(status.load15)}")
-            ValueCard("Net ↑ / ↓ per s",
+            ValueCard(tr("Net ↑ / ↓ per s"),
                 "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}")
-            ValueCard("Connections", "TCP ${status.tcpCount} · UDP ${status.udpCount}")
-            if (status.uptime > 0) ValueCard("Uptime", status.uptime.formatUptime())
-            if (status.panelVersion.isNotBlank()) ValueCard("Panel", "v${status.panelVersion}")
+            ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}")
+            if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
+            if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
         }
     }
 }
@@ -96,12 +96,12 @@ private fun XrayCard(status: ServerStatus) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                "Xray" + if (status.xray.version.isNotBlank()) " · v${status.xray.version}" else "",
+                tr("Xray") + if (status.xray.version.isNotBlank()) " · v${status.xray.version}" else "",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                if (status.xrayRunning) "Running" else status.xray.state.ifBlank { "Stopped" },
+                if (status.xrayRunning) tr("Running") else status.xray.state.ifBlank { tr("Stopped") },
                 style = MaterialTheme.typography.titleMedium,
                 color = if (status.xrayRunning) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.error,

@@ -22,8 +22,15 @@ actual class SessionStore {
         defaults.removeObjectForKey(KEY_TOKEN)
     }
 
+    actual fun loadLang(): String? = defaults.stringForKey(KEY_LANG)
+
+    actual fun saveLang(lang: String) {
+        defaults.setObject(lang, forKey = KEY_LANG)
+    }
+
     private companion object {
         const val KEY_URL = "xui.baseUrl"
         const val KEY_TOKEN = "xui.token"
+        const val KEY_LANG = "xui.lang"
     }
 }

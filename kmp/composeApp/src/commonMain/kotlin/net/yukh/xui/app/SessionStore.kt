@@ -14,4 +14,8 @@ expect class SessionStore() {
     fun load(): SavedSession?
     fun save(baseUrl: String, token: String)
     fun clear()
+
+    /** Persisted UI language ("en"/"ru"); null = not set (default English). */
+    fun loadLang(): String?
+    fun saveLang(lang: String)
 }
