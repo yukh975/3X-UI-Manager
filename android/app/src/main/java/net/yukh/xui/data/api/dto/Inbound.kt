@@ -22,6 +22,9 @@ data class InboundSlim(
     val expiryTime: Long = 0,
     val tag: String = "",
     val trafficReset: String = "",
+    // Which server owns this inbound: null/0 = the main panel's own inbound,
+    // N = sub-node with that id. The central /inbounds/list mixes both.
+    val nodeId: Int? = null,
     val clientStats: List<ClientStat> = emptyList(),
 )
 

@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.13] — 2026-06-09
+
+### Fixed
+- **Online by server:** the main-server group no longer lists node-only clients.
+  The central onlines endpoint reports online emails across the whole node tree,
+  so the main group could show a client that belongs only to a sub-node's inbound
+  (e.g. an outbound credential the main server uses to chain to a node). The main
+  group is now restricted to clients of the main panel's own inbounds
+  (`nodeId` 0); node clients appear under their node. If a node isn't reachable
+  directly from the device, its online clients now fall back to inbound-membership
+  attribution instead of vanishing from the list.
+
 ## [0.3.12] — 2026-06-09
 
 ### Changed
