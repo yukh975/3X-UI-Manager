@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.dto.Client
+import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
@@ -69,6 +70,9 @@ fun App() {
             var xrayConfigJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
             var xrayLoading by remember { mutableStateOf(false) }
+            var editingClient by remember { mutableStateOf<Client?>(null) }
+            var clientLinks by remember { mutableStateOf<List<String>>(emptyList()) }
+            var clientLinksLoading by remember { mutableStateOf(false) }
             var editorSaving by remember { mutableStateOf(false) }
             var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
@@ -190,6 +194,43 @@ fun App() {
                         onBaseUrl = { baseUrl = it; error = null },
                         onToken = { token = it; error = null },
                         onConnect = { scope.launch { connect(baseUrl, token) } },
+                    )
+                } else if (editingClient != null) {
+                    ClientEditorScreen(
+                        source = editingClient!!,
+                        saving = editorSaving,
+                        error = editorError,
+                        links = clientLinks,
+                        linksLoading = clientLinksLoading,
+                        onShowLinks = {
+                            scope.launch {
+                                clientLinksLoading = true
+                                val r = try { api?.clientLinks(editingClient!!.email) } catch (e: Throwable) { null }
+                                clientLinks = r?.obj ?: emptyList()
+                                clientLinksLoading = false
+                            }
+                        },
+                        onSave = { model ->
+                            scope.launch {
+                                editorSaving = true; editorError = null
+                                val r = try { api?.updateClient(editingClient!!.email, model) }
+                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                editorSaving = false
+                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); refreshAll() }
+                                else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
+                            }
+                        },
+                        onDelete = {
+                            scope.launch {
+                                editorSaving = true; editorError = null
+                                val r = try { api?.deleteClient(editingClient!!.email) }
+                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                editorSaving = false
+                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); refreshAll() }
+                                else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
+                            }
+                        },
+                        onCancel = { editingClient = null; clientLinks = emptyList(); editorError = null },
                     )
                 } else if (editingInbound != null) {
                     InboundEditorScreen(
@@ -314,7 +355,11 @@ fun App() {
                                     },
                                     onToggle = { id, en -> scope.launch { api?.setInboundEnable(id, en); refreshAll() } },
                                 )
-                                2 -> ClientsListScreen(clients)
+                                2 -> ClientsListScreen(
+                                    clients,
+                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); editingClient = c },
+                                    onToggle = { c, en -> scope.launch { api?.updateClient(c.email, c.toModel().copy(enable = en)); refreshAll() } },
+                                )
                                 3 -> NodesListScreen(
                                     nodes,
                                     onAdd = { editingNodeNew = true; editorError = null; editingNode = NodeModel() },

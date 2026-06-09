@@ -162,6 +162,13 @@ data class Client(
     val down: Long get() = traffic?.down ?: 0
     val quota: Long get() = traffic?.total?.takeIf { it > 0 } ?: totalGB
     val lastOnline: Long get() = traffic?.lastOnline ?: 0
+
+    fun toModel(): ClientModel = ClientModel(
+        id = uuid, email = email, password = password, auth = auth, security = security,
+        flow = flow, limitIp = limitIp, totalGB = totalGB, expiryTime = expiryTime,
+        enable = enable, tgId = tgId, subId = subId, group = group, comment = comment,
+        reset = reset, createdAt = createdAt, updatedAt = updatedAt,
+    )
 }
 
 @Serializable

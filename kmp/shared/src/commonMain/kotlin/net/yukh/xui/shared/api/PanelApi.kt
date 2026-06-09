@@ -19,7 +19,10 @@ import kotlinx.serialization.json.Json
 import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.ApiResponse
 import net.yukh.xui.shared.dto.Client
+import net.yukh.xui.shared.dto.ClientCreatePayload
+import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.EnableRequest
+import net.yukh.xui.shared.dto.InboundIdsRequest
 import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
@@ -85,6 +88,33 @@ class PanelApi(baseUrl: String, private val token: String) {
 
     suspend fun clients(): ApiResponse<List<Client>> =
         client.get("$base/panel/api/clients/list") { auth() }.body()
+
+    suspend fun addClient(payload: ClientCreatePayload): ApiAck =
+        client.post("$base/panel/api/clients/add") {
+            auth(); contentType(ContentType.Application.Json); setBody(payload)
+        }.body()
+
+    suspend fun updateClient(email: String, model: ClientModel): ApiAck =
+        client.post("$base/panel/api/clients/update/$email") {
+            auth(); contentType(ContentType.Application.Json); setBody(model)
+        }.body()
+
+    suspend fun deleteClient(email: String): ApiAck =
+        client.post("$base/panel/api/clients/del/$email") { auth() }.body()
+
+    /** Connection (share) links for a client, e.g. ["vless://…", …]. */
+    suspend fun clientLinks(email: String): ApiResponse<List<String>> =
+        client.get("$base/panel/api/clients/links/$email") { auth() }.body()
+
+    suspend fun attachClient(email: String, inboundIds: List<Int>): ApiAck =
+        client.post("$base/panel/api/clients/$email/attach") {
+            auth(); contentType(ContentType.Application.Json); setBody(InboundIdsRequest(inboundIds))
+        }.body()
+
+    suspend fun detachClient(email: String, inboundIds: List<Int>): ApiAck =
+        client.post("$base/panel/api/clients/$email/detach") {
+            auth(); contentType(ContentType.Application.Json); setBody(InboundIdsRequest(inboundIds))
+        }.body()
 
     suspend fun nodes(): ApiResponse<List<Node>> =
         client.get("$base/panel/api/nodes/list") { auth() }.body()

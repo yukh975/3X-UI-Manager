@@ -80,15 +80,20 @@ fun InboundsListScreen(items: List<InboundSlim>, onAdd: () -> Unit, onEdit: (Int
 }
 
 @Composable
-fun ClientsListScreen(items: List<Client>) {
-    ListScaffold("Clients", items.size, "No clients") {
+fun ClientsListScreen(items: List<Client>, onEdit: (Client) -> Unit, onToggle: (Client, Boolean) -> Unit) {
+    ListScaffold(tr("Clients"), items.size, tr("No clients yet.")) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id.toString() + it.email }) { c ->
-                rowCard {
-                    Text(c.email.ifBlank { "#${c.id}" }, style = MaterialTheme.typography.titleMedium)
+                rowCard(onClick = { onEdit(c) }) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(c.email.ifBlank { "#${c.id}" }, style = MaterialTheme.typography.titleMedium)
+                        Switch(checked = c.enable, onCheckedChange = { onToggle(c, it) })
+                    }
                     Text("↑ ${c.up.formatBytes()}  ↓ ${c.down.formatBytes()}", style = MaterialTheme.typography.labelMedium)
-                    val seen = if (c.lastOnline <= 0L) "Last seen: Never" else "Online"
-                    Text(seen, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

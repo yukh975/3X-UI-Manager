@@ -117,6 +117,17 @@ val ruStrings: Map<String, String> = mapOf(
         "Протокол, транспорт и безопасность редактируются в полном редакторе (скоро).",
     "Couldn't load inbound" to "Не удалось загрузить inbound",
 
+    // Client editor
+    "Edit client" to "Изменить клиента",
+    "Delete client" to "Удалить клиента",
+    "Email / name" to "Email / имя",
+    "IP limit (0 = unlimited)" to "Лимит IP (0 = безлимит)",
+    "Traffic reset period (days, 0 = off)" to "Период сброса трафика (дней, 0 = выкл)",
+    "Telegram ID (optional)" to "Telegram ID (необязательно)",
+    "Group (optional)" to "Группа (необязательно)",
+    "Comment (optional)" to "Комментарий (необязательно)",
+    "Show connection links" to "Показать ссылки-подключения",
+
     // Xray config
     "Xray config" to "Конфиг Xray",
     "Outbound test URL" to "URL для теста outbound",
