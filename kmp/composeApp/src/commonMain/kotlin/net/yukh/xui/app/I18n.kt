@@ -117,6 +117,20 @@ val ruStrings: Map<String, String> = mapOf(
         "Протокол, транспорт и безопасность редактируются в полном редакторе (скоро).",
     "Couldn't load inbound" to "Не удалось загрузить inbound",
 
+    // App lock
+    "App lock" to "Блокировка приложения",
+    "Set passcode" to "Задать код-пароль",
+    "Change passcode" to "Сменить код-пароль",
+    "Remove passcode" to "Убрать код-пароль",
+    "Unlock with biometrics" to "Разблокировка по биометрии",
+    "Set a 4–8 digit passcode" to "Задайте код-пароль из 4–8 цифр",
+    "Passcode" to "Код-пароль",
+    "Confirm passcode" to "Повторите код-пароль",
+    "Enter passcode" to "Введите код-пароль",
+    "Wrong passcode" to "Неверный код-пароль",
+    "Unlock" to "Разблокировать",
+    "Use biometrics" to "Использовать биометрию",
+
     // Client editor
     "Edit client" to "Изменить клиента",
     "Delete client" to "Удалить клиента",

@@ -77,6 +77,8 @@ fun App() {
             var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
             val store = remember { SessionStore() }
+            val lock = remember { AppLock() }
+            var locked by remember { mutableStateOf(lock.hasPasscode()) }
             val scope = rememberCoroutineScope()
 
             // Validate URL+token by fetching status; on success keep the client,
@@ -185,7 +187,13 @@ fun App() {
             }
 
             CompositionLocalProvider(LocalAppLanguage provides lang) {
-                if (!connected) {
+                if (locked) {
+                    LockScreen(
+                        biometryEnabled = lock.biometryEnabled(),
+                        onUnlock = { code -> if (lock.check(code)) { locked = false; true } else false },
+                        onBiometric = { lock.authenticate("Unlock 3X-UI Manager") { ok -> if (ok) locked = false } },
+                    )
+                } else if (!connected) {
                     ConnectScreen(
                         baseUrl = baseUrl,
                         token = token,
@@ -369,6 +377,7 @@ fun App() {
                                     host = baseUrl,
                                     lang = lang,
                                     onLang = { lang = it; store.saveLang(it) },
+                                    lock = lock,
                                     onXrayConfig = { showXray = true; editorError = null; scope.launch { loadXray() } },
                                     onDisconnect = doDisconnect,
                                 )

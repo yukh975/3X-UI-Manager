@@ -11,15 +11,27 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
 /**
@@ -31,9 +43,13 @@ fun MoreScreen(
     host: String,
     lang: String,
     onLang: (String) -> Unit,
+    lock: AppLock,
     onXrayConfig: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
+    var hasCode by remember { mutableStateOf(lock.hasPasscode()) }
+    var bioOn by remember { mutableStateOf(lock.biometryEnabled()) }
+    var showSetDialog by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -47,6 +63,35 @@ fun MoreScreen(
                 Text(tr("Language"), style = MaterialTheme.typography.labelMedium)
                 LanguageRow(tr("English"), selected = lang == LANG_EN) { onLang(LANG_EN) }
                 LanguageRow(tr("Русский"), selected = lang == LANG_RU) { onLang(LANG_RU) }
+            }
+        }
+
+        // ---- App lock ----
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(tr("App lock"), style = MaterialTheme.typography.titleMedium)
+                if (!hasCode) {
+                    OutlinedButton(onClick = { showSetDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(tr("Set passcode"))
+                    }
+                } else {
+                    OutlinedButton(onClick = { showSetDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(tr("Change passcode"))
+                    }
+                    if (lock.biometryAvailable()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(tr("Unlock with biometrics"), modifier = Modifier.weight(1f))
+                            Switch(checked = bioOn, onCheckedChange = { bioOn = it; lock.setBiometryEnabled(it) })
+                        }
+                    }
+                    OutlinedButton(onClick = { lock.removePasscode(); hasCode = false; bioOn = false }, modifier = Modifier.fillMaxWidth()) {
+                        Text(tr("Remove passcode"))
+                    }
+                }
             }
         }
 
@@ -93,6 +138,43 @@ fun MoreScreen(
             ),
         ) { Text(tr("Disconnect")) }
     }
+
+    if (showSetDialog) {
+        var newCode by remember { mutableStateOf("") }
+        var confirm by remember { mutableStateOf("") }
+        val valid = newCode.length in 4..8 && newCode == confirm
+        AlertDialog(
+            onDismissRequest = { showSetDialog = false },
+            title = { Text(if (hasCode) tr("Change passcode") else tr("Set passcode")) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr("Set a 4–8 digit passcode"), style = MaterialTheme.typography.labelMedium)
+                    PinField(newCode, { newCode = it.filter(Char::isDigit).take(8) }, tr("Passcode"))
+                    PinField(confirm, { confirm = it.filter(Char::isDigit).take(8) }, tr("Confirm passcode"))
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { lock.setPasscode(newCode); hasCode = true; showSetDialog = false },
+                    enabled = valid,
+                ) { Text(tr("Save")) }
+            },
+            dismissButton = { TextButton(onClick = { showSetDialog = false }) { Text(tr("Cancel")) } },
+        )
+    }
+}
+
+@Composable
+private fun PinField(value: String, onChange: (String) -> Unit, label: String) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        label = { Text(label) },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
