@@ -49,6 +49,7 @@ fun App() {
             var inbounds by remember { mutableStateOf<List<InboundSlim>>(emptyList()) }
             var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
             var nodes by remember { mutableStateOf<List<Node>>(emptyList()) }
+            var onlines by remember { mutableStateOf<List<String>>(emptyList()) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
             val store = remember { SessionStore() }
             val scope = rememberCoroutineScope()
@@ -88,6 +89,7 @@ fun App() {
                     a.inbounds().let { if (it.success) inbounds = it.obj ?: emptyList() }
                     a.clients().let { if (it.success) clients = it.obj ?: emptyList() }
                     a.nodes().let { if (it.success) nodes = it.obj ?: emptyList() }
+                    a.onlines().let { if (it.success) onlines = it.obj ?: emptyList() }
                     error = null
                 } catch (e: Throwable) {
                     error = e.message ?: "Network error"
@@ -110,7 +112,7 @@ fun App() {
                 api?.close()
                 api = null
                 status = null
-                inbounds = emptyList(); clients = emptyList(); nodes = emptyList()
+                inbounds = emptyList(); clients = emptyList(); nodes = emptyList(); onlines = emptyList()
                 tab = 0
                 connected = false
                 store.clear()
@@ -138,7 +140,7 @@ fun App() {
                                         selected = tab == i,
                                         onClick = { tab = i },
                                         icon = { Text(icons[i]) },
-                                        label = { Text(tr(label)) },
+                                        label = { Text(tr(label), maxLines = 1, softWrap = false) },
                                     )
                                 }
                             }
@@ -149,6 +151,7 @@ fun App() {
                                 0 -> DashboardScreen(
                                     host = baseUrl,
                                     status = status,
+                                    onlineEmails = onlines,
                                     refreshing = refreshing,
                                     error = error,
                                     onRefresh = { scope.launch { refreshing = true; refreshAll(); refreshing = false } },

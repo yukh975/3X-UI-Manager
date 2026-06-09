@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +17,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -26,6 +31,7 @@ import net.yukh.xui.shared.dto.ServerStatus
 fun DashboardScreen(
     host: String,
     status: ServerStatus?,
+    onlineEmails: List<String>,
     refreshing: Boolean,
     error: String?,
     onRefresh: () -> Unit,
@@ -64,7 +70,7 @@ fun DashboardScreen(
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             XrayCard(status)
@@ -83,6 +89,7 @@ fun DashboardScreen(
             ValueCard(tr("Net ↑ / ↓ per s"),
                 "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}")
             ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}")
+            OnlineCard(onlineEmails)
             if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
             if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
         }
@@ -139,6 +146,31 @@ private fun ValueCard(title: String, value: String) {
         ) {
             Text(title, style = MaterialTheme.typography.labelMedium)
             Text(value, style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+/** Online clients: count, tap to expand the list of online emails. */
+@Composable
+private fun OnlineCard(emails: List<String>) {
+    var expanded by remember { mutableStateOf(false) }
+    Card(modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(tr("Online"), style = MaterialTheme.typography.labelMedium)
+                Text(emails.size.toString(), style = MaterialTheme.typography.titleMedium)
+            }
+            if (expanded) {
+                if (emails.isEmpty()) {
+                    Text(
+                        tr("Nobody online right now."),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    emails.sorted().forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                }
+            }
         }
     }
 }

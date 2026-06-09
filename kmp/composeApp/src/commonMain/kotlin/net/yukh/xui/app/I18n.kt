@@ -58,6 +58,9 @@ val ruStrings: Map<String, String> = mapOf(
     "Uptime" to "Аптайм",
     "Panel" to "Панель",
     "cores" to "ядер",
+    "Online" to "Онлайн",
+    "Online clients" to "Онлайн-клиенты",
+    "Nobody online right now." to "Сейчас никто не в сети.",
 
     // Lists
     "No inbounds yet." to "Пока нет inbound'ов.",

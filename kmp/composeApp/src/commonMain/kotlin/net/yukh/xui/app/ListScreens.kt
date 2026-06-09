@@ -2,6 +2,7 @@ package net.yukh.xui.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +20,7 @@ import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
 
 @Composable
-private fun ListScaffold(title: String, count: Int, empty: String, content: @Composable () -> Unit) {
+private fun ListScaffold(title: String, count: Int, empty: String, content: @Composable ColumnScope.() -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("$title ($count)", style = MaterialTheme.typography.headlineSmall)
         if (count == 0) {
@@ -40,7 +41,7 @@ private fun rowCard(content: @Composable () -> Unit) {
 @Composable
 fun InboundsListScreen(items: List<InboundSlim>) {
     ListScaffold("Inbounds", items.size, "No inbounds") {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id }) { ib ->
                 rowCard {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -61,7 +62,7 @@ fun InboundsListScreen(items: List<InboundSlim>) {
 @Composable
 fun ClientsListScreen(items: List<Client>) {
     ListScaffold("Clients", items.size, "No clients") {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id.toString() + it.email }) { c ->
                 rowCard {
                     Text(c.email.ifBlank { "#${c.id}" }, style = MaterialTheme.typography.titleMedium)
@@ -77,7 +78,7 @@ fun ClientsListScreen(items: List<Client>) {
 @Composable
 fun NodesListScreen(items: List<Node>) {
     ListScaffold("Nodes", items.size, "No nodes") {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id }) { n ->
                 rowCard {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
