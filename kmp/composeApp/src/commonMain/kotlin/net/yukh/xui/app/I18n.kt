@@ -82,4 +82,21 @@ val ruStrings: Map<String, String> = mapOf(
     "Application" to "Приложение",
     "Version" to "Версия",
     "Panel URL:" to "URL панели:",
+
+    // Common actions + editors
+    "Cancel" to "Отмена",
+    "Save" to "Сохранить",
+    "Add" to "Добавить",
+    "Add node" to "Добавить узел",
+    "Edit node" to "Изменить узел",
+    "Delete node" to "Удалить узел",
+    "Name" to "Имя",
+    "Remark (optional)" to "Примечание (необязательно)",
+    "Scheme" to "Схема",
+    "Address (IP or domain)" to "Адрес (IP или домен)",
+    "Port" to "Порт",
+    "Base path" to "Базовый путь",
+    "Enabled" to "Включён",
+    "Verify TLS certificate" to "Проверять TLS-сертификат",
+    "Allow private address" to "Разрешить приватные адреса",
 )

@@ -7,15 +7,20 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.ApiResponse
 import net.yukh.xui.shared.dto.Client
+import net.yukh.xui.shared.dto.EnableRequest
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
+import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.ServerStatus
 
 /** Platform HTTP engine (Darwin on iOS, OkHttp on JVM). */
@@ -58,6 +63,24 @@ class PanelApi(baseUrl: String, private val token: String) {
 
     suspend fun nodes(): ApiResponse<List<Node>> =
         client.get("$base/panel/api/nodes/list") { auth() }.body()
+
+    suspend fun addNode(node: NodeModel): ApiAck =
+        client.post("$base/panel/api/nodes/add") {
+            auth(); contentType(ContentType.Application.Json); setBody(node)
+        }.body()
+
+    suspend fun updateNode(id: Int, node: NodeModel): ApiAck =
+        client.post("$base/panel/api/nodes/update/$id") {
+            auth(); contentType(ContentType.Application.Json); setBody(node)
+        }.body()
+
+    suspend fun deleteNode(id: Int): ApiAck =
+        client.post("$base/panel/api/nodes/del/$id") { auth() }.body()
+
+    suspend fun setNodeEnable(id: Int, enable: Boolean): ApiAck =
+        client.post("$base/panel/api/nodes/setEnable/$id") {
+            auth(); contentType(ContentType.Application.Json); setBody(EnableRequest(enable))
+        }.body()
 
     /**
      * Online clients reported by a specific node, queried directly against that

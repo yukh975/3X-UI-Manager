@@ -190,6 +190,13 @@ data class Node(
     val clientCount: Int = 0,
 ) {
     val online: Boolean get() = status.equals("online", ignoreCase = true)
+
+    fun toModel(): NodeModel = NodeModel(
+        id = id, name = name, remark = remark, scheme = scheme, address = address,
+        port = port, basePath = basePath, apiToken = apiToken, enable = enable,
+        allowPrivateAddress = allowPrivateAddress, tlsVerifyMode = tlsVerifyMode,
+        pinnedCertSha256 = pinnedCertSha256,
+    )
 }
 
 @Serializable

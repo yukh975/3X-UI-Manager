@@ -27,6 +27,7 @@ import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
+import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.ServerStatus
 
 /** One server's currently-online clients, for the grouped online view. */
@@ -58,6 +59,10 @@ fun App() {
             var onlines by remember { mutableStateOf<List<String>>(emptyList()) }
             var onlineGroups by remember { mutableStateOf<List<OnlineGroup>>(emptyList()) }
             var onlineLoading by remember { mutableStateOf(false) }
+            var editingNode by remember { mutableStateOf<NodeModel?>(null) }
+            var editingNodeNew by remember { mutableStateOf(false) }
+            var editorSaving by remember { mutableStateOf(false) }
+            var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
             val store = remember { SessionStore() }
             val scope = rememberCoroutineScope()
@@ -164,6 +169,35 @@ fun App() {
                         onToken = { token = it; error = null },
                         onConnect = { scope.launch { connect(baseUrl, token) } },
                     )
+                } else if (editingNode != null) {
+                    NodeEditorScreen(
+                        initial = editingNode!!,
+                        isNew = editingNodeNew,
+                        saving = editorSaving,
+                        error = editorError,
+                        onSave = { model ->
+                            scope.launch {
+                                editorSaving = true; editorError = null
+                                val r = try {
+                                    if (editingNodeNew) api?.addNode(model) else api?.updateNode(model.id, model)
+                                } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                editorSaving = false
+                                if (r?.success == true) { editingNode = null; refreshAll() }
+                                else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
+                            }
+                        },
+                        onDelete = {
+                            scope.launch {
+                                editorSaving = true; editorError = null
+                                val r = try { api?.deleteNode(editingNode!!.id) }
+                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                editorSaving = false
+                                if (r?.success == true) { editingNode = null; refreshAll() }
+                                else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
+                            }
+                        },
+                        onCancel = { editingNode = null; editorError = null },
+                    )
                 } else {
                     val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes", "More")
                     val icons = listOf("📊", "🔌", "👥", "🌐", "⚙️")
@@ -197,7 +231,11 @@ fun App() {
                                 )
                                 1 -> InboundsListScreen(inbounds)
                                 2 -> ClientsListScreen(clients)
-                                3 -> NodesListScreen(nodes)
+                                3 -> NodesListScreen(
+                                    nodes,
+                                    onAdd = { editingNodeNew = true; editorError = null; editingNode = NodeModel() },
+                                    onEdit = { n -> editingNodeNew = false; editorError = null; editingNode = n.toModel() },
+                                )
                                 else -> MoreScreen(
                                     host = baseUrl,
                                     lang = lang,
