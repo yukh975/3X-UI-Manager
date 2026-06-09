@@ -47,6 +47,10 @@ its "Текущее состояние" section is the latest snapshot.
 - Node 3x-ui self-update: `POST /panel/api/nodes/updatePanel` `{ids:[…]}` (Nodes
   screen shows an "Update" button when a node's version ≠ latest).
 - Filed upstream bug: MHSanaei/3x-ui **#5100** (resetting an inbound's traffic on
-  the master doesn't propagate to slave nodes).
+  the master doesn't propagate to slave nodes) — **fixed upstream in v3.3.0 (#5103)**.
+- **3X-UI panel manual (RU + EN)** lives on branch **`docs/manual`** (NOT
+  android-app), MR **!2** → `main`: `docs/3X-UI-MANUAL.ru.md` (canonical) +
+  `docs/3X-UI-MANUAL.md` (English). Targets panel **v3.3.0**; 16 sections / 142
+  subsections. Edit RU first, then sync EN.
 
 (Detailed rationale for every point above is in `docs/ANDROID-HANDOFF.md`.)
