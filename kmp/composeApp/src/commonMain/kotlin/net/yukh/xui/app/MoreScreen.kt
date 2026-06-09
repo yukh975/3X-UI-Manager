@@ -1,5 +1,6 @@
 package net.yukh.xui.app
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ fun MoreScreen(
     host: String,
     lang: String,
     onLang: (String) -> Unit,
+    onXrayConfig: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
     Column(
@@ -45,6 +47,18 @@ fun MoreScreen(
                 Text(tr("Language"), style = MaterialTheme.typography.labelMedium)
                 LanguageRow(tr("English"), selected = lang == LANG_EN) { onLang(LANG_EN) }
                 LanguageRow(tr("Русский"), selected = lang == LANG_RU) { onLang(LANG_RU) }
+            }
+        }
+
+        // ---- Xray config ----
+        Card(modifier = Modifier.fillMaxWidth().clickable { onXrayConfig() }) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(tr("Xray config"), style = MaterialTheme.typography.titleMedium)
+                Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 

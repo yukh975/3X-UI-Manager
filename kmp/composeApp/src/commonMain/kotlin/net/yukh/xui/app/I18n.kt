@@ -116,4 +116,12 @@ val ruStrings: Map<String, String> = mapOf(
     "Protocol, transport and security are edited in the full editor (coming soon)." to
         "Протокол, транспорт и безопасность редактируются в полном редакторе (скоро).",
     "Couldn't load inbound" to "Не удалось загрузить inbound",
+
+    // Xray config
+    "Xray config" to "Конфиг Xray",
+    "Outbound test URL" to "URL для теста outbound",
+    "xray config (JSON)" to "конфиг xray (JSON)",
+    "Invalid JSON." to "Некорректный JSON.",
+    "Save, then restart Xray to apply. A broken config can take Xray down." to
+        "Сохраните и перезапустите Xray, чтобы применить. Сломанный конфиг может уронить Xray.",
 )

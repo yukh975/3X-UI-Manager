@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -12,6 +13,7 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
+import io.ktor.http.parameters
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import net.yukh.xui.shared.dto.ApiAck
@@ -127,6 +129,20 @@ class PanelApi(baseUrl: String, private val token: String) {
             c.close()
         }
     }
+
+    /** Full Xray config — obj is a JSON string wrapping {xraySetting, outboundTestUrl};
+     *  parse with parseXrayObj(). Token-accessible since panel v3.3.0. */
+    suspend fun getXraySetting(): ApiResponse<String> =
+        client.post("$base/panel/api/xray/") { auth() }.body()
+
+    suspend fun updateXraySetting(xraySetting: String, outboundTestUrl: String): ApiAck =
+        client.submitForm(
+            url = "$base/panel/api/xray/update",
+            formParameters = parameters {
+                append("xraySetting", xraySetting)
+                append("outboundTestUrl", outboundTestUrl)
+            },
+        ) { auth() }.body()
 
     suspend fun restartXray(): ApiAck =
         client.post("$base/panel/api/server/restartXrayService") { auth() }.body()

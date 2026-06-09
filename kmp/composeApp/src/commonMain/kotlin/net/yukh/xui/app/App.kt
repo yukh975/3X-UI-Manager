@@ -30,6 +30,7 @@ import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.ServerStatus
+import net.yukh.xui.shared.dto.parseXrayObj
 
 /** One server's currently-online clients, for the grouped online view. */
 data class OnlineGroup(val server: String, val isMain: Boolean, val emails: List<String>)
@@ -64,6 +65,10 @@ fun App() {
             var editingNodeNew by remember { mutableStateOf(false) }
             var editingInbound by remember { mutableStateOf<InboundModel?>(null) }
             var editingInboundNew by remember { mutableStateOf(false) }
+            var showXray by remember { mutableStateOf(false) }
+            var xrayConfigJson by remember { mutableStateOf("") }
+            var xrayTestUrl by remember { mutableStateOf("") }
+            var xrayLoading by remember { mutableStateOf(false) }
             var editorSaving by remember { mutableStateOf(false) }
             var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
@@ -137,6 +142,20 @@ fun App() {
                 }
                 onlineGroups = listOf(main) + nodeGroups
                 onlineLoading = false
+            }
+
+            suspend fun loadXray() {
+                val a = api ?: return
+                xrayLoading = true; editorError = null
+                val r = try { a.getXraySetting() } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                if (r?.success == true && r.obj != null) {
+                    val parsed = parseXrayObj(r.obj!!)
+                    if (parsed != null) { xrayConfigJson = parsed.configJson; xrayTestUrl = parsed.testUrl }
+                    else editorError = "Couldn't parse Xray config"
+                } else if (r != null) {
+                    editorError = r.msg.ifBlank { "Xray config unavailable (needs panel v3.3.0+)" }
+                }
+                xrayLoading = false
             }
 
             // Auto-restore a saved session + language on first launch.
@@ -230,6 +249,27 @@ fun App() {
                         },
                         onCancel = { editingNode = null; editorError = null },
                     )
+                } else if (showXray) {
+                    XrayConfigScreen(
+                        configJson = xrayConfigJson,
+                        testUrl = xrayTestUrl,
+                        loading = xrayLoading,
+                        saving = editorSaving,
+                        error = editorError,
+                        onConfigChange = { xrayConfigJson = it },
+                        onTestUrlChange = { xrayTestUrl = it },
+                        onSave = {
+                            scope.launch {
+                                editorSaving = true; editorError = null
+                                val r = try { api?.updateXraySetting(xrayConfigJson, xrayTestUrl) }
+                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                editorSaving = false
+                                if (r?.success == true) showXray = false
+                                else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
+                            }
+                        },
+                        onCancel = { showXray = false; editorError = null },
+                    )
                 } else {
                     val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes", "More")
                     val icons = listOf("📊", "🔌", "👥", "🌐", "⚙️")
@@ -284,6 +324,7 @@ fun App() {
                                     host = baseUrl,
                                     lang = lang,
                                     onLang = { lang = it; store.saveLang(it) },
+                                    onXrayConfig = { showXray = true; editorError = null; scope.launch { loadXray() } },
                                     onDisconnect = doDisconnect,
                                 )
                             }
