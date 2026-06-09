@@ -144,17 +144,20 @@ interface XuiApi {
     @POST("panel/api/nodes/updatePanel")
     suspend fun updateNodePanel(@Body body: NodeIdsRequest): ApiAck
 
-    // ---- Settings & Xray config (session-auth only; token → login redirect) ---
+    // ---- Settings & Xray config -------------------------------------------
+    // Panel v3.3.0 (upstream c6f15cd5) moved these under /panel/api/* so they now
+    // accept a Bearer token too (were session-only at /panel/setting/* and
+    // /panel/xray/*, which v3.3.0 removed). Requires panel ≥ v3.3.0.
 
-    @POST("panel/setting/all")
+    @POST("panel/api/setting/all")
     suspend fun getAllSettings(): ApiResponse<PanelSettings>
 
     /** Returns the wrapped config as a JSON string in `obj` (parse twice). */
-    @POST("panel/xray/")
+    @POST("panel/api/xray/")
     suspend fun getXraySetting(): ApiResponse<String>
 
     @FormUrlEncoded
-    @POST("panel/xray/update")
+    @POST("panel/api/xray/update")
     suspend fun updateXraySetting(
         @Field("xraySetting") xraySetting: String,
         @Field("outboundTestUrl") outboundTestUrl: String,

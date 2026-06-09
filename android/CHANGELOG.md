@@ -21,6 +21,13 @@ uses [Semantic Versioning](https://semver.org/).
   (`POST /panel/api/server/updateGeofile/:file`). Each update confirms first,
   since the panel restarts Xray afterwards (a brief connection drop).
 
+### Changed
+- **Panel v3.3.0 compatibility:** upstream v3.3.0 moved the Xray-config and
+  panel-settings endpoints under `/panel/api/*`. `XuiApi` now targets the new
+  paths — and because they accept a Bearer token there, the **Xray config
+  editor** and the auto-derived **subscription URL** now work in **API-token**
+  mode too (previously login/password only). ⚠️ Requires the panel on **v3.3.0+**.
+
 ## [0.3.13] — 2026-06-09
 
 ### Fixed
