@@ -155,6 +155,14 @@ val ruStrings: Map<String, String> = mapOf(
     "Main server" to "Основной сервер",
     "Xray uptime" to "Аптайм Xray",
     "Update available:" to "Доступно обновление:",
+    "Traffic this month" to "Трафик за месяц",
+    "since" to "с",
+    "not all inbounds reset monthly" to "не все inbounds сбрасываются ежемесячно",
+    "Geo databases" to "Гео-базы",
+    "Update geo database?" to "Обновить гео-базу?",
+    "Downloads the latest database and restarts Xray, " +
+        "briefly dropping every active connection." to
+        "Скачает свежую базу и перезапустит Xray, кратко разорвав все активные подключения.",
 
     // Clients list & rows
     "Add client" to "Добавить клиента",

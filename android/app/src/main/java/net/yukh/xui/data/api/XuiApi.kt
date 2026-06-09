@@ -55,6 +55,12 @@ interface XuiApi {
     @POST("panel/api/server/updatePanel")
     suspend fun updatePanel(): ApiAck
 
+    // Re-download one built-in geo database (allowlisted .dat name) from its
+    // upstream release and restart Xray. The panel also has a no-path variant
+    // that updates all of them at once; the app updates per file.
+    @POST("panel/api/server/updateGeofile/{fileName}")
+    suspend fun updateGeofile(@Path("fileName") fileName: String): ApiAck
+
     // ---- Inbounds ---------------------------------------------------------
 
     // /list (not /list/slim): slim strips port/protocol/listen which the list

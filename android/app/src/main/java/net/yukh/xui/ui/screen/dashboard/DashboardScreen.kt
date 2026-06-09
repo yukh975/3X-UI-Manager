@@ -16,10 +16,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DataUsage
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Stop
@@ -61,6 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.format.formatBytes
+import net.yukh.xui.ui.format.formatDayMonth
 import net.yukh.xui.ui.format.formatPercent
 import net.yukh.xui.ui.format.formatUptime
 
@@ -73,6 +76,7 @@ fun DashboardScreen(
     var showRestartDialog by remember { mutableStateOf(false) }
     var showStopDialog by remember { mutableStateOf(false) }
     var showUpdateDialog by remember { mutableStateOf(false) }
+    var pendingGeoFile by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     DisposableEffect(lifecycleOwner) {
@@ -97,6 +101,12 @@ fun DashboardScreen(
         state.updateMessage?.let {
             snackbarHostState.showSnackbar(it)
             vm.dismissUpdateMessage()
+        }
+    }
+    LaunchedEffect(state.geoMessage) {
+        state.geoMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            vm.dismissGeoMessage()
         }
     }
 
@@ -171,8 +181,25 @@ fun DashboardScreen(
                     )
                 }
 
+                // Proxied (VPN) traffic this month for the main panel's own
+                // inbounds (sub-nodes are shown per-node on the Nodes tab).
+                state.mainTraffic?.let { t ->
+                    MetricTileCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        icon = Icons.Outlined.DataUsage,
+                        title = tr("Traffic this month"),
+                        value = t.bytes.formatBytes(),
+                        caption = if (!t.allMonthly) {
+                            tr("not all inbounds reset monthly")
+                        } else {
+                            t.sinceMillis.formatDayMonth().takeIf { it.isNotBlank() }
+                                ?.let { "${tr("since")} $it" }
+                        },
+                    )
+                }
+
                 // Each metric is its own full-width card, in this order:
-                // CPU, Memory, (Disk), Load, Net, Connections, Online.
+                // CPU, Memory, (Disk), Traffic, Load, Net, Connections, Online.
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Outlined.Speed,
@@ -221,6 +248,12 @@ fun DashboardScreen(
                     info = state.updateInfo,
                     updating = state.updating,
                     onUpdate = { showUpdateDialog = true },
+                )
+
+                GeoDatabasesCard(
+                    files = GEO_FILES,
+                    updating = state.geoUpdating,
+                    onUpdate = { pendingGeoFile = it },
                 )
             }
 
@@ -305,6 +338,28 @@ fun DashboardScreen(
             groups = state.onlineGroups,
             loading = state.onlineLoading,
             onDismiss = vm::closeOnlineList,
+        )
+    }
+
+    pendingGeoFile?.let { file ->
+        AlertDialog(
+            onDismissRequest = { pendingGeoFile = null },
+            title = { Text(tr("Update geo database?")) },
+            text = {
+                Text(
+                    "$file\n\n" + tr("Downloads the latest database and restarts Xray, " +
+                        "briefly dropping every active connection."),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.updateGeofile(file)
+                    pendingGeoFile = null
+                }) { Text(tr("Update")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingGeoFile = null }) { Text(tr("Cancel")) }
+            },
         )
     }
 }
@@ -416,6 +471,50 @@ private fun PanelVersionCard(
                         }
                     },
                 )
+            }
+        }
+    }
+}
+
+// The panel's geo-database allowlist (see ServerService.UpdateGeofile). Each can
+// be re-downloaded individually; the panel rejects any name outside this set.
+private val GEO_FILES = listOf(
+    "geoip.dat", "geosite.dat",
+    "geoip_RU.dat", "geosite_RU.dat",
+    "geoip_IR.dat", "geosite_IR.dat",
+)
+
+@Composable
+private fun GeoDatabasesCard(
+    files: List<String>,
+    updating: Set<String>,
+    onUpdate: (String) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Public, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(
+                    "  ${tr("Geo databases")}",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            files.forEach { name ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    if (name in updating) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    } else {
+                        TextButton(onClick = { onUpdate(name) }) { Text(tr("Update")) }
+                    }
+                }
             }
         }
     }
@@ -570,6 +669,7 @@ private fun MetricTileCard(
     title: String,
     value: String,
     modifier: Modifier = Modifier,
+    caption: String? = null,
     onClick: (() -> Unit)? = null,
 ) {
     Card(
@@ -588,6 +688,13 @@ private fun MetricTileCard(
                 )
             }
             Text(value, style = MaterialTheme.typography.titleMedium)
+            if (caption != null) {
+                Text(
+                    caption,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

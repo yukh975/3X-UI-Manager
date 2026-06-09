@@ -22,6 +22,10 @@ data class InboundSlim(
     val expiryTime: Long = 0,
     val tag: String = "",
     val trafficReset: String = "",
+    // When this inbound's traffic counter was last zeroed (Unix ms; 0 = never).
+    // For a trafficReset="monthly" inbound this is the start of the current
+    // accounting month, so up+down == this month's traffic.
+    val lastTrafficResetTime: Long = 0,
     // Which server owns this inbound: null/0 = the main panel's own inbound,
     // N = sub-node with that id. The central /inbounds/list mixes both.
     val nodeId: Int? = null,

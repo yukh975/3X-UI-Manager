@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.ServerTraffic
 
 data class NodesUiState(
     val items: List<Node> = emptyList(),
@@ -24,6 +25,8 @@ data class NodesUiState(
     // its panelVersion differs. Empty until fetched.
     val latestVersion: String = "",
     val updatingIds: Set<Int> = emptySet(),
+    // Proxied traffic this month per node id (Σ up+down of that node's inbounds).
+    val trafficByNode: Map<Int, ServerTraffic> = emptyMap(),
 )
 
 data class NodeEditorState(
@@ -74,6 +77,12 @@ class NodesViewModel @Inject constructor(
                 repo.getPanelUpdateInfo().onSuccess { info ->
                     _state.update { it.copy(latestVersion = info.latestVersion.removePrefix("v")) }
                 }
+            }
+        }
+        // Per-node proxied traffic this month (one /inbounds/list call, grouped by nodeId).
+        viewModelScope.launch {
+            repo.monthlyTrafficByServer().onSuccess { byServer ->
+                _state.update { it.copy(trafficByNode = byServer) }
             }
         }
     }

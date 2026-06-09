@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.ServerTraffic
 
 data class DashboardUiState(
     val status: ServerStatus? = null,
@@ -35,6 +36,11 @@ data class DashboardUiState(
     val updateInfo: PanelUpdateInfo? = null,
     val updating: Boolean = false,
     val updateMessage: String? = null,
+    // Proxied traffic this month for the main panel's own inbounds (nodeId 0).
+    val mainTraffic: ServerTraffic? = null,
+    // Geo databases: which .dat files are currently re-downloading, + last result.
+    val geoUpdating: Set<String> = emptySet(),
+    val geoMessage: String? = null,
 ) {
     val onlineCount: Int get() = onlineEmails.size
 }
@@ -68,6 +74,7 @@ class DashboardViewModel @Inject constructor(
         if (pollJob?.isActive == true) return
         _state.update { it.copy(loading = it.status == null) }
         if (_state.value.updateInfo == null) refreshUpdateInfo()
+        if (_state.value.mainTraffic == null) refreshMonthlyTraffic()
         pollJob = viewModelScope.launch {
             while (isActive) {
                 fetchOnce()
@@ -91,6 +98,7 @@ class DashboardViewModel @Inject constructor(
             _state.update { it.copy(pullRefreshing = true) }
             fetchOnce()
             refreshUpdateInfo()
+            refreshMonthlyTraffic()
             _state.update { it.copy(pullRefreshing = false) }
         }
     }
@@ -186,6 +194,17 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    // Monthly traffic changes slowly, so (like update info) it's fetched once on
+    // start and on pull-to-refresh — not on every 3s status poll, which would pull
+    // the whole inbounds list each tick.
+    private fun refreshMonthlyTraffic() {
+        viewModelScope.launch {
+            repo.monthlyTrafficByServer().onSuccess { byServer ->
+                _state.update { it.copy(mainTraffic = byServer[0]) }
+            }
+        }
+    }
+
     fun updatePanel() {
         if (_state.value.updating) return
         _state.update { it.copy(updating = true, updateMessage = null) }
@@ -204,6 +223,32 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun dismissUpdateMessage() = _state.update { it.copy(updateMessage = null) }
+
+    // ---- Geo databases ----------------------------------------------------
+
+    // Re-download one geo .dat from upstream; the panel restarts Xray afterwards
+    // (a brief connection drop), so the screen confirms before calling this.
+    fun updateGeofile(fileName: String) {
+        if (fileName in _state.value.geoUpdating) return
+        _state.update { it.copy(geoUpdating = it.geoUpdating + fileName, geoMessage = null) }
+        viewModelScope.launch {
+            val result = repo.updateGeofile(fileName)
+            _state.update {
+                it.copy(
+                    geoUpdating = it.geoUpdating - fileName,
+                    geoMessage = result.fold(
+                        onSuccess = { "$fileName updated — Xray restarted" },
+                        onFailure = { e -> "$fileName update failed: ${e.message}" },
+                    ),
+                )
+            }
+            // The geo update restarts Xray on the server; pull fresh status so the
+            // Xray card reflects the restart instead of waiting for the next tick.
+            refreshNow()
+        }
+    }
+
+    fun dismissGeoMessage() = _state.update { it.copy(geoMessage = null) }
 
     // ---- Xray controls ----------------------------------------------------
 
