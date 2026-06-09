@@ -18,6 +18,7 @@ import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.ApiResponse
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.EnableRequest
+import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
@@ -57,6 +58,23 @@ class PanelApi(baseUrl: String, private val token: String) {
 
     suspend fun inbounds(): ApiResponse<List<InboundSlim>> =
         client.get("$base/panel/api/inbounds/list") { auth() }.body()
+
+    /** Full inbound (with settings/streamSettings/sniffing) for round-trip edits. */
+    suspend fun getInbound(id: Int): ApiResponse<InboundModel> =
+        client.get("$base/panel/api/inbounds/get/$id") { auth() }.body()
+
+    suspend fun updateInbound(id: Int, inbound: InboundModel): ApiAck =
+        client.post("$base/panel/api/inbounds/update/$id") {
+            auth(); contentType(ContentType.Application.Json); setBody(inbound)
+        }.body()
+
+    suspend fun deleteInbound(id: Int): ApiAck =
+        client.post("$base/panel/api/inbounds/del/$id") { auth() }.body()
+
+    suspend fun setInboundEnable(id: Int, enable: Boolean): ApiAck =
+        client.post("$base/panel/api/inbounds/setEnable/$id") {
+            auth(); contentType(ContentType.Application.Json); setBody(EnableRequest(enable))
+        }.body()
 
     suspend fun clients(): ApiResponse<List<Client>> =
         client.get("$base/panel/api/clients/list") { auth() }.body()

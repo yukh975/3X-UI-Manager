@@ -2,6 +2,8 @@ package net.yukh.xui.shared.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 // ---- Response envelopes (web/entity/Msg.go) ------------------------------
 
@@ -99,6 +101,30 @@ data class ClientStat(
     val expiryTime: Long = 0,
     val reset: Int = 0,
     val lastOnline: Long = 0,
+)
+
+/**
+ * Body for inbound create/update (POST /inbounds/add, /inbounds/update/:id) and
+ * the parse target for GET /inbounds/get/:id. settings/streamSettings/sniffing
+ * are kept as raw JsonElement so a basic-field edit round-trips the protocol
+ * config untouched (the panel emits them as objects; unknown response-only
+ * fields like up/down/tag/clientStats are dropped by ignoreUnknownKeys).
+ */
+@Serializable
+data class InboundModel(
+    val id: Int = 0,
+    val remark: String = "",
+    val enable: Boolean = true,
+    val listen: String = "",
+    val port: Int = 0,
+    val protocol: String = "vless",
+    val expiryTime: Long = 0,
+    val total: Long = 0,
+    val trafficReset: String = "never",
+    val settings: JsonElement = JsonObject(emptyMap()),
+    val streamSettings: JsonElement = JsonObject(emptyMap()),
+    val sniffing: JsonElement = JsonObject(emptyMap()),
+    val nodeId: Int? = null,
 )
 
 @Serializable

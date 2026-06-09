@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.dto.Client
+import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
@@ -61,6 +62,7 @@ fun App() {
             var onlineLoading by remember { mutableStateOf(false) }
             var editingNode by remember { mutableStateOf<NodeModel?>(null) }
             var editingNodeNew by remember { mutableStateOf(false) }
+            var editingInbound by remember { mutableStateOf<InboundModel?>(null) }
             var editorSaving by remember { mutableStateOf(false) }
             var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
@@ -169,6 +171,33 @@ fun App() {
                         onToken = { token = it; error = null },
                         onConnect = { scope.launch { connect(baseUrl, token) } },
                     )
+                } else if (editingInbound != null) {
+                    InboundEditorScreen(
+                        initial = editingInbound!!,
+                        saving = editorSaving,
+                        error = editorError,
+                        onSave = { model ->
+                            scope.launch {
+                                editorSaving = true; editorError = null
+                                val r = try { api?.updateInbound(model.id, model) }
+                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                editorSaving = false
+                                if (r?.success == true) { editingInbound = null; refreshAll() }
+                                else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
+                            }
+                        },
+                        onDelete = {
+                            scope.launch {
+                                editorSaving = true; editorError = null
+                                val r = try { api?.deleteInbound(editingInbound!!.id) }
+                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                editorSaving = false
+                                if (r?.success == true) { editingInbound = null; refreshAll() }
+                                else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
+                            }
+                        },
+                        onCancel = { editingInbound = null; editorError = null },
+                    )
                 } else if (editingNode != null) {
                     NodeEditorScreen(
                         initial = editingNode!!,
@@ -229,7 +258,18 @@ fun App() {
                                     onRefresh = { scope.launch { refreshing = true; refreshAll(); refreshing = false } },
                                     onDisconnect = doDisconnect,
                                 )
-                                1 -> InboundsListScreen(inbounds)
+                                1 -> InboundsListScreen(
+                                    inbounds,
+                                    onEdit = { id ->
+                                        scope.launch {
+                                            editorError = null
+                                            val r = try { api?.getInbound(id) } catch (e: Throwable) { null }
+                                            if (r?.success == true && r.obj != null) editingInbound = r.obj
+                                            else error = r?.msg?.ifBlank { null } ?: "Couldn't load inbound"
+                                        }
+                                    },
+                                    onToggle = { id, en -> scope.launch { api?.setInboundEnable(id, en); refreshAll() } },
+                                )
                                 2 -> ClientsListScreen(clients)
                                 3 -> NodesListScreen(
                                     nodes,

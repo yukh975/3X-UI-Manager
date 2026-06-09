@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,16 +57,18 @@ private fun rowCard(onClick: (() -> Unit)? = null, content: @Composable () -> Un
 }
 
 @Composable
-fun InboundsListScreen(items: List<InboundSlim>) {
-    ListScaffold("Inbounds", items.size, "No inbounds") {
+fun InboundsListScreen(items: List<InboundSlim>, onEdit: (Int) -> Unit, onToggle: (Int, Boolean) -> Unit) {
+    ListScaffold("Inbounds", items.size, tr("No inbounds yet.")) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id }) { ib ->
-                rowCard {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                rowCard(onClick = { onEdit(ib.id) }) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(ib.remark.ifBlank { "inbound #${ib.id}" }, style = MaterialTheme.typography.titleMedium)
-                        Text(if (ib.enable) "on" else "off",
-                            color = if (ib.enable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.labelMedium)
+                        Switch(checked = ib.enable, onCheckedChange = { onToggle(ib.id, it) })
                     }
                     Text("${ib.protocol.uppercase().ifBlank { "?" }} · ${ib.listen.ifBlank { "*" }}:${ib.port}",
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

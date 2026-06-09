@@ -99,4 +99,14 @@ val ruStrings: Map<String, String> = mapOf(
     "Enabled" to "Включён",
     "Verify TLS certificate" to "Проверять TLS-сертификат",
     "Allow private address" to "Разрешить приватные адреса",
+    "Edit inbound" to "Изменить inbound",
+    "Delete inbound" to "Удалить inbound",
+    "Remark" to "Примечание",
+    "Listen IP (blank = all)" to "Listen IP (пусто = все)",
+    "Traffic limit (GB, 0 = unlimited)" to "Лимит трафика (ГБ, 0 = безлимит)",
+    "Expiry is set — edit it in the full editor (coming soon)." to
+        "Срок задан — изменить можно будет в полном редакторе (скоро).",
+    "Protocol, transport and security are edited in the full editor (coming soon)." to
+        "Протокол, транспорт и безопасность редактируются в полном редакторе (скоро).",
+    "Couldn't load inbound" to "Не удалось загрузить inbound",
 )
