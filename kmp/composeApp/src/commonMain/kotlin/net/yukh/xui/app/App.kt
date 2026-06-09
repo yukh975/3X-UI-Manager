@@ -18,6 +18,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.PanelApi
@@ -25,6 +28,9 @@ import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.ServerStatus
+
+/** One server's currently-online clients, for the grouped online view. */
+data class OnlineGroup(val server: String, val isMain: Boolean, val emails: List<String>)
 
 /**
  * Root of the shared iOS/Android Compose Multiplatform app. Connect → tabbed
@@ -50,6 +56,8 @@ fun App() {
             var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
             var nodes by remember { mutableStateOf<List<Node>>(emptyList()) }
             var onlines by remember { mutableStateOf<List<String>>(emptyList()) }
+            var onlineGroups by remember { mutableStateOf<List<OnlineGroup>>(emptyList()) }
+            var onlineLoading by remember { mutableStateOf(false) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
             val store = remember { SessionStore() }
             val scope = rememberCoroutineScope()
@@ -94,6 +102,33 @@ fun App() {
                 } catch (e: Throwable) {
                     error = e.message ?: "Network error"
                 }
+            }
+
+            // Online clients grouped BY SERVER (main panel + each node), mirroring
+            // the Android "Online by server" dialog. The central /clients/onlines
+            // can't say which inbound a client is on, so: main = online ∩ clients
+            // of main-panel inbounds (nodeId 0); each node is queried directly for
+            // its own онлайн, falling back to inbound-membership if unreachable.
+            suspend fun loadOnlineGroups() {
+                val a = api ?: return
+                onlineLoading = true
+                val onlineSet = onlines.toSet()
+                fun membersOf(nid: Int): Set<String> =
+                    inbounds.filter { (it.nodeId ?: 0) == nid }
+                        .flatMap { ib -> ib.clientStats.map { it.email } }.toSet()
+                val main = OnlineGroup("", isMain = true, onlineSet.filter { it in membersOf(0) }.sorted())
+                val nodeGroups = coroutineScope {
+                    nodes.filter { it.enable }.map { node ->
+                        async {
+                            val direct = try { a.nodeOnlines(node) } catch (e: Throwable) { null }
+                            val emails = if (direct?.success == true) direct.obj ?: emptyList()
+                                else onlineSet.filter { it in membersOf(node.id) }
+                            OnlineGroup(node.remark.ifBlank { node.name }, isMain = false, emails.sorted())
+                        }
+                    }.awaitAll()
+                }
+                onlineGroups = listOf(main) + nodeGroups
+                onlineLoading = false
             }
 
             // Auto-restore a saved session + language on first launch.
@@ -151,7 +186,10 @@ fun App() {
                                 0 -> DashboardScreen(
                                     host = baseUrl,
                                     status = status,
-                                    onlineEmails = onlines,
+                                    onlineCount = onlines.size,
+                                    onlineGroups = onlineGroups,
+                                    onlineLoading = onlineLoading,
+                                    onExpandOnline = { scope.launch { loadOnlineGroups() } },
                                     refreshing = refreshing,
                                     error = error,
                                     onRefresh = { scope.launch { refreshing = true; refreshAll(); refreshing = false } },

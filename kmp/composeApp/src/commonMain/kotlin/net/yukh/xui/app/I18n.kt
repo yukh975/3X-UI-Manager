@@ -59,6 +59,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Panel" to "Панель",
     "cores" to "ядер",
     "Online" to "Онлайн",
+    "Online by server" to "Онлайн по серверам",
+    "Main server" to "Основной сервер",
     "Online clients" to "Онлайн-клиенты",
     "Nobody online right now." to "Сейчас никто не в сети.",
 

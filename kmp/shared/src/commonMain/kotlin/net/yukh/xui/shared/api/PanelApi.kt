@@ -59,6 +59,29 @@ class PanelApi(baseUrl: String, private val token: String) {
     suspend fun nodes(): ApiResponse<List<Node>> =
         client.get("$base/panel/api/nodes/list") { auth() }.body()
 
+    /**
+     * Online clients reported by a specific node, queried directly against that
+     * node's own 3x-ui API (each node carries its own scheme/address/port/
+     * basePath/apiToken). The central panel has no per-node onlines endpoint, and
+     * since xray keys online by email per server, this is the only way to see
+     * which node a multi-server client is actually on. Mirrors Android's
+     * PanelRepository.listNodeOnlines.
+     */
+    suspend fun nodeOnlines(node: Node): ApiResponse<List<String>> {
+        val bp = node.basePath.ifBlank { "/" }
+            .let { if (it.startsWith("/")) it else "/$it" }
+            .let { if (it.endsWith("/")) it else "$it/" }
+        val nbase = "${node.scheme}://${node.address}:${node.port}$bp".trimEnd('/')
+        val c = platformHttpClient { install(ContentNegotiation) { json(sharedJson) } }
+        return try {
+            c.post("$nbase/panel/api/clients/onlines") {
+                header(HttpHeaders.Authorization, "Bearer ${node.apiToken}")
+            }.body()
+        } finally {
+            c.close()
+        }
+    }
+
     suspend fun restartXray(): ApiAck =
         client.post("$base/panel/api/server/restartXrayService") { auth() }.body()
 

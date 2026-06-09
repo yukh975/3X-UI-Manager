@@ -31,7 +31,10 @@ import net.yukh.xui.shared.dto.ServerStatus
 fun DashboardScreen(
     host: String,
     status: ServerStatus?,
-    onlineEmails: List<String>,
+    onlineCount: Int,
+    onlineGroups: List<OnlineGroup>,
+    onlineLoading: Boolean,
+    onExpandOnline: () -> Unit,
     refreshing: Boolean,
     error: String?,
     onRefresh: () -> Unit,
@@ -89,7 +92,7 @@ fun DashboardScreen(
             ValueCard(tr("Net ↑ / ↓ per s"),
                 "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}")
             ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}")
-            OnlineCard(onlineEmails)
+            OnlineCard(onlineCount, onlineGroups, onlineLoading, onExpandOnline)
             if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
             if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
         }
@@ -150,25 +153,54 @@ private fun ValueCard(title: String, value: String) {
     }
 }
 
-/** Online clients: count, tap to expand the list of online emails. */
+/** Online clients grouped BY SERVER (main panel + each node), like the Android
+ *  "Online by server" dialog. Tap to expand — loads each node's own онлайн. */
 @Composable
-private fun OnlineCard(emails: List<String>) {
+private fun OnlineCard(count: Int, groups: List<OnlineGroup>, loading: Boolean, onExpand: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable {
+            expanded = !expanded
+            if (expanded) onExpand()
+        },
+    ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(tr("Online"), style = MaterialTheme.typography.labelMedium)
-                Text(emails.size.toString(), style = MaterialTheme.typography.titleMedium)
+                Text(tr("Online by server"), style = MaterialTheme.typography.labelMedium)
+                Text(count.toString(), style = MaterialTheme.typography.titleMedium)
             }
             if (expanded) {
-                if (emails.isEmpty()) {
-                    Text(
+                when {
+                    loading && groups.isEmpty() -> Text(
+                        tr("Loading…"),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    groups.isEmpty() -> Text(
                         tr("Nobody online right now."),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                } else {
-                    emails.sorted().forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    else -> groups.forEach { g ->
+                        val header = if (g.isMain) tr("Main server") else g.server
+                        Text(
+                            "$header (${g.emails.size})",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                        if (g.emails.isEmpty()) {
+                            Text(
+                                "—",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        } else {
+                            g.emails.forEach { email ->
+                                Text(email, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
+                            }
+                        }
+                    }
                 }
             }
         }
