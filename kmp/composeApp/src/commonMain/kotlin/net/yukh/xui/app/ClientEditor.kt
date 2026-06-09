@@ -12,9 +12,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientModel
+import net.yukh.xui.shared.dto.InboundSlim
 
 private const val GBC = 1_073_741_824.0
 
@@ -40,15 +43,18 @@ private const val GBC = 1_073_741_824.0
 @Composable
 fun ClientEditorScreen(
     source: Client,
+    isNew: Boolean,
+    availableInbounds: List<InboundSlim>,
     saving: Boolean,
     error: String?,
     links: List<String>,
     linksLoading: Boolean,
     onShowLinks: () -> Unit,
-    onSave: (ClientModel) -> Unit,
+    onSave: (ClientModel, List<Int>) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit,
 ) {
+    var selectedInbounds by remember { mutableStateOf(setOf<Int>()) }
     var email by remember { mutableStateOf(source.email) }
     var enable by remember { mutableStateOf(source.enable) }
     var totalGb by remember { mutableStateOf(gbStr(source.totalGB)) }
@@ -58,7 +64,7 @@ fun ClientEditorScreen(
     var group by remember { mutableStateOf(source.group) }
     var comment by remember { mutableStateOf(source.comment) }
 
-    val canSave = !saving && email.isNotBlank()
+    val canSave = !saving && email.isNotBlank() && (!isNew || selectedInbounds.isNotEmpty())
     fun build(): ClientModel = source.toModel().copy(
         email = email.trim(),
         enable = enable,
@@ -77,8 +83,8 @@ fun ClientEditorScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TextButton(onClick = onCancel, enabled = !saving) { Text(tr("Cancel")) }
-            Text(tr("Edit client"), style = MaterialTheme.typography.titleMedium)
-            TextButton(onClick = { onSave(build()) }, enabled = canSave) { Text(if (saving) "…" else tr("Save")) }
+            Text(if (isNew) tr("New client") else tr("Edit client"), style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = { onSave(build(), selectedInbounds.toList()) }, enabled = canSave) { Text(if (saving) "…" else tr("Save")) }
         }
         Column(
             modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -95,30 +101,47 @@ fun ClientEditorScreen(
             CField(comment, { comment = it }, tr("Comment (optional)"))
             CToggle(tr("Enabled"), enable) { enable = it }
 
-            OutlinedButton(onClick = onShowLinks, modifier = Modifier.fillMaxWidth()) {
-                Text(tr("Show connection links"))
-            }
-            if (linksLoading) Text(tr("Loading…"), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (links.isNotEmpty()) {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    SelectionContainer {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            links.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+            if (isNew) {
+                Text(tr("Attach to inbounds"), style = MaterialTheme.typography.labelMedium)
+                availableInbounds.forEach { ib ->
+                    val on = ib.id in selectedInbounds
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            selectedInbounds = if (on) selectedInbounds - ib.id else selectedInbounds + ib.id
+                        },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = on, onCheckedChange = {
+                            selectedInbounds = if (it) selectedInbounds + ib.id else selectedInbounds - ib.id
+                        })
+                        Text(ib.remark.ifBlank { "inbound #${ib.id}" } + "  ·  ${ib.protocol.uppercase()}:${ib.port}")
+                    }
+                }
+            } else {
+                OutlinedButton(onClick = onShowLinks, modifier = Modifier.fillMaxWidth()) {
+                    Text(tr("Show connection links"))
+                }
+                if (linksLoading) Text(tr("Loading…"), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (links.isNotEmpty()) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SelectionContainer {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                links.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                            }
                         }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onDelete,
+                    enabled = !saving,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    ),
+                ) { Text(tr("Delete client")) }
             }
-
-            Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = onDelete,
-                enabled = !saving,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                ),
-            ) { Text(tr("Delete client")) }
             Spacer(Modifier.height(24.dp))
         }
     }

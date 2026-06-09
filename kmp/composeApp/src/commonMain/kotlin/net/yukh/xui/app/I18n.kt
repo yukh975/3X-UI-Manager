@@ -141,6 +141,8 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Client editor
     "Edit client" to "Изменить клиента",
+    "New client" to "Новый клиент",
+    "Attach to inbounds" to "Привязать к inbound'ам",
     "Delete client" to "Удалить клиента",
     "Email / name" to "Email / имя",
     "IP limit (0 = unlimited)" to "Лимит IP (0 = безлимит)",

@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.dto.Client
+import net.yukh.xui.shared.dto.ClientCreatePayload
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
@@ -78,6 +79,7 @@ fun App() {
             var xrayTestUrl by remember { mutableStateOf("") }
             var xrayLoading by remember { mutableStateOf(false) }
             var editingClient by remember { mutableStateOf<Client?>(null) }
+            var editingClientNew by remember { mutableStateOf(false) }
             var clientLinks by remember { mutableStateOf<List<String>>(emptyList()) }
             var clientLinksLoading by remember { mutableStateOf(false) }
             var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -214,6 +216,8 @@ fun App() {
                 } else if (editingClient != null) {
                     ClientEditorScreen(
                         source = editingClient!!,
+                        isNew = editingClientNew,
+                        availableInbounds = inbounds,
                         saving = editorSaving,
                         error = editorError,
                         links = clientLinks,
@@ -226,11 +230,13 @@ fun App() {
                                 clientLinksLoading = false
                             }
                         },
-                        onSave = { model ->
+                        onSave = { model, inboundIds ->
                             scope.launch {
                                 editorSaving = true; editorError = null
-                                val r = try { api?.updateClient(editingClient!!.email, model) }
-                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                val r = try {
+                                    if (editingClientNew) api?.addClient(ClientCreatePayload(model, inboundIds))
+                                    else api?.updateClient(editingClient!!.email, model)
+                                } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
                                 if (r?.success == true) { editingClient = null; clientLinks = emptyList(); refreshAll() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
@@ -385,7 +391,8 @@ fun App() {
                                 )
                                 2 -> ClientsListScreen(
                                     clients,
-                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); editingClient = c },
+                                    onAdd = { editorError = null; clientLinks = emptyList(); editingClientNew = true; editingClient = Client() },
+                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); editingClientNew = false; editingClient = c },
                                     onToggle = { c, en -> scope.launch { api?.updateClient(c.email, c.toModel().copy(enable = en)); refreshAll() } },
                                 )
                                 3 -> NodesListScreen(

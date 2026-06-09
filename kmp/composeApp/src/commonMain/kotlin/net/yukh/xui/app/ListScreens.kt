@@ -81,8 +81,8 @@ fun InboundsListScreen(items: List<InboundSlim>, onAdd: () -> Unit, onEdit: (Int
 }
 
 @Composable
-fun ClientsListScreen(items: List<Client>, onEdit: (Client) -> Unit, onToggle: (Client, Boolean) -> Unit) {
-    ListScaffold(tr("Clients"), items.size, tr("No clients yet.")) {
+fun ClientsListScreen(items: List<Client>, onAdd: () -> Unit, onEdit: (Client) -> Unit, onToggle: (Client, Boolean) -> Unit) {
+    ListScaffold(tr("Clients"), items.size, tr("No clients yet."), onAdd = onAdd) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id.toString() + it.email }) { c ->
                 rowCard(onClick = { onEdit(c) }) {
