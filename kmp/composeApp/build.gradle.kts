@@ -24,6 +24,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            implementation("io.github.alexzhirkevich:qrose:1.0.1")
         }
     }
 }

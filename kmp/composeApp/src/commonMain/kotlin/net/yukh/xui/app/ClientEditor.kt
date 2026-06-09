@@ -12,7 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundSlim
@@ -122,12 +125,19 @@ fun ClientEditorScreen(
                     Text(tr("Show connection links"))
                 }
                 if (linksLoading) Text(tr("Loading…"), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (links.isNotEmpty()) {
+                links.forEach { link ->
                     Card(modifier = Modifier.fillMaxWidth()) {
-                        SelectionContainer {
-                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                links.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                            }
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Image(
+                                painter = rememberQrCodePainter(link),
+                                contentDescription = null,
+                                modifier = Modifier.size(200.dp),
+                            )
+                            SelectionContainer { Text(link, style = MaterialTheme.typography.bodySmall) }
                         }
                     }
                 }
