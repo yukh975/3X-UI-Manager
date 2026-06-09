@@ -19,6 +19,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -40,8 +42,21 @@ import net.yukh.xui.shared.dto.buildInbound
 import net.yukh.xui.shared.dto.settingsText
 import net.yukh.xui.shared.dto.sniffingText
 import net.yukh.xui.shared.dto.streamSettingsText
+import net.yukh.xui.shared.json.jsonGetBool
+import net.yukh.xui.shared.json.jsonGetString
+import net.yukh.xui.shared.json.jsonGetStrings
+import net.yukh.xui.shared.json.jsonPutBool
+import net.yukh.xui.shared.json.jsonPutString
+import net.yukh.xui.shared.json.jsonPutStrings
+import net.yukh.xui.shared.json.jsonToggleString
+import net.yukh.xui.shared.json.parseCsvList
 
 private const val GB = 1_073_741_824.0
+
+private val NETWORKS = listOf("tcp", "ws", "grpc", "httpupgrade", "xhttp", "kcp")
+private val SECURITIES = listOf("none", "tls", "reality")
+private val FINGERPRINTS = listOf("chrome", "firefox", "safari", "ios", "android", "edge", "random", "randomized")
+private val SNIFF_TARGETS = listOf("http", "tls", "quic", "fakedns")
 
 /**
  * Inbound editor — create (isNew) and edit. Basics as structured fields;
@@ -119,6 +134,93 @@ fun InboundEditorScreen(
             EditToggle(tr("Enabled"), enable) { enable = it }
 
             JsonField(tr("Protocol settings (JSON)"), settingsJson) { settingsJson = it }
+
+            // ---- Transport (structured, over streamJson) ----
+            HorizontalDivider()
+            SectionTitle(tr("Transport"))
+            val network = jsonGetString(streamJson, listOf("network")).ifBlank { "tcp" }
+            Text(tr("Network"), style = MaterialTheme.typography.labelMedium)
+            Chips(NETWORKS, network) { streamJson = jsonPutString(streamJson, listOf("network"), it) }
+            when (network) {
+                "ws" -> {
+                    EditField(jsonGetString(streamJson, listOf("wsSettings", "path")),
+                        { streamJson = jsonPutString(streamJson, listOf("wsSettings", "path"), it) }, tr("Path"))
+                    EditField(jsonGetString(streamJson, listOf("wsSettings", "host")),
+                        { streamJson = jsonPutString(streamJson, listOf("wsSettings", "host"), it) }, tr("Host"))
+                }
+                "httpupgrade" -> {
+                    EditField(jsonGetString(streamJson, listOf("httpupgradeSettings", "path")),
+                        { streamJson = jsonPutString(streamJson, listOf("httpupgradeSettings", "path"), it) }, tr("Path"))
+                    EditField(jsonGetString(streamJson, listOf("httpupgradeSettings", "host")),
+                        { streamJson = jsonPutString(streamJson, listOf("httpupgradeSettings", "host"), it) }, tr("Host"))
+                }
+                "grpc" -> {
+                    EditField(jsonGetString(streamJson, listOf("grpcSettings", "serviceName")),
+                        { streamJson = jsonPutString(streamJson, listOf("grpcSettings", "serviceName"), it) }, tr("Service name"))
+                }
+            }
+
+            // ---- Security (structured) ----
+            HorizontalDivider()
+            SectionTitle(tr("Security"))
+            val security = jsonGetString(streamJson, listOf("security")).ifBlank { "none" }
+            Chips(SECURITIES, security) { streamJson = jsonPutString(streamJson, listOf("security"), it) }
+            when (security) {
+                "tls" -> {
+                    EditField(jsonGetString(streamJson, listOf("tlsSettings", "serverName")),
+                        { streamJson = jsonPutString(streamJson, listOf("tlsSettings", "serverName"), it) }, tr("SNI (server name)"))
+                }
+                "reality" -> {
+                    EditField(jsonGetString(streamJson, listOf("realitySettings", "dest")),
+                        { streamJson = jsonPutString(streamJson, listOf("realitySettings", "dest"), it) }, tr("Dest (target)"))
+                    var serverNames by remember {
+                        mutableStateOf(jsonGetStrings(streamJson, listOf("realitySettings", "serverNames")).joinToString(", "))
+                    }
+                    EditField(serverNames, {
+                        serverNames = it
+                        streamJson = jsonPutStrings(streamJson, listOf("realitySettings", "serverNames"), parseCsvList(it))
+                    }, tr("Server names (comma-separated)"))
+                    var shortIds by remember {
+                        mutableStateOf(jsonGetStrings(streamJson, listOf("realitySettings", "shortIds")).joinToString(", "))
+                    }
+                    EditField(shortIds, {
+                        shortIds = it
+                        streamJson = jsonPutStrings(streamJson, listOf("realitySettings", "shortIds"), parseCsvList(it))
+                    }, tr("Short IDs (comma-separated)"))
+                    Text(tr("Fingerprint"), style = MaterialTheme.typography.labelMedium)
+                    Chips(FINGERPRINTS, jsonGetString(streamJson, listOf("realitySettings", "settings", "fingerprint")).ifBlank { "chrome" }) {
+                        streamJson = jsonPutString(streamJson, listOf("realitySettings", "settings", "fingerprint"), it)
+                    }
+                    EditField(jsonGetString(streamJson, listOf("realitySettings", "settings", "publicKey")),
+                        { streamJson = jsonPutString(streamJson, listOf("realitySettings", "settings", "publicKey"), it) }, tr("Public key"))
+                    EditField(jsonGetString(streamJson, listOf("realitySettings", "privateKey")),
+                        { streamJson = jsonPutString(streamJson, listOf("realitySettings", "privateKey"), it) }, tr("Private key"))
+                }
+            }
+
+            // ---- Sniffing (structured, over sniffingJson) ----
+            HorizontalDivider()
+            SectionTitle(tr("Sniffing"))
+            EditToggle(tr("Enabled"), jsonGetBool(sniffingJson, listOf("enabled"))) {
+                sniffingJson = jsonPutBool(sniffingJson, listOf("enabled"), it)
+            }
+            val destOverride = jsonGetStrings(sniffingJson, listOf("destOverride"))
+            SNIFF_TARGETS.forEach { target ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        sniffingJson = jsonToggleString(sniffingJson, listOf("destOverride"), target)
+                    },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = target in destOverride, onCheckedChange = {
+                        sniffingJson = jsonToggleString(sniffingJson, listOf("destOverride"), target)
+                    })
+                    Text(target, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+
+            // ---- Advanced: raw JSON (kept in sync with the fields above) ----
+            HorizontalDivider()
             JsonField(tr("Transport / security (JSON)"), streamJson) { streamJson = it }
             JsonField(tr("Sniffing (JSON)"), sniffingJson) { sniffingJson = it }
             if (built == null) {
@@ -196,6 +298,11 @@ private fun JsonField(label: String, value: String, onChange: (String) -> Unit) 
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
         modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
     )
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
 }
 
 @Composable
