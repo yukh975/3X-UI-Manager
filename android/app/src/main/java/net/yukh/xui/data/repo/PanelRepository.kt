@@ -180,6 +180,11 @@ class PanelRepository @Inject constructor(
     suspend fun updatePanel(): Result<Unit> =
         authedAck { it.updatePanel() }
 
+    /** Re-download one built-in geo database and restart Xray. [fileName] must be
+     *  an allowlisted .dat name (e.g. "geoip.dat"); the panel rejects others. */
+    suspend fun updateGeofile(fileName: String): Result<Unit> =
+        authedAck { it.updateGeofile(fileName) }
+
     // ---- Inbounds ---------------------------------------------------------
 
     suspend fun listInbounds(): Result<List<InboundSlim>> =

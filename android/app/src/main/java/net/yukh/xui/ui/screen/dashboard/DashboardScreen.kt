@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Stop
@@ -75,6 +76,7 @@ fun DashboardScreen(
     var showRestartDialog by remember { mutableStateOf(false) }
     var showStopDialog by remember { mutableStateOf(false) }
     var showUpdateDialog by remember { mutableStateOf(false) }
+    var pendingGeoFile by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     DisposableEffect(lifecycleOwner) {
@@ -99,6 +101,12 @@ fun DashboardScreen(
         state.updateMessage?.let {
             snackbarHostState.showSnackbar(it)
             vm.dismissUpdateMessage()
+        }
+    }
+    LaunchedEffect(state.geoMessage) {
+        state.geoMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            vm.dismissGeoMessage()
         }
     }
 
@@ -241,6 +249,12 @@ fun DashboardScreen(
                     updating = state.updating,
                     onUpdate = { showUpdateDialog = true },
                 )
+
+                GeoDatabasesCard(
+                    files = GEO_FILES,
+                    updating = state.geoUpdating,
+                    onUpdate = { pendingGeoFile = it },
+                )
             }
 
             if (state.refreshingNow) {
@@ -324,6 +338,28 @@ fun DashboardScreen(
             groups = state.onlineGroups,
             loading = state.onlineLoading,
             onDismiss = vm::closeOnlineList,
+        )
+    }
+
+    pendingGeoFile?.let { file ->
+        AlertDialog(
+            onDismissRequest = { pendingGeoFile = null },
+            title = { Text(tr("Update geo database?")) },
+            text = {
+                Text(
+                    "$file\n\n" + tr("Downloads the latest database and restarts Xray, " +
+                        "briefly dropping every active connection."),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.updateGeofile(file)
+                    pendingGeoFile = null
+                }) { Text(tr("Update")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingGeoFile = null }) { Text(tr("Cancel")) }
+            },
         )
     }
 }
@@ -435,6 +471,50 @@ private fun PanelVersionCard(
                         }
                     },
                 )
+            }
+        }
+    }
+}
+
+// The panel's geo-database allowlist (see ServerService.UpdateGeofile). Each can
+// be re-downloaded individually; the panel rejects any name outside this set.
+private val GEO_FILES = listOf(
+    "geoip.dat", "geosite.dat",
+    "geoip_RU.dat", "geosite_RU.dat",
+    "geoip_IR.dat", "geosite_IR.dat",
+)
+
+@Composable
+private fun GeoDatabasesCard(
+    files: List<String>,
+    updating: Set<String>,
+    onUpdate: (String) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Public, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(
+                    "  ${tr("Geo databases")}",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            files.forEach { name ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    if (name in updating) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    } else {
+                        TextButton(onClick = { onUpdate(name) }) { Text(tr("Update")) }
+                    }
+                }
             }
         }
     }

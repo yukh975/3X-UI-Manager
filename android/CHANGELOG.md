@@ -16,6 +16,10 @@ uses [Semantic Versioning](https://semver.org/).
 - **Nodes:** each node card now shows its **traffic this month** (that node's own
   inbounds). A trailing `*` flags a group where not every inbound resets monthly
   (its figure then counts all-time, not just this month).
+- **Dashboard:** a "Geo databases" card to re-download the panel's built-in geo
+  rule files — `geoip.dat`, `geosite.dat`, and the RU/IR variants — one at a time
+  (`POST /panel/api/server/updateGeofile/:file`). Each update confirms first,
+  since the panel restarts Xray afterwards (a brief connection drop).
 
 ## [0.3.13] — 2026-06-09
 

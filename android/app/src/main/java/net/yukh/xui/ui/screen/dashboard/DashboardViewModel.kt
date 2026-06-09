@@ -38,6 +38,9 @@ data class DashboardUiState(
     val updateMessage: String? = null,
     // Proxied traffic this month for the main panel's own inbounds (nodeId 0).
     val mainTraffic: ServerTraffic? = null,
+    // Geo databases: which .dat files are currently re-downloading, + last result.
+    val geoUpdating: Set<String> = emptySet(),
+    val geoMessage: String? = null,
 ) {
     val onlineCount: Int get() = onlineEmails.size
 }
@@ -220,6 +223,32 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun dismissUpdateMessage() = _state.update { it.copy(updateMessage = null) }
+
+    // ---- Geo databases ----------------------------------------------------
+
+    // Re-download one geo .dat from upstream; the panel restarts Xray afterwards
+    // (a brief connection drop), so the screen confirms before calling this.
+    fun updateGeofile(fileName: String) {
+        if (fileName in _state.value.geoUpdating) return
+        _state.update { it.copy(geoUpdating = it.geoUpdating + fileName, geoMessage = null) }
+        viewModelScope.launch {
+            val result = repo.updateGeofile(fileName)
+            _state.update {
+                it.copy(
+                    geoUpdating = it.geoUpdating - fileName,
+                    geoMessage = result.fold(
+                        onSuccess = { "$fileName updated — Xray restarted" },
+                        onFailure = { e -> "$fileName update failed: ${e.message}" },
+                    ),
+                )
+            }
+            // The geo update restarts Xray on the server; pull fresh status so the
+            // Xray card reflects the restart instead of waiting for the next tick.
+            refreshNow()
+        }
+    }
+
+    fun dismissGeoMessage() = _state.update { it.copy(geoMessage = null) }
 
     // ---- Xray controls ----------------------------------------------------
 

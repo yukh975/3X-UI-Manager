@@ -20,6 +20,7 @@ Native Android client for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) 
 - **Traffic this month** — proxied (VPN) traffic for the current month, for the main panel's own inbounds (with the period start date).
 - Tap **Online** → list of currently-connected clients, each with the inbound(s) they belong to (refreshes every 3 s).
 - **3x-ui panel version** card at the bottom; if an update is available, an **Update** button (confirmed) triggers the panel self-update.
+- **Geo databases** — re-download the panel's built-in geo rule files (`geoip.dat`, `geosite.dat`, and the RU/IR variants) individually; the panel restarts Xray after each update (confirmed first).
 
 ### Inbounds
 - List with per-row **enable/disable** toggle, traffic usage vs quota, client counts.
