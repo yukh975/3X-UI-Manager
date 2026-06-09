@@ -2,6 +2,7 @@ package net.yukh.xui.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,10 +28,12 @@ import androidx.compose.ui.unit.dp
 fun ConnectScreen(
     baseUrl: String,
     token: String,
+    allowInsecure: Boolean,
     busy: Boolean,
     error: String?,
     onBaseUrl: (String) -> Unit,
     onToken: (String) -> Unit,
+    onAllowInsecure: (Boolean) -> Unit,
     onConnect: () -> Unit,
 ) {
     Column(
@@ -65,6 +69,20 @@ fun ConnectScreen(
             enabled = !busy,
             modifier = Modifier.fillMaxWidth().widthIn(max = 480.dp),
         )
+
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth().widthIn(max = 480.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                tr("Allow self-signed TLS"),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(checked = allowInsecure, onCheckedChange = onAllowInsecure, enabled = !busy)
+        }
 
         if (error != null) {
             Spacer(Modifier.height(12.dp))

@@ -39,6 +39,7 @@ val ruStrings: Map<String, String> = mapOf(
     "API token" to "API-токен",
     "Connect" to "Подключиться",
     "Connecting…" to "Подключение…",
+    "Allow self-signed TLS" to "Разрешить самоподписанный TLS",
     "Login failed — check URL / token" to "Не удалось войти — проверьте URL / токен",
 
     // Dashboard

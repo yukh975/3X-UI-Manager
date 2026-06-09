@@ -57,6 +57,7 @@ fun App() {
         Surface(modifier = Modifier.fillMaxSize()) {
             var baseUrl by remember { mutableStateOf("") }
             var token by remember { mutableStateOf("") }
+            var allowInsecure by remember { mutableStateOf(false) }
             var connected by remember { mutableStateOf(false) }
             var busy by remember { mutableStateOf(false) }
             var refreshing by remember { mutableStateOf(false) }
@@ -93,10 +94,10 @@ fun App() {
 
             // Validate URL+token by fetching status; on success keep the client,
             // mark connected and persist the session. Returns success.
-            suspend fun connect(url: String, tok: String): Boolean {
+            suspend fun connect(url: String, tok: String, insecure: Boolean): Boolean {
                 busy = true
                 error = null
-                val a = PanelApi(url.trim(), tok.trim())
+                val a = PanelApi(url.trim(), tok.trim(), insecure)
                 val ok = try {
                     val resp = a.serverStatus()
                     if (resp.success) {
@@ -115,7 +116,7 @@ fun App() {
                     false
                 }
                 busy = false
-                if (ok) store.save(url.trim(), tok.trim())
+                if (ok) store.save(url.trim(), tok.trim(), insecure)
                 return ok
             }
 
@@ -181,7 +182,8 @@ fun App() {
                     store.load()?.let { saved ->
                         baseUrl = saved.baseUrl
                         token = saved.token
-                        connect(saved.baseUrl, saved.token)
+                        allowInsecure = saved.allowInsecure
+                        connect(saved.baseUrl, saved.token, saved.allowInsecure)
                     }
                 }
             }
@@ -207,11 +209,13 @@ fun App() {
                     ConnectScreen(
                         baseUrl = baseUrl,
                         token = token,
+                        allowInsecure = allowInsecure,
                         busy = busy,
                         error = error,
                         onBaseUrl = { baseUrl = it; error = null },
                         onToken = { token = it; error = null },
-                        onConnect = { scope.launch { connect(baseUrl, token) } },
+                        onAllowInsecure = { allowInsecure = it },
+                        onConnect = { scope.launch { connect(baseUrl, token, allowInsecure) } },
                     )
                 } else if (editingClient != null) {
                     ClientEditorScreen(

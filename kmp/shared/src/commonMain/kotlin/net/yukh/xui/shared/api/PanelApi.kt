@@ -29,8 +29,10 @@ import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.ServerStatus
 
-/** Platform HTTP engine (Darwin on iOS, OkHttp on JVM). */
-expect fun platformHttpClient(block: HttpClientConfig<*>.() -> Unit): HttpClient
+/** Platform HTTP engine (Darwin on iOS, OkHttp on JVM). When [allowInsecure] is
+ *  true the engine trusts self-signed / otherwise-invalid TLS certificates —
+ *  mirroring the Android app's per-connection "allow self-signed TLS". */
+expect fun platformHttpClient(allowInsecure: Boolean, block: HttpClientConfig<*>.() -> Unit): HttpClient
 
 internal val sharedJson = Json {
     ignoreUnknownKeys = true
@@ -45,9 +47,9 @@ internal val sharedJson = Json {
  * Android `XuiApi` for the panel/api endpoints that work with a Bearer token.
  * (Session-only endpoints — settings, Xray config — are not here.)
  */
-class PanelApi(baseUrl: String, private val token: String) {
+class PanelApi(baseUrl: String, private val token: String, private val allowInsecure: Boolean = false) {
     private val base = baseUrl.trimEnd('/')
-    private val client = platformHttpClient {
+    private val client = platformHttpClient(allowInsecure) {
         install(ContentNegotiation) { json(sharedJson) }
     }
 
@@ -150,7 +152,7 @@ class PanelApi(baseUrl: String, private val token: String) {
             .let { if (it.startsWith("/")) it else "/$it" }
             .let { if (it.endsWith("/")) it else "$it/" }
         val nbase = "${node.scheme}://${node.address}:${node.port}$bp".trimEnd('/')
-        val c = platformHttpClient { install(ContentNegotiation) { json(sharedJson) } }
+        val c = platformHttpClient(allowInsecure) { install(ContentNegotiation) { json(sharedJson) } }
         return try {
             c.post("$nbase/panel/api/clients/onlines") {
                 header(HttpHeaders.Authorization, "Bearer ${node.apiToken}")
