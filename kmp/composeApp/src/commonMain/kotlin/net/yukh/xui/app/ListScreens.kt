@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
+import net.yukh.xui.shared.dto.TrafficSummary
 
 @Composable
 private fun ListScaffold(
@@ -101,7 +102,7 @@ fun ClientsListScreen(items: List<Client>, onEdit: (Client) -> Unit, onToggle: (
 }
 
 @Composable
-fun NodesListScreen(items: List<Node>, onAdd: () -> Unit, onEdit: (Node) -> Unit) {
+fun NodesListScreen(items: List<Node>, traffic: Map<Int, TrafficSummary>, onAdd: () -> Unit, onEdit: (Node) -> Unit) {
     ListScaffold(tr("Nodes"), items.size, tr("No nodes yet."), onAdd = onAdd) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id }) { n ->
@@ -122,6 +123,10 @@ fun NodesListScreen(items: List<Node>, onAdd: () -> Unit, onEdit: (Node) -> Unit
                             Text("3x-ui: v${n.panelVersion}", style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                    }
+                    traffic[n.id]?.let {
+                        Text("${tr("Traffic this month")}: ${it.bytes.formatBytes()}",
+                            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

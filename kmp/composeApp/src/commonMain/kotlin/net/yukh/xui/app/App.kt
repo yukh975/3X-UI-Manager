@@ -31,10 +31,17 @@ import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.ServerStatus
+import net.yukh.xui.shared.dto.TrafficSummary
 import net.yukh.xui.shared.dto.parseXrayObj
+import net.yukh.xui.shared.dto.trafficByNode
 
 /** One server's currently-online clients, for the grouped online view. */
 data class OnlineGroup(val server: String, val isMain: Boolean, val emails: List<String>)
+
+/** Panel geo-database allowlist (see ServerService.UpdateGeofile). */
+private val GEO_FILES = listOf(
+    "geoip.dat", "geosite.dat", "geoip_RU.dat", "geosite_RU.dat", "geoip_IR.dat", "geosite_IR.dat",
+)
 
 /**
  * Root of the shared iOS/Android Compose Multiplatform app. Connect → tabbed
@@ -73,6 +80,7 @@ fun App() {
             var editingClient by remember { mutableStateOf<Client?>(null) }
             var clientLinks by remember { mutableStateOf<List<String>>(emptyList()) }
             var clientLinksLoading by remember { mutableStateOf(false) }
+            var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
             var editorSaving by remember { mutableStateOf(false) }
             var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
@@ -322,6 +330,7 @@ fun App() {
                 } else {
                     val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes", "More")
                     val icons = listOf("📊", "🔌", "👥", "🌐", "⚙️")
+                    val traffic = trafficByNode(inbounds)
                     Scaffold(
                         bottomBar = {
                             NavigationBar {
@@ -345,6 +354,17 @@ fun App() {
                                     onlineGroups = onlineGroups,
                                     onlineLoading = onlineLoading,
                                     onExpandOnline = { scope.launch { loadOnlineGroups() } },
+                                    mainTraffic = traffic[0],
+                                    geoFiles = GEO_FILES,
+                                    geoUpdating = geoUpdating,
+                                    onGeoUpdate = { f ->
+                                        scope.launch {
+                                            geoUpdating = geoUpdating + f
+                                            try { api?.updateGeofile(f) } catch (e: Throwable) {}
+                                            geoUpdating = geoUpdating - f
+                                            refreshAll()
+                                        }
+                                    },
                                     refreshing = refreshing,
                                     error = error,
                                     onRefresh = { scope.launch { refreshing = true; refreshAll(); refreshing = false } },
@@ -370,6 +390,7 @@ fun App() {
                                 )
                                 3 -> NodesListScreen(
                                     nodes,
+                                    traffic = traffic,
                                     onAdd = { editingNodeNew = true; editorError = null; editingNode = NodeModel() },
                                     onEdit = { n -> editingNodeNew = false; editorError = null; editingNode = n.toModel() },
                                 )

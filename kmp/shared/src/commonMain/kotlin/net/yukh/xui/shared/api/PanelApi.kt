@@ -180,5 +180,9 @@ class PanelApi(baseUrl: String, private val token: String) {
     suspend fun stopXray(): ApiAck =
         client.post("$base/panel/api/server/stopXrayService") { auth() }.body()
 
+    /** Re-download one built-in geo database (.dat) and restart Xray. */
+    suspend fun updateGeofile(fileName: String): ApiAck =
+        client.post("$base/panel/api/server/updateGeofile/$fileName") { auth() }.body()
+
     fun close() = client.close()
 }

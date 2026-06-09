@@ -84,10 +84,29 @@ data class InboundSlim(
     val expiryTime: Long = 0,
     val tag: String = "",
     val trafficReset: String = "",
+    // When the inbound's counter was last zeroed (Unix ms; 0 = never). For a
+    // monthly inbound this is the start of the current accounting month.
+    val lastTrafficResetTime: Long = 0,
     // null/0 = the main panel's own inbound; N = sub-node id (central list mixes both).
     val nodeId: Int? = null,
     val clientStats: List<ClientStat> = emptyList(),
 )
+
+/** Proxied (VPN) traffic for one server (Σ up+down over its inbounds). */
+data class TrafficSummary(val bytes: Long, val sinceMillis: Long, val allMonthly: Boolean)
+
+/**
+ * Traffic this month grouped by server: key 0 = main panel's own inbounds
+ * (nodeId null/0), key N = sub-node N. Mirrors Android's monthlyTrafficByServer.
+ */
+fun trafficByNode(inbounds: List<InboundSlim>): Map<Int, TrafficSummary> =
+    inbounds.groupBy { it.nodeId ?: 0 }.mapValues { (_, g) ->
+        TrafficSummary(
+            bytes = g.sumOf { it.up + it.down },
+            sinceMillis = g.mapNotNull { it.lastTrafficResetTime.takeIf { t -> t > 0 } }.maxOrNull() ?: 0L,
+            allMonthly = g.all { it.trafficReset.equals("monthly", ignoreCase = true) },
+        )
+    }
 
 @Serializable
 data class ClientStat(
