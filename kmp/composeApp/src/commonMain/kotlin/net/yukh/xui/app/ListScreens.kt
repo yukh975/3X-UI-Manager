@@ -57,8 +57,8 @@ private fun rowCard(onClick: (() -> Unit)? = null, content: @Composable () -> Un
 }
 
 @Composable
-fun InboundsListScreen(items: List<InboundSlim>, onEdit: (Int) -> Unit, onToggle: (Int, Boolean) -> Unit) {
-    ListScaffold("Inbounds", items.size, tr("No inbounds yet.")) {
+fun InboundsListScreen(items: List<InboundSlim>, onAdd: () -> Unit, onEdit: (Int) -> Unit, onToggle: (Int, Boolean) -> Unit) {
+    ListScaffold("Inbounds", items.size, tr("No inbounds yet."), onAdd = onAdd) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id }) { ib ->
                 rowCard(onClick = { onEdit(ib.id) }) {

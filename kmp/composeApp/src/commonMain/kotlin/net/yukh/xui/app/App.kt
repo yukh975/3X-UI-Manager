@@ -63,6 +63,7 @@ fun App() {
             var editingNode by remember { mutableStateOf<NodeModel?>(null) }
             var editingNodeNew by remember { mutableStateOf(false) }
             var editingInbound by remember { mutableStateOf<InboundModel?>(null) }
+            var editingInboundNew by remember { mutableStateOf(false) }
             var editorSaving by remember { mutableStateOf(false) }
             var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
@@ -174,13 +175,15 @@ fun App() {
                 } else if (editingInbound != null) {
                     InboundEditorScreen(
                         initial = editingInbound!!,
+                        isNew = editingInboundNew,
                         saving = editorSaving,
                         error = editorError,
                         onSave = { model ->
                             scope.launch {
                                 editorSaving = true; editorError = null
-                                val r = try { api?.updateInbound(model.id, model) }
-                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                val r = try {
+                                    if (editingInboundNew) api?.addInbound(model) else api?.updateInbound(model.id, model)
+                                } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
                                 if (r?.success == true) { editingInbound = null; refreshAll() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
@@ -260,11 +263,12 @@ fun App() {
                                 )
                                 1 -> InboundsListScreen(
                                     inbounds,
+                                    onAdd = { editingInboundNew = true; editorError = null; editingInbound = InboundModel() },
                                     onEdit = { id ->
                                         scope.launch {
                                             editorError = null
                                             val r = try { api?.getInbound(id) } catch (e: Throwable) { null }
-                                            if (r?.success == true && r.obj != null) editingInbound = r.obj
+                                            if (r?.success == true && r.obj != null) { editingInboundNew = false; editingInbound = r.obj }
                                             else error = r?.msg?.ifBlank { null } ?: "Couldn't load inbound"
                                         }
                                     },

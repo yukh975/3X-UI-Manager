@@ -63,6 +63,11 @@ class PanelApi(baseUrl: String, private val token: String) {
     suspend fun getInbound(id: Int): ApiResponse<InboundModel> =
         client.get("$base/panel/api/inbounds/get/$id") { auth() }.body()
 
+    suspend fun addInbound(inbound: InboundModel): ApiAck =
+        client.post("$base/panel/api/inbounds/add") {
+            auth(); contentType(ContentType.Application.Json); setBody(inbound)
+        }.body()
+
     suspend fun updateInbound(id: Int, inbound: InboundModel): ApiAck =
         client.post("$base/panel/api/inbounds/update/$id") {
             auth(); contentType(ContentType.Application.Json); setBody(inbound)
