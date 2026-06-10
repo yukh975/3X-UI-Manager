@@ -18,8 +18,11 @@ its "Текущее состояние" section is the latest snapshot.
    (`feat(android): …` / `fix(android): …`) + push to `origin`. Don't push `upstream`.
 2. **Build/release only on a `vX.Y.Z` tag** (branch pushes don't build). Don't tag
    per change — batch under one tag when the user says they're ready ("собирай").
-3. **Compile locally before tagging**: `cd android && ./gradlew :app:assembleDebug`.
-   Only boot the emulator for visual checks when a change touches layout.
+3. **Dev loop for every change:** write code → compile locally
+   (`cd android && ./gradlew :app:assembleDebug`) → **install on the local
+   emulator and verify the functionality actually works** → only when fully
+   debugged, tag `vX.Y.Z` to trigger the GitLab build + release. Don't tag until
+   it's emulator-verified.
 4. Keep **both changelogs** (`android/CHANGELOG.md` + `.ru.md`) and **both READMEs**
    updated. The GitLab Release notes are generated (in Russian) from `CHANGELOG.ru.md`.
 5. In the **Russian** UI, do **not** translate the words `inbound` / `outbound`.
@@ -28,9 +31,9 @@ its "Текущее состояние" section is the latest snapshot.
 
 ## Quick facts
 - GitLab: `yukh/3x-ui`, project id **15**, `git.home.yukh.net`. API token at
-  `~/.gl-token` (local). Latest **released**: **v0.3.12** ("первый стабильный" was
-  v0.3.11). **v0.3.13 is committed on `android-app` but NOT yet tagged** (online-by-
-  server fix) — tag it when the user says "собирай".
+  `~/.gl-token` (local). Latest **released**: **v0.3.14** ("первый стабильный" was
+  v0.3.11). v0.3.14 shipped traffic-this-month + geo-database updater + v3.3.0 API
+  compat + the online-by-server fix (v0.3.13 was folded into it).
 - Release APK filename now carries the version: `3x-ui-manager-<version>.apk`.
   CI has no `test:unit` job (removed — no tests, didn't gate the release).
 - Release signing keystore: `~/.config/3x-ui-android-keystore/` (local) **and**
