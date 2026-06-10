@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.16] — Unreleased
+## [0.3.16] — 2026-06-10
 
 ### Added
 - **App icon:** a custom adaptive launcher icon (indigo “3X” monogram with a
