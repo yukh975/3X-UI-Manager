@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +26,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -45,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.outboundAddressSummary
 import net.yukh.xui.data.api.dto.outboundProtocol
 import net.yukh.xui.data.api.dto.outboundTag
+import net.yukh.xui.data.parse.parseVlessLink
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
 
@@ -97,6 +101,10 @@ fun OutboundsScreen(
 
     // --- List ---
     var pendingDelete by remember { mutableStateOf<Int?>(null) }
+    var showImport by remember { mutableStateOf(false) }
+    var linkText by remember { mutableStateOf("") }
+    var linkError by remember { mutableStateOf<String?>(null) }
+    val invalidLink = tr("Not a valid vless:// link")
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -109,6 +117,9 @@ fun OutboundsScreen(
                 },
                 actions = {
                     if (state.available) {
+                        IconButton(onClick = { showImport = true }) {
+                            Icon(Icons.Outlined.Link, contentDescription = tr("Import from link"))
+                        }
                         TextButton(onClick = vm::save, enabled = state.dirty && !state.saving) {
                             if (state.saving) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
@@ -183,6 +194,40 @@ fun OutboundsScreen(
             destructive = true,
             onConfirm = { pendingDelete = null; vm.deleteAt(idx) },
             onDismiss = { pendingDelete = null },
+        )
+    }
+
+    if (showImport) {
+        AlertDialog(
+            onDismissRequest = { showImport = false; linkText = ""; linkError = null },
+            title = { Text(tr("Import from vless:// link")) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = linkText,
+                        onValueChange = { linkText = it; linkError = null },
+                        label = { Text(tr("Paste vless:// link")) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    linkError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val parsed = parseVlessLink(linkText)
+                    if (parsed == null) {
+                        linkError = invalidLink
+                    } else {
+                        showImport = false; linkText = ""; linkError = null
+                        vm.openImported(parsed)
+                    }
+                }) { Text(tr("Import")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showImport = false; linkText = ""; linkError = null }) { Text(tr("Cancel")) }
+            },
         )
     }
 }

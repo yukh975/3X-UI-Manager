@@ -9,13 +9,16 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.3.17] — Unreleased
 
 ### Added
-- **Outbounds editor (work in progress):** a structured Outbounds list under the
-  ⋮ menu (session login only, same as the Xray config) — add / edit / delete /
-  reorder outbounds (order = priority; index 0 is the default route). Structured
-  forms for freedom, blackhole, socks and http; other protocols (vless, vmess,
-  trojan, shadowsocks, wireguard, …) are edited via a raw-JSON settings box for
-  now (full forms + import-from-`vless://`-link are coming next). Edits round-trip
-  through the full config, leaving routing / balancers / DNS / observatory intact.
+- **Outbounds editor:** a structured Outbounds list under the ⋮ menu (session
+  login only, same as the Xray config) — add / edit / delete / reorder outbounds
+  (order = priority; index 0 is the default route). Structured forms for vless,
+  vmess, trojan, shadowsocks, socks, http, freedom, blackhole and wireguard, with
+  transport + security (TCP / WS / gRPC / HTTPUpgrade / xHTTP / kcp, TLS / REALITY)
+  for the proxy protocols. **Import from a `vless://` link** — paste a share link
+  and it becomes an outbound. Niche types (dns, loopback, WARP, NordVPN, TUN,
+  reverse, subscription outbounds) are edited via a raw-JSON box. Every edit
+  round-trips through the full config, leaving routing / balancers / DNS /
+  observatory intact.
 
 ## [0.3.16] — 2026-06-10
 

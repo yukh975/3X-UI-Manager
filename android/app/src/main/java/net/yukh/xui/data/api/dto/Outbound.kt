@@ -24,60 +24,52 @@ val PROXY_PROTOCOLS = setOf("vmess", "vless", "trojan", "shadowsocks", "socks", 
 
 /** Protocols with a dedicated structured form so far (Phase 1). Others use the
  *  raw-settings editor until their form lands. */
-val FORMED_PROTOCOLS = setOf("freedom", "blackhole", "socks", "http")
+val FORMED_PROTOCOLS = setOf(
+    "freedom", "blackhole", "socks", "http", "vmess", "vless", "trojan", "shadowsocks", "wireguard",
+)
 
-val FREEDOM_DOMAIN_STRATEGY =
-    listOf("AsIs", "UseIP", "UseIPv4", "UseIPv6", "ForceIP", "ForceIPv4", "ForceIPv6")
+val FREEDOM_DOMAIN_STRATEGY = listOf(
+    "AsIs", "UseIP", "UseIPv4", "UseIPv6", "UseIPv6v4", "UseIPv4v6",
+    "ForceIP", "ForceIPv6v4", "ForceIPv6", "ForceIPv4v6", "ForceIPv4",
+)
 val BLACKHOLE_RESPONSE_TYPE = listOf("none", "http")
 val SS_METHODS = listOf(
-    "aes-256-gcm", "aes-128-gcm", "chacha20-ietf-poly1305",
-    "2022-blake3-aes-256-gcm", "2022-blake3-aes-128-gcm", "2022-blake3-chacha20-poly1305", "none",
+    "aes-256-gcm", "aes-128-gcm", "chacha20-poly1305", "chacha20-ietf-poly1305",
+    "xchacha20-poly1305", "xchacha20-ietf-poly1305",
+    "2022-blake3-aes-128-gcm", "2022-blake3-aes-256-gcm", "2022-blake3-chacha20-poly1305",
 )
 val VMESS_SECURITY = listOf("auto", "aes-128-gcm", "chacha20-poly1305", "none", "zero")
 val VLESS_FLOW = listOf("", "xtls-rprx-vision", "xtls-rprx-vision-udp443")
+val WG_DOMAIN_STRATEGY = listOf("", "ForceIP", "ForceIPv4", "ForceIPv4v6", "ForceIPv6", "ForceIPv6v4")
+val MUX_XUDP_443 = listOf("reject", "allow", "skip")
+val FREEDOM_FRAGMENT_PACKETS = listOf("tlshello", "1-1", "1-2", "1-3")
 
 /** Minimal valid skeleton for a new outbound of [protocol], keeping [tag]. */
 fun defaultOutbound(protocol: String, tag: String): JsonObject = buildJsonObject {
     put("tag", tag)
     put("protocol", protocol)
+    // 3x-ui uses a FLAT outbound-settings model (address/port/id/… directly under
+    // settings), not raw Xray's vnext[]/servers[] nesting. streamSettings is a
+    // top-level sibling. (wireguard keeps its inherent address[]/peers[] arrays.)
     when (protocol) {
         "freedom" -> putJsonObject("settings") { put("domainStrategy", "AsIs") }
         "blackhole" -> putJsonObject("settings") { putJsonObject("response") { put("type", "none") } }
-        "socks", "http" -> putJsonObject("settings") {
-            putJsonArray("servers") { addJsonObject { put("address", ""); put("port", if (protocol == "socks") 1080 else 8080) } }
-        }
+        "socks" -> putJsonObject("settings") { put("address", ""); put("port", 1080) }
+        "http" -> putJsonObject("settings") { put("address", ""); put("port", 8080) }
         "vmess" -> {
-            putJsonObject("settings") {
-                putJsonArray("vnext") {
-                    addJsonObject {
-                        put("address", ""); put("port", 443)
-                        putJsonArray("users") { addJsonObject { put("id", ""); put("security", "auto") } }
-                    }
-                }
-            }
+            putJsonObject("settings") { put("address", ""); put("port", 443); put("id", ""); put("security", "auto") }
             putJsonObject("streamSettings") { put("network", "tcp"); put("security", "none") }
         }
         "vless" -> {
-            putJsonObject("settings") {
-                putJsonArray("vnext") {
-                    addJsonObject {
-                        put("address", ""); put("port", 443)
-                        putJsonArray("users") { addJsonObject { put("id", ""); put("encryption", "none"); put("flow", "") } }
-                    }
-                }
-            }
+            putJsonObject("settings") { put("address", ""); put("port", 443); put("id", ""); put("flow", ""); put("encryption", "none") }
             putJsonObject("streamSettings") { put("network", "tcp"); put("security", "none") }
         }
         "trojan" -> {
-            putJsonObject("settings") {
-                putJsonArray("servers") { addJsonObject { put("address", ""); put("port", 443); put("password", "") } }
-            }
+            putJsonObject("settings") { put("address", ""); put("port", 443); put("password", "") }
             putJsonObject("streamSettings") { put("network", "tcp"); put("security", "tls") }
         }
         "shadowsocks" -> putJsonObject("settings") {
-            putJsonArray("servers") {
-                addJsonObject { put("address", ""); put("port", 8388); put("method", "aes-256-gcm"); put("password", "") }
-            }
+            put("address", ""); put("port", 8388); put("method", "aes-256-gcm"); put("password", "")
         }
         "wireguard" -> putJsonObject("settings") {
             put("secretKey", "")
@@ -100,20 +92,16 @@ fun defaultOutbound(protocol: String, tag: String): JsonObject = buildJsonObject
 fun JsonObject.outboundTag(): String = string("tag")
 fun JsonObject.outboundProtocol(): String = string("protocol")
 
-/** Best-effort "host:port" for the list row, across vnext / servers / peers / settings. */
+/** Best-effort "host:port" for the list row. 3x-ui's flat model puts address/port
+ *  directly under settings; wireguard uses peers[].endpoint. */
 fun JsonObject.outboundAddressSummary(): String {
     val s = child("settings")
-    fun fromArray(key: String, addrKey: String): String? {
-        val first = (s[key] as? JsonArray)?.firstOrNull()?.asObject() ?: return null
-        val addr = first.string(addrKey)
-        if (addr.isBlank()) return null
-        val port = first.int("port")
+    val addr = s.string("address")
+    if (addr.isNotBlank()) {
+        val port = s.int("port")
         return if (port != null) "$addr:$port" else addr
     }
-    fromArray("vnext", "address")?.let { return it }
-    fromArray("servers", "address")?.let { return it }
     (s["peers"] as? JsonArray)?.firstOrNull()?.asObject()?.string("endpoint")
         ?.takeIf { it.isNotBlank() }?.let { return it }
-    s.string("address").takeIf { it.isNotBlank() }?.let { return it }
     return ""
 }

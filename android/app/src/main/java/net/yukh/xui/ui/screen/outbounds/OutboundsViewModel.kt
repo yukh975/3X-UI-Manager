@@ -74,6 +74,11 @@ class OutboundsViewModel @Inject constructor(
         it.copy(editing = EditingOutbound(-1, isNew = true, draft = defaultOutbound("vless", "")), editorError = null)
     }
 
+    /** Open the editor pre-filled with an outbound parsed from a share link. */
+    fun openImported(draft: JsonObject) = _state.update {
+        it.copy(editing = EditingOutbound(-1, isNew = true, draft = draft), editorError = null)
+    }
+
     fun openEdit(index: Int) = _state.update {
         val ob = it.outbounds.getOrNull(index) ?: return@update it
         it.copy(editing = EditingOutbound(index, isNew = false, draft = ob), editorError = null)
