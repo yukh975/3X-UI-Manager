@@ -17,6 +17,7 @@ Native Android client for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) 
 ### Dashboard
 - Live server status, polled every 3 s: **Xray** running/stopped + version, one-tap **Restart Xray** (confirmed).
 - **CPU**, **Memory**, **Disk** with used/total; **Online** clients, **Net ↑/↓** per second, **TCP/UDP** connection counts, **load average**, **uptime**, public IP.
+- Tap any metric card (CPU, Memory, Disk, Load, Net, Connections) → a **history chart** with an interval dropdown (real-time up to 5 h).
 - **Traffic this month** — proxied (VPN) traffic for the current month, for the main panel's own inbounds (with the period start date).
 - Tap **Online** → list of currently-connected clients, each with the inbound(s) they belong to (refreshes every 3 s).
 - **3x-ui panel version** card at the bottom; if an update is available, an **Update** button (confirmed) triggers the panel self-update.
@@ -42,8 +43,13 @@ Native Android client for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) 
 - Manage remote panels (multi-panel): online status, CPU/RAM/latency, inbound/client counts, **traffic this month** per node.
 - **Add / edit / delete**: name, address, port, scheme, base path, API token, TLS verify mode, allow-private-address.
 
-### Xray config
-- Edit the full Xray config (outbounds, routing, DNS) as JSON — the same as the panel's Xray Configuration page.
+### Xray config (⋮ menu)
+Structured editors over the panel's Xray config — each round-trips the **whole** config, preserving sibling and unknown keys. Field sets mirror the panel's own forms. (Needs API-token access on panel **v3.3.0+**, otherwise a login session.)
+- **Outbounds** — list (add / edit / delete / reorder) + per-protocol forms (vless, vmess, trojan, shadowsocks, socks, http, freedom, blackhole, wireguard) with transport + TLS/REALITY; **import from a `vless://` link**.
+- **Routing** — rules (source / dest / inbound → outbound or balancer, reorderable) + balancers (strategy / selector / fallback) + routing strategy.
+- **DNS** — enable, DNS-level options, servers (bare string or full object), FakeDNS pools.
+- **General / Logs** — log levels, routing strategy, outbound test URL, traffic-stats toggles.
+- **Xray config (raw)** — the full config as JSON, a fallback for anything the forms don't cover (Observatory, advanced xHTTP, hysteria, reverse, …).
 
 ### Other
 - **Language**: English (default) or Russian, switchable in **Settings** (⋮ menu) — no restart needed.

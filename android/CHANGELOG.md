@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.17] — Unreleased
+## [0.3.17] — 2026-06-10
 
 ### Added
 - **Outbounds editor:** a structured Outbounds list under the ⋮ menu (session
