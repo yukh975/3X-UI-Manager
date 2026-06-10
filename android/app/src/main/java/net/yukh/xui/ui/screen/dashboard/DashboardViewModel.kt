@@ -40,6 +40,7 @@ data class DashboardUiState(
     val mainTraffic: ServerTraffic? = null,
     // Geo databases: which .dat files are currently re-downloading, + last result.
     val geoUpdating: Set<String> = emptySet(),
+    val geoUpdatingAll: Boolean = false,
     val geoMessage: String? = null,
     // Metric-history chart dialog (tap a metric card). null = closed.
     val metricChart: MetricChartState? = null,
@@ -281,6 +282,25 @@ class DashboardViewModel @Inject constructor(
             }
             // The geo update restarts Xray on the server; pull fresh status so the
             // Xray card reflects the restart instead of waiting for the next tick.
+            refreshNow()
+        }
+    }
+
+    /** Re-download all built-in geo databases in one panel call. */
+    fun updateAllGeofiles() {
+        if (_state.value.geoUpdatingAll) return
+        _state.update { it.copy(geoUpdatingAll = true, geoMessage = null) }
+        viewModelScope.launch {
+            val result = repo.updateAllGeofiles()
+            _state.update {
+                it.copy(
+                    geoUpdatingAll = false,
+                    geoMessage = result.fold(
+                        onSuccess = { "Geo databases updated — Xray restarted" },
+                        onFailure = { e -> "Geo update failed: ${e.message}" },
+                    ),
+                )
+            }
             refreshNow()
         }
     }

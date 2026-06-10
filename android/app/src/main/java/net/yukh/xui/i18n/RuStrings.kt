@@ -69,6 +69,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Memory" to "Память",
     "Disk" to "Диск",
     "Online (tap)" to "Онлайн (нажми)",
+    "Online" to "Онлайн",
     "Net ↑ / ↓ per s" to "Сеть ↑ / ↓ в сек",
     "Connections" to "Соединения",
     "Refreshing…" to "Обновление…",
@@ -171,10 +172,16 @@ val ruStrings: Map<String, String> = mapOf(
     "since" to "с",
     "not all inbounds reset monthly" to "не все inbounds сбрасываются ежемесячно",
     "Geo databases" to "Гео-базы",
+    "Update all" to "Обновить все",
     "Update geo database?" to "Обновить гео-базу?",
+    "Update all geo databases?" to "Обновить все гео-базы?",
     "Downloads the latest database and restarts Xray, " +
         "briefly dropping every active connection." to
         "Скачает свежую базу и перезапустит Xray, кратко разорвав все активные подключения.",
+    "Downloads the latest of every built-in geo database and restarts " +
+        "Xray, briefly dropping every active connection." to
+        "Скачает свежие версии всех встроенных гео-баз и перезапустит Xray, " +
+        "кратко разорвав все активные подключения.",
 
     // Clients list & rows
     "Add client" to "Добавить клиента",

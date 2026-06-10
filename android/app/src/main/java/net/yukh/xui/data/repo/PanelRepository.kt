@@ -190,6 +190,10 @@ class PanelRepository @Inject constructor(
     suspend fun updateGeofile(fileName: String): Result<Unit> =
         authedAck { it.updateGeofile(fileName) }
 
+    /** Re-download all built-in geo databases at once and restart Xray. */
+    suspend fun updateAllGeofiles(): Result<Unit> =
+        authedAck { it.updateAllGeofiles() }
+
     // ---- Inbounds ---------------------------------------------------------
 
     suspend fun listInbounds(): Result<List<InboundSlim>> =

@@ -6,6 +6,20 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.16] — Unreleased
+
+### Added
+- **App icon:** a custom adaptive launcher icon (indigo “3X” monogram with a
+  two-tone X) replaces the system-default icon — the app now shows one consistent
+  icon across devices. Includes a monochrome layer for Android 13+ themed icons.
+- **Dashboard → Geo databases:** an “Update all” button re-downloads every
+  built-in geo database in a single panel call.
+
+### Changed
+- **Dashboard → Geo databases:** the card is collapsed by default (header only)
+  and expands to the per-file list on tap (accordion).
+- **Dashboard:** the online-clients card title no longer says “(tap)”.
+
 ## [0.3.15] — 2026-06-10
 
 ### Added
