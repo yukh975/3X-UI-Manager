@@ -10,6 +10,9 @@ import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.AltRoute
+import androidx.compose.material.icons.outlined.Article
+import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.DropdownMenu
@@ -58,6 +61,9 @@ import net.yukh.xui.ui.screen.nodes.NodesViewModel
 import net.yukh.xui.ui.screen.settings.SettingsScreen
 import net.yukh.xui.ui.screen.outbounds.OutboundsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
+import net.yukh.xui.ui.screen.xrayedit.DnsScreen
+import net.yukh.xui.ui.screen.xrayedit.GeneralScreen
+import net.yukh.xui.ui.screen.xrayedit.RoutingScreen
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -92,6 +98,9 @@ fun MainScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var showXrayConfig by remember { mutableStateOf(false) }
     var showOutbounds by remember { mutableStateOf(false) }
+    var showRouting by remember { mutableStateOf(false) }
+    var showDns by remember { mutableStateOf(false) }
+    var showGeneral by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
 
     // The editor-bearing VMs are created here and shared with the tab screens, so
@@ -119,6 +128,21 @@ fun MainScreen(
                             text = { Text(tr("Outbounds")) },
                             leadingIcon = { Icon(Icons.Outlined.SwapVert, contentDescription = null) },
                             onClick = { menuOpen = false; showOutbounds = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("Routing")) },
+                            leadingIcon = { Icon(Icons.Outlined.AltRoute, contentDescription = null) },
+                            onClick = { menuOpen = false; showRouting = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("DNS")) },
+                            leadingIcon = { Icon(Icons.Outlined.Dns, contentDescription = null) },
+                            onClick = { menuOpen = false; showDns = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("General / Logs")) },
+                            leadingIcon = { Icon(Icons.Outlined.Article, contentDescription = null) },
+                            onClick = { menuOpen = false; showGeneral = true },
                         )
                         DropdownMenuItem(
                             text = { Text(tr("Xray config")) },
@@ -231,6 +255,21 @@ fun MainScreen(
     if (showOutbounds) {
         BackHandler(onBack = { showOutbounds = false })
         OutboundsScreen(onClose = { showOutbounds = false })
+    }
+
+    if (showRouting) {
+        BackHandler(onBack = { showRouting = false })
+        RoutingScreen(onClose = { showRouting = false })
+    }
+
+    if (showDns) {
+        BackHandler(onBack = { showDns = false })
+        DnsScreen(onClose = { showDns = false })
+    }
+
+    if (showGeneral) {
+        BackHandler(onBack = { showGeneral = false })
+        GeneralScreen(onClose = { showGeneral = false })
     }
 
     if (showSettings) {

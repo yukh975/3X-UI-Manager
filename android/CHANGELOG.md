@@ -19,6 +19,17 @@ uses [Semantic Versioning](https://semver.org/).
   reverse, subscription outbounds) are edited via a raw-JSON box. Every edit
   round-trips through the full config, leaving routing / balancers / DNS /
   observatory intact.
+- **Routing editor (⋮ menu):** routing rules (add / edit / delete / reorder —
+  inbound / domain / IP / port / source / network / protocol / user → outbound or
+  balancer) and balancers (tag / strategy / selector / fallback), plus the routing
+  strategy.
+- **DNS editor (⋮ menu):** enable toggle, DNS servers (bare address or full
+  object — port / query strategy / domains / expected & unexpected IPs / skip-
+  fallback / …), FakeDNS pools, and the DNS-level options.
+- **General / Logs (⋮ menu):** routing strategy, log levels (access / error /
+  mask / DNS log), outbound test URL, and traffic-statistics toggles.
+- All four Xray-config sections round-trip through the same config (siblings and
+  unknown keys preserved) and are session-login only.
 
 ## [0.3.16] — 2026-06-10
 
