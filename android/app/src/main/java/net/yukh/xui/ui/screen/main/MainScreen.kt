@@ -10,6 +10,7 @@ import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -55,6 +56,7 @@ import net.yukh.xui.ui.screen.nodes.NodeEditorScreen
 import net.yukh.xui.ui.screen.nodes.NodesScreen
 import net.yukh.xui.ui.screen.nodes.NodesViewModel
 import net.yukh.xui.ui.screen.settings.SettingsScreen
+import net.yukh.xui.ui.screen.outbounds.OutboundsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
 
 @HiltViewModel
@@ -89,6 +91,7 @@ fun MainScreen(
     val currentTab = tabs.firstOrNull { it.route == currentRoute } ?: tabs.first()
     var menuOpen by remember { mutableStateOf(false) }
     var showXrayConfig by remember { mutableStateOf(false) }
+    var showOutbounds by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
 
     // The editor-bearing VMs are created here and shared with the tab screens, so
@@ -112,6 +115,11 @@ fun MainScreen(
                         Icon(Icons.Outlined.MoreVert, contentDescription = tr("Menu"))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(tr("Outbounds")) },
+                            leadingIcon = { Icon(Icons.Outlined.SwapVert, contentDescription = null) },
+                            onClick = { menuOpen = false; showOutbounds = true },
+                        )
                         DropdownMenuItem(
                             text = { Text(tr("Xray config")) },
                             leadingIcon = { Icon(Icons.Outlined.Tune, contentDescription = null) },
@@ -218,6 +226,11 @@ fun MainScreen(
     if (showXrayConfig) {
         BackHandler(onBack = { showXrayConfig = false })
         XrayConfigScreen(onClose = { showXrayConfig = false })
+    }
+
+    if (showOutbounds) {
+        BackHandler(onBack = { showOutbounds = false })
+        OutboundsScreen(onClose = { showOutbounds = false })
     }
 
     if (showSettings) {

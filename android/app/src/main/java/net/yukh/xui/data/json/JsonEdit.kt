@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 
 /**
  * Small immutable helpers for editing kotlinx JsonObjects in place-ish: each
@@ -34,6 +35,15 @@ fun JsonObject.child(key: String): JsonObject = (this[key] as? JsonObject) ?: Js
 
 fun JsonObject.strings(key: String): List<String> =
     (this[key] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull } ?: emptyList()
+
+fun JsonObject.int(key: String): Int? = (this[key] as? JsonPrimitive)?.intOrNull
+
+fun JsonObject.putInt(key: String, value: Int): JsonObject = put(key, JsonPrimitive(value))
+
+fun JsonObject.array(key: String): JsonArray = (this[key] as? JsonArray) ?: JsonArray(emptyList())
+
+fun JsonObject.putArray(key: String, items: List<JsonElement>): JsonObject =
+    put(key, JsonArray(items))
 
 /** Parse a comma/space/newline separated list into trimmed non-blank items. */
 fun parseCsv(text: String): List<String> =

@@ -6,6 +6,17 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.17] — Unreleased
+
+### Added
+- **Outbounds editor (work in progress):** a structured Outbounds list under the
+  ⋮ menu (session login only, same as the Xray config) — add / edit / delete /
+  reorder outbounds (order = priority; index 0 is the default route). Structured
+  forms for freedom, blackhole, socks and http; other protocols (vless, vmess,
+  trojan, shadowsocks, wireguard, …) are edited via a raw-JSON settings box for
+  now (full forms + import-from-`vless://`-link are coming next). Edits round-trip
+  through the full config, leaving routing / balancers / DNS / observatory intact.
+
 ## [0.3.16] — 2026-06-10
 
 ### Added
