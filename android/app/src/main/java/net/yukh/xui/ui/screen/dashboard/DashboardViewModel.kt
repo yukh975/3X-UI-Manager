@@ -41,6 +41,8 @@ data class DashboardUiState(
     // Geo databases: which .dat files are currently re-downloading, + last result.
     val geoUpdating: Set<String> = emptySet(),
     val geoMessage: String? = null,
+    // Metric-history chart dialog (tap a metric card). null = closed.
+    val metricChart: MetricChartState? = null,
 ) {
     val onlineCount: Int get() = onlineEmails.size
 }
@@ -185,6 +187,41 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun closeOnlineList() = _state.update { it.copy(showOnlineList = false) }
+
+    // ---- Metric history chart ---------------------------------------------
+
+    /** Open the history chart for a metric block (default interval = 1 hour). */
+    fun openMetricChart(block: MetricBlock) {
+        _state.update { it.copy(metricChart = MetricChartState(block = block, loading = true)) }
+        fetchMetricChart()
+    }
+
+    /** Change the chart's interval (API bucket seconds) and reload. */
+    fun setMetricBucket(bucket: Int) {
+        val mc = _state.value.metricChart ?: return
+        _state.update { it.copy(metricChart = mc.copy(bucket = bucket, loading = true)) }
+        fetchMetricChart()
+    }
+
+    fun closeMetricChart() = _state.update { it.copy(metricChart = null) }
+
+    private fun fetchMetricChart() {
+        val mc = _state.value.metricChart ?: return
+        viewModelScope.launch {
+            val series = mc.block.series.map { def ->
+                async {
+                    ChartSeries(def.label, repo.metricHistory(def.key, mc.bucket).getOrNull().orEmpty())
+                }
+            }.awaitAll()
+            // Ignore if the user changed the block/bucket meanwhile.
+            _state.update { st ->
+                val cur = st.metricChart
+                if (cur != null && cur.block == mc.block && cur.bucket == mc.bucket) {
+                    st.copy(metricChart = cur.copy(series = series, loading = false))
+                } else st
+            }
+        }
+    }
 
     // ---- Panel update -----------------------------------------------------
 

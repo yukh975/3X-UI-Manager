@@ -13,6 +13,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
+import net.yukh.xui.data.api.dto.MetricPoint
 import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
@@ -167,6 +168,10 @@ class PanelRepository @Inject constructor(
 
     suspend fun getServerStatus(): Result<ServerStatus> =
         authedData { it.getServerStatus() }
+
+    /** System-metrics history for the dashboard charts (one metric, one bucket). */
+    suspend fun metricHistory(metric: String, bucket: Int): Result<List<MetricPoint>> =
+        authedData { it.metricHistory(metric, bucket) }
 
     suspend fun restartXray(): Result<Unit> =
         authedAck { it.restartXray() }

@@ -9,6 +9,7 @@ import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
+import net.yukh.xui.data.api.dto.MetricPoint
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.NodeModel
@@ -42,6 +43,15 @@ interface XuiApi {
 
     @GET("panel/api/server/status")
     suspend fun getServerStatus(): ApiResponse<ServerStatus>
+
+    // System-metrics history for the dashboard charts. metric ∈ SystemMetricKeys
+    // (cpu, mem, swap, netUp, netDown, diskUsage, tcpCount, udpCount, load1…);
+    // bucket ∈ {2, 30, 60, 120, 180, 300} seconds (≤ 60 points returned).
+    @GET("panel/api/server/history/{metric}/{bucket}")
+    suspend fun metricHistory(
+        @Path("metric") metric: String,
+        @Path("bucket") bucket: Int,
+    ): ApiResponse<List<MetricPoint>>
 
     @POST("panel/api/server/restartXrayService")
     suspend fun restartXray(): ApiAck

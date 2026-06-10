@@ -6,6 +6,17 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.15] — Unreleased
+
+### Added
+- **Dashboard:** tap any system-metric card (CPU, Memory, Disk, Load, Network,
+  Connections) to open a **history chart** for that metric, with an interval
+  selector at the top (Real-time / 30 min / 1 hour / 2 / 3 / 5 hours; default
+  **1 hour**). Multi-value blocks chart every series — Load as 1m/5m/15m, Network
+  as ↑/↓, Connections as TCP/UDP. Data comes from the panel's
+  `GET /panel/api/server/history/{metric}/{bucket}` (Bearer-token), ~60 points per
+  interval. Percent metrics use a fixed 0–100 % scale; the rest auto-scale.
+
 ## [0.3.14] — 2026-06-09
 
 ### Added

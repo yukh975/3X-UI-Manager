@@ -163,6 +163,7 @@ fun DashboardScreen(
                     title = tr("CPU") + if (status.cpuCores > 0) " · ${status.cpuCores} ${tr("cores")}" else "",
                     primaryValue = status.cpu.formatPercent(),
                     progress = (status.cpu / 100.0).toFloat().coerceIn(0f, 1f),
+                    onClick = { vm.openMetricChart(MetricBlock.CPU) },
                 )
                 MetricBarCard(
                     icon = Icons.Outlined.Memory,
@@ -170,6 +171,7 @@ fun DashboardScreen(
                     primaryValue = status.memPercent.formatPercent(),
                     secondaryValue = "${status.mem.current.formatBytes()} / ${status.mem.total.formatBytes()}",
                     progress = (status.memPercent / 100.0).toFloat().coerceIn(0f, 1f),
+                    onClick = { vm.openMetricChart(MetricBlock.MEMORY) },
                 )
                 if (status.disk.total > 0) {
                     MetricBarCard(
@@ -178,6 +180,7 @@ fun DashboardScreen(
                         primaryValue = status.diskPercent.formatPercent(),
                         secondaryValue = "${status.disk.current.formatBytes()} / ${status.disk.total.formatBytes()}",
                         progress = (status.diskPercent / 100.0).toFloat().coerceIn(0f, 1f),
+                        onClick = { vm.openMetricChart(MetricBlock.DISK) },
                     )
                 }
 
@@ -205,18 +208,21 @@ fun DashboardScreen(
                     icon = Icons.Outlined.Speed,
                     title = tr("Load 1·5·15m"),
                     value = "%.2f·%.2f·%.2f".format(status.load1, status.load5, status.load15),
+                    onClick = { vm.openMetricChart(MetricBlock.LOAD) },
                 )
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Outlined.SwapVert,
                     title = tr("Net ↑ / ↓ per s"),
                     value = "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}",
+                    onClick = { vm.openMetricChart(MetricBlock.NET) },
                 )
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Outlined.Dns,
                     title = tr("Connections"),
                     value = "TCP ${status.tcpCount} · UDP ${status.udpCount}",
+                    onClick = { vm.openMetricChart(MetricBlock.CONN) },
                 )
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -338,6 +344,14 @@ fun DashboardScreen(
             groups = state.onlineGroups,
             loading = state.onlineLoading,
             onDismiss = vm::closeOnlineList,
+        )
+    }
+
+    state.metricChart?.let { mc ->
+        MetricHistoryDialog(
+            state = mc,
+            onBucket = vm::setMetricBucket,
+            onDismiss = vm::closeMetricChart,
         )
     }
 
@@ -633,8 +647,9 @@ private fun MetricBarCard(
     primaryValue: String,
     progress: Float,
     secondaryValue: String? = null,
+    onClick: (() -> Unit)? = null,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = if (onClick != null) Modifier.fillMaxWidth().clickable(onClick = onClick) else Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
