@@ -157,6 +157,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Load" to "Нагрузка",
     "Network" to "Сеть",
     "history" to "история",
+    "Interval" to "Период",
     "No history yet" to "Данных истории пока нет",
     "Real-time" to "Реальное время",
     "30 min" to "30 мин",

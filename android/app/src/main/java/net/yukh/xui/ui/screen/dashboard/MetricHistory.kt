@@ -10,18 +10,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,12 +59,12 @@ data class ChartSeries(val label: String, val points: List<MetricPoint>)
 /** State of the open metric-history chart. `bucket` is the API bucket-seconds. */
 data class MetricChartState(
     val block: MetricBlock,
-    val bucket: Int = 60,
+    val bucket: Int = 2,
     val series: List<ChartSeries> = emptyList(),
     val loading: Boolean = false,
 )
 
-/** Interval options → API bucket seconds (≈60 points each). Default: 1 hour. */
+/** Interval options → API bucket seconds (≈60 points each). Default: real-time. */
 val BUCKET_OPTIONS: List<Pair<Int, String>> = listOf(
     2 to "Real-time",
     30 to "30 min",
@@ -94,23 +97,31 @@ fun MetricHistoryDialog(
         title = { Text("${tr(state.block.title)} — ${tr("history")}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Interval selector — scrolls the selected chip into view.
-                val chipState = rememberLazyListState()
-                LaunchedEffect(state.bucket) {
-                    val idx = BUCKET_OPTIONS.indexOfFirst { it.first == state.bucket }
-                    if (idx >= 0) chipState.animateScrollToItem(idx)
-                }
-                LazyRow(
-                    state = chipState,
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                // Interval selector — dropdown menu.
+                var expanded by remember { mutableStateOf(false) }
+                val selectedLabel = BUCKET_OPTIONS.firstOrNull { it.first == state.bucket }?.second ?: ""
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
                 ) {
-                    items(BUCKET_OPTIONS) { (bucket, label) ->
-                        FilterChip(
-                            selected = state.bucket == bucket,
-                            onClick = { if (state.bucket != bucket) onBucket(bucket) },
-                            label = { Text(tr(label)) },
-                        )
+                    OutlinedTextField(
+                        value = tr(selectedLabel),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(tr("Interval")) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        BUCKET_OPTIONS.forEach { (bucket, label) ->
+                            DropdownMenuItem(
+                                text = { Text(tr(label)) },
+                                onClick = {
+                                    expanded = false
+                                    if (bucket != state.bucket) onBucket(bucket)
+                                },
+                            )
+                        }
                     }
                 }
 
