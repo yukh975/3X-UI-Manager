@@ -31,11 +31,12 @@ its "Текущее состояние" section is the latest snapshot.
 
 ## Quick facts
 - GitLab: `yukh/3x-ui`, project id **15**, `git.home.yukh.net`. API token at
-  `~/.gl-token` (local). Latest **released**: **v0.3.15** ("первый стабильный" was
-  v0.3.11). v0.3.15 added dashboard metric-history charts (tap CPU/Mem/Disk/Load/
-  Net/Conn → line chart, interval dropdown, default real-time). v0.3.14 shipped
-  traffic-this-month + geo-database updater + v3.3.0 API compat + the online-by-
-  server fix (v0.3.13 was folded into it).
+  `~/.gl-token` (local). Latest **released**: **v0.3.16** ("первый стабильный" was
+  v0.3.11). v0.3.16 added a custom adaptive app icon (3X monogram) + geo-databases
+  accordion with "Update all". v0.3.15 added dashboard metric-history charts (tap
+  CPU/Mem/Disk/Load/Net/Conn → line chart, interval dropdown, default real-time).
+  v0.3.14 shipped traffic-this-month + geo-database updater + v3.3.0 API compat +
+  the online-by-server fix (v0.3.13 was folded into it).
 - Release APK filename now carries the version: `3x-ui-manager-<version>.apk`.
   CI has no `test:unit` job (removed — no tests, didn't gate the release).
 - Release signing keystore: `~/.config/3x-ui-android-keystore/` (local) **and**
