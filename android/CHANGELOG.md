@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.21] — unreleased
+## [0.3.21] — 2026-06-11
 
 ### Changed
 - **The app is now token-only and requires panel v3.3.0 or newer.** Login +
