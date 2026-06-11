@@ -46,6 +46,14 @@ class ConnectViewModel @Inject constructor(
     private val _state = MutableStateFlow(initialState())
     val state: StateFlow<ConnectUiState> = _state.asStateFlow()
 
+    init {
+        // Surface a mid-session auth loss (token revoked / session expired) that
+        // bounced the user back here, so the Connect screen explains why.
+        viewModelScope.launch {
+            repo.authError.collect { msg -> if (msg != null) _state.update { it.copy(error = msg) } }
+        }
+    }
+
     private fun initialState(): ConnectUiState {
         val stored = store.getProfile() ?: return ConnectUiState()
         return when (val auth = stored.auth) {

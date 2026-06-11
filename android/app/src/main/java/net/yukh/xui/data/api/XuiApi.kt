@@ -1,6 +1,7 @@
 package net.yukh.xui.data.api
 
 import net.yukh.xui.data.api.dto.ApiAck
+import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
@@ -9,18 +10,25 @@ import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.LoginRequest
+import net.yukh.xui.data.api.dto.MetricPoint
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
+import okhttp3.MultipartBody
+import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Streaming
 
 interface XuiApi {
 
@@ -43,6 +51,15 @@ interface XuiApi {
     @GET("panel/api/server/status")
     suspend fun getServerStatus(): ApiResponse<ServerStatus>
 
+    // System-metrics history for the dashboard charts. metric ∈ SystemMetricKeys
+    // (cpu, mem, swap, netUp, netDown, diskUsage, tcpCount, udpCount, load1…);
+    // bucket ∈ {2, 30, 60, 120, 180, 300} seconds (≤ 60 points returned).
+    @GET("panel/api/server/history/{metric}/{bucket}")
+    suspend fun metricHistory(
+        @Path("metric") metric: String,
+        @Path("bucket") bucket: Int,
+    ): ApiResponse<List<MetricPoint>>
+
     @POST("panel/api/server/restartXrayService")
     suspend fun restartXray(): ApiAck
 
@@ -56,10 +73,29 @@ interface XuiApi {
     suspend fun updatePanel(): ApiAck
 
     // Re-download one built-in geo database (allowlisted .dat name) from its
-    // upstream release and restart Xray. The panel also has a no-path variant
-    // that updates all of them at once; the app updates per file.
+    // upstream release and restart Xray. The no-path variant updates all of
+    // them at once.
     @POST("panel/api/server/updateGeofile/{fileName}")
     suspend fun updateGeofile(@Path("fileName") fileName: String): ApiAck
+
+    @POST("panel/api/server/updateGeofile")
+    suspend fun updateAllGeofiles(): ApiAck
+
+    // ---- Backup / restore -------------------------------------------------
+
+    // Download the panel database backup. Streaming; the engine-specific
+    // filename (x-ui.db on SQLite, x-ui.dump on PostgreSQL) is returned in the
+    // Content-Disposition header — the panel picks it, so the client stays
+    // engine-agnostic.
+    @Streaming
+    @GET("panel/api/server/getDb")
+    suspend fun getDb(): Response<ResponseBody>
+
+    // Restore the panel from a backup file (multipart form field `db`). The
+    // panel imports it (under its own engine) and restarts the Xray service.
+    @Multipart
+    @POST("panel/api/server/importDB")
+    suspend fun importDb(@Part file: MultipartBody.Part): ApiAck
 
     // ---- Inbounds ---------------------------------------------------------
 
@@ -162,4 +198,37 @@ interface XuiApi {
         @Field("xraySetting") xraySetting: String,
         @Field("outboundTestUrl") outboundTestUrl: String,
     ): ApiAck
+
+    // ---- Panel admin (settings) -------------------------------------------
+
+    // Change the admin username + password. The panel verifies the old
+    // credentials against the logged-in (token → first admin) user.
+    @FormUrlEncoded
+    @POST("panel/api/setting/updateUser")
+    suspend fun updateUser(
+        @Field("oldUsername") oldUsername: String,
+        @Field("oldPassword") oldPassword: String,
+        @Field("newUsername") newUsername: String,
+        @Field("newPassword") newPassword: String,
+    ): ApiAck
+
+    // Restart the panel service (after a short delay) — the app's connection
+    // drops briefly while it comes back.
+    @POST("panel/api/setting/restartPanel")
+    suspend fun restartPanel(): ApiAck
+
+    @GET("panel/api/setting/apiTokens")
+    suspend fun listApiTokens(): ApiResponse<List<ApiToken>>
+
+    // Returns the new token with its plaintext value (shown only once).
+    @FormUrlEncoded
+    @POST("panel/api/setting/apiTokens/create")
+    suspend fun createApiToken(@Field("name") name: String): ApiResponse<ApiToken>
+
+    @POST("panel/api/setting/apiTokens/delete/{id}")
+    suspend fun deleteApiToken(@Path("id") id: Int): ApiAck
+
+    @FormUrlEncoded
+    @POST("panel/api/setting/apiTokens/setEnabled/{id}")
+    suspend fun setApiTokenEnabled(@Path("id") id: Int, @Field("enabled") enabled: Boolean): ApiAck
 }

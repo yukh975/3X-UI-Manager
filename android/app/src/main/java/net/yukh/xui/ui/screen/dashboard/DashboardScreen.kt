@@ -21,6 +21,8 @@ import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
@@ -77,6 +79,7 @@ fun DashboardScreen(
     var showStopDialog by remember { mutableStateOf(false) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     var pendingGeoFile by remember { mutableStateOf<String?>(null) }
+    var pendingGeoAll by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     DisposableEffect(lifecycleOwner) {
@@ -163,6 +166,7 @@ fun DashboardScreen(
                     title = tr("CPU") + if (status.cpuCores > 0) " · ${status.cpuCores} ${tr("cores")}" else "",
                     primaryValue = status.cpu.formatPercent(),
                     progress = (status.cpu / 100.0).toFloat().coerceIn(0f, 1f),
+                    onClick = { vm.openMetricChart(MetricBlock.CPU) },
                 )
                 MetricBarCard(
                     icon = Icons.Outlined.Memory,
@@ -170,6 +174,7 @@ fun DashboardScreen(
                     primaryValue = status.memPercent.formatPercent(),
                     secondaryValue = "${status.mem.current.formatBytes()} / ${status.mem.total.formatBytes()}",
                     progress = (status.memPercent / 100.0).toFloat().coerceIn(0f, 1f),
+                    onClick = { vm.openMetricChart(MetricBlock.MEMORY) },
                 )
                 if (status.disk.total > 0) {
                     MetricBarCard(
@@ -178,6 +183,7 @@ fun DashboardScreen(
                         primaryValue = status.diskPercent.formatPercent(),
                         secondaryValue = "${status.disk.current.formatBytes()} / ${status.disk.total.formatBytes()}",
                         progress = (status.diskPercent / 100.0).toFloat().coerceIn(0f, 1f),
+                        onClick = { vm.openMetricChart(MetricBlock.DISK) },
                     )
                 }
 
@@ -205,23 +211,26 @@ fun DashboardScreen(
                     icon = Icons.Outlined.Speed,
                     title = tr("Load 1·5·15m"),
                     value = "%.2f·%.2f·%.2f".format(status.load1, status.load5, status.load15),
+                    onClick = { vm.openMetricChart(MetricBlock.LOAD) },
                 )
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Outlined.SwapVert,
                     title = tr("Net ↑ / ↓ per s"),
                     value = "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}",
+                    onClick = { vm.openMetricChart(MetricBlock.NET) },
                 )
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Outlined.Dns,
                     title = tr("Connections"),
                     value = "TCP ${status.tcpCount} · UDP ${status.udpCount}",
+                    onClick = { vm.openMetricChart(MetricBlock.CONN) },
                 )
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Outlined.People,
-                    title = tr("Online (tap)"),
+                    title = tr("Online"),
                     value = state.onlineCount.toString(),
                     onClick = vm::openOnlineList,
                 )
@@ -253,7 +262,9 @@ fun DashboardScreen(
                 GeoDatabasesCard(
                     files = GEO_FILES,
                     updating = state.geoUpdating,
+                    updatingAll = state.geoUpdatingAll,
                     onUpdate = { pendingGeoFile = it },
+                    onUpdateAll = { pendingGeoAll = true },
                 )
             }
 
@@ -341,6 +352,14 @@ fun DashboardScreen(
         )
     }
 
+    state.metricChart?.let { mc ->
+        MetricHistoryDialog(
+            state = mc,
+            onBucket = vm::setMetricBucket,
+            onDismiss = vm::closeMetricChart,
+        )
+    }
+
     pendingGeoFile?.let { file ->
         AlertDialog(
             onDismissRequest = { pendingGeoFile = null },
@@ -359,6 +378,28 @@ fun DashboardScreen(
             },
             dismissButton = {
                 TextButton(onClick = { pendingGeoFile = null }) { Text(tr("Cancel")) }
+            },
+        )
+    }
+
+    if (pendingGeoAll) {
+        AlertDialog(
+            onDismissRequest = { pendingGeoAll = false },
+            title = { Text(tr("Update all geo databases?")) },
+            text = {
+                Text(
+                    tr("Downloads the latest of every built-in geo database and restarts " +
+                        "Xray, briefly dropping every active connection."),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.updateAllGeofiles()
+                    pendingGeoAll = false
+                }) { Text(tr("Update all")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingGeoAll = false }) { Text(tr("Cancel")) }
             },
         )
     }
@@ -488,31 +529,50 @@ private val GEO_FILES = listOf(
 private fun GeoDatabasesCard(
     files: List<String>,
     updating: Set<String>,
+    updatingAll: Boolean,
     onUpdate: (String) -> Unit,
+    onUpdateAll: () -> Unit,
 ) {
+    var expanded by remember { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Header — tap anywhere (except the button) to expand/collapse.
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(Icons.Outlined.Public, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(
                     "  ${tr("Geo databases")}",
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.weight(1f),
                 )
+                if (updatingAll) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    TextButton(onClick = onUpdateAll) { Text(tr("Update all")) }
+                }
+                Icon(
+                    if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
             }
-            files.forEach { name ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    if (name in updating) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    } else {
-                        TextButton(onClick = { onUpdate(name) }) { Text(tr("Update")) }
+            if (expanded) {
+                files.forEach { name ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        if (name in updating || updatingAll) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            TextButton(onClick = { onUpdate(name) }) { Text(tr("Update")) }
+                        }
                     }
                 }
             }
@@ -633,8 +693,9 @@ private fun MetricBarCard(
     primaryValue: String,
     progress: Float,
     secondaryValue: String? = null,
+    onClick: (() -> Unit)? = null,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = if (onClick != null) Modifier.fillMaxWidth().clickable(onClick = onClick) else Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),

@@ -8,9 +8,10 @@ import java.net.URI
  * URL. Only the subscription fields are declared; the endpoint returns many
  * more (ignoreUnknownKeys drops them).
  *
- * NOTE: /panel/setting/all is gated by session login on the panel — an API
- * token can't reach it. So this is only populated when the user connected
- * with login/password.
+ * NOTE: on panel v3.3.0 the settings call moved to /panel/api/setting/all,
+ * which an API token can reach — so this is populated with either a token or a
+ * login session. Only panels older than v3.3.0 (session-only /panel/setting/all)
+ * leave it empty under token auth.
  */
 @Serializable
 data class PanelSettings(

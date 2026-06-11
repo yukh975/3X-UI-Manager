@@ -9,10 +9,12 @@ import net.yukh.xui.data.api.ApiResponse
 import net.yukh.xui.data.api.XuiApi
 import net.yukh.xui.data.api.XuiApiFactory
 import net.yukh.xui.data.api.dto.ApiAck
+import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
+import net.yukh.xui.data.api.dto.MetricPoint
 import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
@@ -29,6 +31,9 @@ import net.yukh.xui.data.auth.InMemoryCookieJar
 import net.yukh.xui.data.prefs.ConnectionAuth
 import net.yukh.xui.data.prefs.ConnectionProfile
 import net.yukh.xui.data.prefs.ConnectionStore
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -44,6 +49,11 @@ class PanelRepository @Inject constructor(
 ) {
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
+
+    /** Set when a mid-session auth failure forces a drop to Connect (so that
+     *  screen can explain why); cleared when a fresh connect is attempted. */
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError.asStateFlow()
 
     private var api: XuiApi? = null
     private var cookieJar: InMemoryCookieJar? = null
@@ -85,6 +95,7 @@ class PanelRepository @Inject constructor(
             currentSubBase = subBaseUrl
             cachedSettings = null
             _connected.value = true
+            _authError.value = null
         }
     }
 
@@ -133,6 +144,7 @@ class PanelRepository @Inject constructor(
             currentSubBase = subBaseUrl
             cachedSettings = null
             _connected.value = true
+            _authError.value = null
         }
     }
 
@@ -168,6 +180,10 @@ class PanelRepository @Inject constructor(
     suspend fun getServerStatus(): Result<ServerStatus> =
         authedData { it.getServerStatus() }
 
+    /** System-metrics history for the dashboard charts (one metric, one bucket). */
+    suspend fun metricHistory(metric: String, bucket: Int): Result<List<MetricPoint>> =
+        authedData { it.metricHistory(metric, bucket) }
+
     suspend fun restartXray(): Result<Unit> =
         authedAck { it.restartXray() }
 
@@ -184,6 +200,38 @@ class PanelRepository @Inject constructor(
      *  an allowlisted .dat name (e.g. "geoip.dat"); the panel rejects others. */
     suspend fun updateGeofile(fileName: String): Result<Unit> =
         authedAck { it.updateGeofile(fileName) }
+
+    /** Re-download all built-in geo databases at once and restart Xray. */
+    suspend fun updateAllGeofiles(): Result<Unit> =
+        authedAck { it.updateAllGeofiles() }
+
+    // ---- Backup / restore -------------------------------------------------
+
+    /** Download the panel's database backup. The panel chooses the engine-
+     *  specific filename (x-ui.db / x-ui.dump), returned in Content-Disposition;
+     *  the whole config (settings, inbounds, clients, Xray config) lives in it. */
+    suspend fun downloadDb(): Result<DbBackup> {
+        val current = api ?: return Result.failure(PanelError.NotConnected)
+        return catching {
+            val resp = current.getDb()
+            val body = resp.body()
+            if (!resp.isSuccessful || body == null) {
+                Result.failure(PanelError.Http(resp.code()))
+            } else {
+                val name = contentDispositionFilename(resp.headers()["Content-Disposition"]) ?: "x-ui.db"
+                Result.success(DbBackup(name, body.bytes()))
+            }
+        }
+    }
+
+    /** Restore the panel from a backup file. The panel imports it under its own
+     *  engine and restarts Xray (a brief connection drop). */
+    suspend fun importDb(filename: String, bytes: ByteArray): Result<Unit> {
+        val part = MultipartBody.Part.createFormData(
+            "db", filename, bytes.toRequestBody("application/octet-stream".toMediaTypeOrNull()),
+        )
+        return authedAck { it.importDb(part) }
+    }
 
     // ---- Inbounds ---------------------------------------------------------
 
@@ -237,19 +285,20 @@ class PanelRepository @Inject constructor(
         authedData { it.getClientLinks(email) }
 
     /**
-     * Build a client's subscription URL. Needs panel sub settings, which are
-     * only reachable with session (login/password) auth — with a token the
-     * settings call is redirected to login and this returns null. The result
-     * is cached so repeated share-sheet opens don't re-fetch settings.
+     * Build a client's subscription URL. The base is either the user-set
+     * override or read from panel settings; on v3.3.0 those settings are
+     * token-readable (the setting call moved under /panel/api), so this works
+     * with a token too — only older panels need a login session. The result is
+     * cached so repeated share-sheet opens don't re-fetch settings.
      */
     suspend fun getSubscriptionUrl(client: Client): String? {
         if (client.subId.isBlank()) return null
-        // Prefer the user-set subscription base (works with API token).
+        // Prefer the user-set subscription base (handy for reverse proxies).
         currentSubBase?.takeIf { it.isNotBlank() }?.let { base ->
             val b = if (base.endsWith("/")) base else "$base/"
             return b + client.subId
         }
-        // Fall back to reading panel sub settings (login/password only).
+        // Otherwise read the base from panel settings (token-readable on v3.3.0).
         val host = currentBaseUrl?.let { PanelSettings.hostOf(it) } ?: return null
         val settings = cachedSettings ?: authedData { it.getAllSettings() }
             .getOrNull()
@@ -334,6 +383,26 @@ class PanelRepository @Inject constructor(
     suspend fun updateXraySetting(configJson: String, testUrl: String): Result<Unit> =
         authedAck { it.updateXraySetting(configJson, testUrl) }
 
+    // ---- Panel admin (settings) -------------------------------------------
+
+    /** Change the admin username + password; old credentials must match. */
+    suspend fun changeCredentials(
+        oldUsername: String, oldPassword: String, newUsername: String, newPassword: String,
+    ): Result<Unit> = authedAck { it.updateUser(oldUsername, oldPassword, newUsername, newPassword) }
+
+    /** Restart the panel service (the connection drops briefly). */
+    suspend fun restartPanel(): Result<Unit> = authedAck { it.restartPanel() }
+
+    suspend fun listApiTokens(): Result<List<ApiToken>> = authedData { it.listApiTokens() }
+
+    /** Create a token; the result carries the plaintext value (shown once). */
+    suspend fun createApiToken(name: String): Result<ApiToken> = authedData { it.createApiToken(name) }
+
+    suspend fun deleteApiToken(id: Int): Result<Unit> = authedAck { it.deleteApiToken(id) }
+
+    suspend fun setApiTokenEnabled(id: Int, enabled: Boolean): Result<Unit> =
+        authedAck { it.setApiTokenEnabled(id, enabled) }
+
     // ---- Internals --------------------------------------------------------
 
     private fun bindTokenInternal(baseUrl: String, allowInsecureTls: Boolean, token: String) {
@@ -343,6 +412,7 @@ class PanelRepository @Inject constructor(
         currentBaseUrl = baseUrl
         cachedSettings = null
         _connected.value = true
+        _authError.value = null
     }
 
     private suspend inline fun <T> authedData(
@@ -354,6 +424,7 @@ class PanelRepository @Inject constructor(
             val again = api ?: return r
             return safeData { block(again) }
         }
+        if (isUnauthorized(r)) onAuthLost()
         return r
     }
 
@@ -366,7 +437,26 @@ class PanelRepository @Inject constructor(
             val again = api ?: return r
             return safeAck { block(again) }
         }
+        if (isUnauthorized(r)) onAuthLost()
         return r
+    }
+
+    /**
+     * A mid-session 401 that reauth couldn't fix means the credential is no
+     * longer valid (a token was deleted/disabled in the panel, or the password
+     * changed under a credentials profile). Drop to the Connect screen with a
+     * message instead of leaving the app "connected" but failing every call. The
+     * profile stays saved so the fields are pre-filled for a quick fix.
+     */
+    private fun onAuthLost() {
+        if (!_connected.value) return
+        val isToken = store.getProfile()?.auth is ConnectionAuth.Token
+        _authError.value = if (isToken) {
+            "Your API token is no longer valid. Reconnect with a working one."
+        } else {
+            "Your session is no longer valid. Sign in again."
+        }
+        _connected.value = false
     }
 
     private fun isUnauthorized(r: Result<*>): Boolean {
@@ -437,6 +527,21 @@ class PanelRepository @Inject constructor(
     } catch (e: Exception) {
         Result.failure(e)
     }
+}
+
+/** A downloaded panel database backup: the raw bytes + the panel-chosen
+ *  filename (x-ui.db for SQLite, x-ui.dump for PostgreSQL). */
+class DbBackup(val filename: String, val bytes: ByteArray)
+
+/** Pull the filename out of a Content-Disposition header value, handling the
+ *  bare, quoted, and RFC 5987 (filename*=) forms. Null if absent. */
+internal fun contentDispositionFilename(header: String?): String? {
+    if (header.isNullOrBlank()) return null
+    Regex("""filename\*=(?:UTF-8'')?["']?([^"';]+)""", RegexOption.IGNORE_CASE)
+        .find(header)?.groupValues?.get(1)?.let { return it.trim() }
+    Regex("""filename=["']?([^"';]+)""", RegexOption.IGNORE_CASE)
+        .find(header)?.groupValues?.get(1)?.let { return it.trim() }
+    return null
 }
 
 /**

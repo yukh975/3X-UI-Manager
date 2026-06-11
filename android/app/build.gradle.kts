@@ -18,7 +18,10 @@ plugins {
 //                  fallback: 1
 //
 //   versionName  ← CI_COMMIT_TAG    (e.g. "v0.2.0" → "0.2.0")
-//                  fallback: `git describe --tags --abbrev=0 --match v*`
+//                  fallback: `git describe --tags --abbrev=0 --match v0.*`
+//                  (v0.* = the app's release tags; excludes the upstream panel
+//                   tags like v3.3.0 that the fork carries after the merge.
+//                   Extend the glob when the app crosses to v1.x.)
 //                  fallback: "0.1.0-<short_sha>" so artifacts from untagged
 //                            commits still have a unique identifier.
 
@@ -69,12 +72,12 @@ val resolvedVersionCode: Int =
         ?: System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
         // Local builds with a reachable tag get a meaningful code; pure
         // local builds without one fall through to 1.
-        ?: parseSemverVersionCode(runGit("describe", "--tags", "--abbrev=0", "--match", "v*"))
+        ?: parseSemverVersionCode(runGit("describe", "--tags", "--abbrev=0", "--match", "v0.*"))
         ?: 1
 
 val resolvedVersionName: String = run {
     val tag = System.getenv("CI_COMMIT_TAG")?.takeIf { it.isNotBlank() }
-        ?: runGit("describe", "--tags", "--abbrev=0", "--match", "v*")
+        ?: runGit("describe", "--tags", "--abbrev=0", "--match", "v0.*")
     if (tag != null) {
         tag.removePrefix("v")
     } else {

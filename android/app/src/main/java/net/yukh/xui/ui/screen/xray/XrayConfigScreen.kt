@@ -93,19 +93,17 @@ fun XrayConfigScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        tr("Xray configuration isn't available with an API token."),
+                        tr("Couldn't load the Xray config"),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        tr("The panel only exposes the Xray config (outbounds, routing, ") +
-                            tr("DNS) to a logged-in session. Reconnect with login/password ") +
-                            tr("to edit it."),
+                        tr("On panel v3.3.0+ the Xray config works with an API token. On older panels it's only exposed to a login session — reconnect with login/password."),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    // The "not available with a token" text already explains it;
-                    // the raw network error (the session-only endpoint refusing
-                    // the token) would just be noise here, so we don't show it.
+                    // On v3.3.0 a token loads this fine; reaching here means the
+                    // load genuinely failed (older panel, or a network error), so
+                    // the message points at the login-session fallback.
                 }
 
                 else -> Column(

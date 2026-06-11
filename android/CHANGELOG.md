@@ -6,6 +6,105 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.20] — 2026-06-11
+
+### Changed
+- **An invalid token / expired session now returns you to the Connect screen.**
+  If the API token is deleted or disabled in the panel (or a login session
+  expires and can't be renewed), the app no longer stays "connected" while every
+  request silently fails — it drops back to Connect with a clear message ("Your
+  API token is no longer valid…") and the fields pre-filled, so you can re-enter
+  a working token and reconnect. Requests now send
+  `X-Requested-With: XMLHttpRequest` so the panel reports an auth failure as
+  **401** (not 404), which the app can tell apart from a genuine "not found".
+
+## [0.3.19] — 2026-06-11
+
+### Added
+- **Panel admin (⋮ menu):** manage the panel itself, all over the token-accessible
+  settings API.
+  - **Admin account** — change the panel login username + password (the current
+    credentials are required to confirm; an API token keeps working afterwards).
+  - **API tokens** — list, create (the new token's plaintext value is shown once
+    to copy), enable / disable, and delete.
+  - **Restart panel** — restart the panel service (confirmed first; the app
+    reconnects after a few seconds).
+
+### Changed
+- Corrected the stale "an API token can't do this" wording across the app and
+  READMEs: on panel **v3.3.0+** a token covers the Xray config editor, settings
+  and subscription links. The Xray-config screen's gate is now a neutral "couldn't
+  load" message (it only appears on an actual load failure), and the subscription
+  hints note that the base is auto-read with a token too.
+
+## [0.3.18] — 2026-06-11
+
+### Added
+- **Backup / restore (⋮ menu):** download the panel's database backup to a file,
+  and restore the panel from one. The backup is the **whole database** — settings,
+  inbounds, clients and the Xray config — so a single file captures everything.
+  The panel chooses the engine-specific file (SQLite `x-ui.db` / PostgreSQL
+  `x-ui.dump`) and imports either back, so the app stays engine-agnostic. Uses the
+  system file picker (Storage Access Framework); restore confirms first and
+  restarts Xray (a brief connection drop). Works with an API token
+  (`GET /panel/api/server/getDb`, `POST /panel/api/server/importDB`).
+
+### Changed
+- Docs: clarified that on panel **v3.3.0+** an API token covers **settings**, the
+  **Xray config editor** and **subscription-link auto-discovery** too — the whole
+  management surface moved under `/panel/api/*`, which a token authenticates. The
+  README previously documented these as login-session-only.
+
+## [0.3.17] — 2026-06-10
+
+### Added
+- **Outbounds editor:** a structured Outbounds list under the ⋮ menu (session
+  login only, same as the Xray config) — add / edit / delete / reorder outbounds
+  (order = priority; index 0 is the default route). Structured forms for vless,
+  vmess, trojan, shadowsocks, socks, http, freedom, blackhole and wireguard, with
+  transport + security (TCP / WS / gRPC / HTTPUpgrade / xHTTP / kcp, TLS / REALITY)
+  for the proxy protocols. **Import from a `vless://` link** — paste a share link
+  and it becomes an outbound. Niche types (dns, loopback, WARP, NordVPN, TUN,
+  reverse, subscription outbounds) are edited via a raw-JSON box. Every edit
+  round-trips through the full config, leaving routing / balancers / DNS /
+  observatory intact.
+- **Routing editor (⋮ menu):** routing rules (add / edit / delete / reorder —
+  inbound / domain / IP / port / source / network / protocol / user → outbound or
+  balancer) and balancers (tag / strategy / selector / fallback), plus the routing
+  strategy.
+- **DNS editor (⋮ menu):** enable toggle, DNS servers (bare address or full
+  object — port / query strategy / domains / expected & unexpected IPs / skip-
+  fallback / …), FakeDNS pools, and the DNS-level options.
+- **General / Logs (⋮ menu):** routing strategy, log levels (access / error /
+  mask / DNS log), outbound test URL, and traffic-statistics toggles.
+- All four Xray-config sections round-trip through the same config (siblings and
+  unknown keys preserved) and are session-login only.
+
+## [0.3.16] — 2026-06-10
+
+### Added
+- **App icon:** a custom adaptive launcher icon (indigo “3X” monogram with a
+  two-tone X) replaces the system-default icon — the app now shows one consistent
+  icon across devices. Includes a monochrome layer for Android 13+ themed icons.
+- **Dashboard → Geo databases:** an “Update all” button re-downloads every
+  built-in geo database in a single panel call.
+
+### Changed
+- **Dashboard → Geo databases:** the card is collapsed by default (header only)
+  and expands to the per-file list on tap (accordion).
+- **Dashboard:** the online-clients card title no longer says “(tap)”.
+
+## [0.3.15] — 2026-06-10
+
+### Added
+- **Dashboard:** tap any system-metric card (CPU, Memory, Disk, Load, Network,
+  Connections) to open a **history chart** for that metric, with an interval
+  **dropdown** at the top (Real-time / 30 min / 1 hour / 2 / 3 / 5 hours; default
+  **Real-time**). Multi-value blocks chart every series — Load as 1m/5m/15m, Network
+  as ↑/↓, Connections as TCP/UDP. Data comes from the panel's
+  `GET /panel/api/server/history/{metric}/{bucket}` (Bearer-token), ~60 points per
+  interval. Percent metrics use a fixed 0–100 % scale; the rest auto-scale.
+
 ## [0.3.14] — 2026-06-09
 
 ### Added
@@ -27,8 +126,6 @@ uses [Semantic Versioning](https://semver.org/).
   paths — and because they accept a Bearer token there, the **Xray config
   editor** and the auto-derived **subscription URL** now work in **API-token**
   mode too (previously login/password only). ⚠️ Requires the panel on **v3.3.0+**.
-
-## [0.3.13] — 2026-06-09
 
 ### Fixed
 - **Online by server:** the main-server group no longer lists node-only clients.

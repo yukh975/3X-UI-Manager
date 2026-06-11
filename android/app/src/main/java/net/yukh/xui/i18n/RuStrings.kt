@@ -53,12 +53,13 @@ val ruStrings: Map<String, String> = mapOf(
     "Signing in…" to "Вход…",
     "Create one in Settings → Security → API Token on the panel." to
         "Создайте его в панели: Settings → Security → API Token.",
-    "For subscription links/QR with an API token, enter your reverse-proxy URI " +
-        "(if you use one) or the panel's Subscription URL, e.g. https://host:2096/sub/. " +
-        "Leave empty with login/password." to
-        "Для ссылок/QR подписки в режиме API-токена укажите URI обратного прокси " +
-            "(если используется) или Subscription URL панели, напр. https://host:2096/sub/. " +
-            "С логином/паролем оставьте пустым.",
+    "Optional. On panel v3.3.0+ the app reads the subscription " +
+        "base automatically (token or login). Set it here only for " +
+        "older panels, or a reverse proxy whose public URL differs " +
+        "— e.g. https://host:2096/sub/." to
+        "Необязательно. На панели v3.3.0+ приложение само читает базу подписки " +
+            "(по токену или логину). Задавайте здесь только для панелей старше v3.3.0 " +
+            "или обратного прокси, чей публичный URL отличается — напр. https://host:2096/sub/.",
 
     // Dashboard
     "Xray" to "Xray",
@@ -69,6 +70,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Memory" to "Память",
     "Disk" to "Диск",
     "Online (tap)" to "Онлайн (нажми)",
+    "Online" to "Онлайн",
     "Net ↑ / ↓ per s" to "Сеть ↑ / ↓ в сек",
     "Connections" to "Соединения",
     "Refreshing…" to "Обновление…",
@@ -153,16 +155,163 @@ val ruStrings: Map<String, String> = mapOf(
     "Online clients" to "Онлайн-клиенты",
     "Online by server" to "Онлайн по серверам",
     "Main server" to "Основной сервер",
+    // Metric history chart
+    "Load" to "Нагрузка",
+    "Network" to "Сеть",
+    "history" to "история",
+    "Interval" to "Период",
+    "No history yet" to "Данных истории пока нет",
+    "Real-time" to "Реальное время",
+    "30 min" to "30 мин",
+    "1 hour" to "1 час",
+    "2 hours" to "2 часа",
+    "3 hours" to "3 часа",
+    "5 hours" to "5 часов",
     "Xray uptime" to "Аптайм Xray",
     "Update available:" to "Доступно обновление:",
     "Traffic this month" to "Трафик за месяц",
     "since" to "с",
     "not all inbounds reset monthly" to "не все inbounds сбрасываются ежемесячно",
     "Geo databases" to "Гео-базы",
+    "Update all" to "Обновить все",
+    // Outbounds editor (the word "outbound" is left untranslated in RU)
+    "Add outbound" to "Добавить outbound",
+    "New outbound" to "Новый outbound",
+    "Edit outbound" to "Изменить outbound",
+    "Delete outbound?" to "Удалить outbound?",
+    "This outbound" to "Этот outbound",
+    "Done" to "Готово",
+    "Tag" to "Тег",
+    "Address" to "Адрес",
+    "Server" to "Сервер",
+    "Domain strategy" to "Стратегия доменов",
+    "Response type" to "Тип ответа",
+    "Username (optional)" to "Имя пользователя (необязательно)",
+    "Password (optional)" to "Пароль (необязательно)",
+    "default route" to "маршрут по умолчанию",
+    "Move up" to "Вверх",
+    "Move down" to "Вниз",
+    "Settings (raw JSON)" to "Настройки (сырой JSON)",
+    "A structured form for this protocol is coming; edit the raw JSON for now." to
+        "Структурная форма для этого протокола скоро появится; пока редактируйте сырой JSON.",
+    "Invalid JSON" to "Некорректный JSON",
+    // Outbound protocol forms + stream settings + link import
+    "Transport" to "Транспорт",
+    "Security" to "Безопасность",
+    "Path" to "Путь",
+    "Mode" to "Режим",
+    "Service name" to "Имя сервиса",
+    "Header type" to "Тип заголовка",
+    "Fingerprint" to "Отпечаток",
+    "ALPN (comma-separated)" to "ALPN (через запятую)",
+    "Allow insecure" to "Разрешить небезопасный TLS",
+    "Public key" to "Публичный ключ",
+    "Encryption" to "Шифрование",
+    "Password" to "Пароль",
+    "Method" to "Метод",
+    "UDP over TCP (uot)" to "UDP поверх TCP (uot)",
+    "Interface" to "Интерфейс",
+    "Secret key" to "Секретный ключ",
+    "Address (CIDR, comma-separated)" to "Адрес (CIDR, через запятую)",
+    "Peer" to "Пир",
+    "Allowed IPs (comma-separated)" to "Разрешённые IP (через запятую)",
+    "Pre-shared key (optional)" to "Pre-shared key (необязательно)",
+    "Import from link" to "Импорт из ссылки",
+    "Import from vless:// link" to "Импорт из vless:// ссылки",
+    "Paste vless:// link" to "Вставьте vless:// ссылку",
+    "Import" to "Импортировать",
+    "Not a valid vless:// link" to "Это не похоже на vless:// ссылку",
+    // Outbound web-parity fields
+    "Send through" to "Отправлять через",
+    "Strategy" to "Стратегия",
+    "Redirect" to "Перенаправление",
+    "Fragment" to "Фрагментация",
+    "Packets" to "Пакеты",
+    "Length" to "Длина",
+    "Max Split" to "Макс. сплит",
+    "Transmission" to "Передача",
+    "HTTP camouflage" to "HTTP-маскировка",
+    "Multi mode" to "Мульти-режим",
+    "Verify peer name" to "Проверка имени пира",
+    "Concurrency" to "Параллелизм",
+    "Workers" to "Воркеры",
+    "Reserved" to "Зарезервировано",
+    "UoT version" to "Версия UoT",
+    "Keep alive" to "Keep-alive",
+    // Routing / DNS / General editor sections
+    "Routing" to "Маршрутизация",
+    "Routing strategy" to "Стратегия маршрутизации",
+    "Routing rules" to "Правила маршрутизации",
+    "Add rule" to "Добавить правило",
+    "Balancers" to "Балансировщики",
+    "Add balancer" to "Добавить балансировщик",
+    "Delete rule?" to "Удалить правило?",
+    "Delete balancer?" to "Удалить балансировщик?",
+    "New rule" to "Новое правило",
+    "Edit rule" to "Изменить правило",
+    "New balancer" to "Новый балансировщик",
+    "Edit balancer" to "Изменить балансировщик",
+    "Target" to "Назначение",
+    "Match" to "Условия",
+    "Outbound tag" to "Тег outbound",
+    "Balancer tag" to "Тег балансировщика",
+    "Inbound tags (comma-separated)" to "Теги inbound (через запятую)",
+    "Domain (comma-separated)" to "Домены (через запятую)",
+    "Destination IP (comma-separated)" to "IP назначения (через запятую)",
+    "Source IPs (comma-separated)" to "Source IP (через запятую)",
+    "Source port" to "Source-порт",
+    "Protocol (comma-separated)" to "Протокол (через запятую)",
+    "User (comma-separated)" to "Пользователь (через запятую)",
+    "VLESS route" to "VLESS route",
+    "Selector (comma-separated)" to "Селектор (через запятую)",
+    "Fallback" to "Fallback",
+    // DNS
+    "Enable DNS" to "Включить DNS",
+    "DNS tag" to "Тег DNS",
+    "Client IP" to "Client IP",
+    "Query strategy" to "Стратегия запросов",
+    "Disable cache" to "Отключить кэш",
+    "Disable fallback" to "Отключить fallback",
+    "Disable fallback if match" to "Отключить fallback при совпадении",
+    "Parallel query" to "Параллельные запросы",
+    "Use system hosts" to "Системные hosts",
+    "DNS servers" to "DNS-серверы",
+    "Add DNS server" to "Добавить DNS-сервер",
+    "Delete DNS server?" to "Удалить DNS-сервер?",
+    "New DNS server" to "Новый DNS-сервер",
+    "Edit DNS server" to "Изменить DNS-сервер",
+    "IP pool" to "Пул IP",
+    "Pool size" to "Размер пула",
+    "Add FakeDNS" to "Добавить FakeDNS",
+    "Domains (comma-separated)" to "Домены (через запятую)",
+    "Expected IPs (comma-separated)" to "Ожидаемые IP (через запятую)",
+    "Unexpected IPs (comma-separated)" to "Неожиданные IP (через запятую)",
+    "Skip fallback" to "Пропустить fallback",
+    "Final query" to "Финальный запрос",
+    // General / Logs
+    "General / Logs" to "Общее / Логи",
+    "General" to "Общее",
+    "Logs" to "Логи",
+    "Statistics" to "Статистика",
+    "Outbound test URL" to "URL проверки outbound",
+    "Log level" to "Уровень логов",
+    "Access log (path, empty = off)" to "Access-лог (путь, пусто = выкл)",
+    "Error log (path, empty = off)" to "Error-лог (путь, пусто = выкл)",
+    "Mask address" to "Маскировать адрес",
+    "DNS log" to "DNS-лог",
+    "Inbound uplink stats" to "Статистика inbound ↑",
+    "Inbound downlink stats" to "Статистика inbound ↓",
+    "Outbound uplink stats" to "Статистика outbound ↑",
+    "Outbound downlink stats" to "Статистика outbound ↓",
     "Update geo database?" to "Обновить гео-базу?",
+    "Update all geo databases?" to "Обновить все гео-базы?",
     "Downloads the latest database and restarts Xray, " +
         "briefly dropping every active connection." to
         "Скачает свежую базу и перезапустит Xray, кратко разорвав все активные подключения.",
+    "Downloads the latest of every built-in geo database and restarts " +
+        "Xray, briefly dropping every active connection." to
+        "Скачает свежие версии всех встроенных гео-баз и перезапустит Xray, " +
+        "кратко разорвав все активные подключения.",
 
     // Clients list & rows
     "Add client" to "Добавить клиента",
@@ -236,15 +385,10 @@ val ruStrings: Map<String, String> = mapOf(
     "The remote panel itself is untouched; it's just removed from this list." to
         "Сама удалённая панель не трогается — она лишь убирается из этого списка.",
 
-    // Xray config screen (paragraphs are split across tr() calls; the Russian
-    // fragments concatenate into a coherent sentence, keep the trailing spaces)
-    "Xray configuration isn't available with an API token." to
-        "Конфигурация Xray недоступна с API-токеном.",
-    "The panel only exposes the Xray config (outbounds, routing, " to
-        "Панель отдаёт конфиг Xray (outbounds, routing, ",
-    "DNS) to a logged-in session. Reconnect with login/password " to
-        "DNS) только авторизованной сессии. Переподключитесь по логину/паролю, ",
-    "to edit it." to "чтобы редактировать его.",
+    // Xray config "couldn't load" gate (shown only when the config load fails)
+    "Couldn't load the Xray config" to "Не удалось загрузить конфиг Xray",
+    "On panel v3.3.0+ the Xray config works with an API token. On older panels it's only exposed to a login session — reconnect with login/password." to
+        "На панели v3.3.0+ конфиг Xray работает по API-токену. На более старых панелях он доступен только сессии по логину — переподключитесь по логину/паролю.",
     "Full Xray config — outbounds, routing, DNS, etc. Same as the " to
         "Полный конфиг Xray — outbounds, routing, DNS и т.д. То же, что ",
     "panel's Xray Configuration page. Save, then restart Xray to apply." to
@@ -257,13 +401,13 @@ val ruStrings: Map<String, String> = mapOf(
     "No connection links for this client." to "Нет ссылок-соединений у этого клиента.",
     "will be removed from every attached inbound." to
         "будет удалён из всех привязанных inbound'ов.",
-    "No subscription URL. With an API token, set the " +
+    "No subscription URL. On panel v3.3.0+ the app reads the " +
+        "base automatically (token or login). Otherwise set the " +
         "\"Subscription base URL\" on the connect screen " +
-        "(e.g. https://host:2096/sub/) — or connect with " +
-        "login/password so the app can read it automatically." to
-        "Нет ссылки подписки. С API-токеном задайте «Базовый URL подписки» на " +
-            "экране подключения (напр. https://host:2096/sub/) — или войдите по " +
-            "логину/паролю, чтобы приложение прочитало её автоматически.",
+        "(e.g. https://host:2096/sub/)." to
+        "Нет ссылки подписки. На панели v3.3.0+ приложение читает базу " +
+            "автоматически (по токену или логину). Иначе задайте «Базовый URL подписки» " +
+            "на экране подключения (напр. https://host:2096/sub/).",
     "Collapse" to "Свернуть",
     "Expand" to "Развернуть",
     "Copy" to "Копировать",
@@ -291,4 +435,68 @@ val ruStrings: Map<String, String> = mapOf(
     "m ago" to "м назад",
     "h ago" to "ч назад",
     "d ago" to "д назад",
+
+    // Backup / restore
+    "Backup / restore" to "Бэкап / восстановление",
+    "Back up" to "Сделать бэкап",
+    "Back up to file" to "Сохранить в файл",
+    "Download the database and save it to a file on this device." to
+        "Скачать базу и сохранить в файл на этом устройстве.",
+    "The backup is the panel's whole database — settings, inbounds, clients and the Xray config. The panel saves SQLite as x-ui.db and PostgreSQL as x-ui.dump; either restores back here." to
+        "Бэкап — это вся база панели: настройки, inbounds, клиенты и конфиг Xray. " +
+        "Панель сохраняет SQLite как x-ui.db, а PostgreSQL как x-ui.dump; и то, и другое восстанавливается обратно сюда.",
+    "Restore" to "Восстановить",
+    "Restore from file" to "Восстановить из файла",
+    "Replace the panel database from a backup file. This overwrites everything and restarts Xray — every active connection drops briefly." to
+        "Заменить базу панели из файла бэкапа. Это перезапишет всё и перезапустит Xray — " +
+        "все активные подключения кратко разорвутся.",
+    "Restore from this backup?" to "Восстановить из этого бэкапа?",
+    "Importing" to "Импорт",
+    "overwrites the panel database and restarts Xray. This can't be undone." to
+        "перезапишет базу панели и перезапустит Xray. Отменить нельзя.",
+    "Backup saved" to "Бэкап сохранён",
+    "Couldn't write the backup file" to "Не удалось записать файл бэкапа",
+    "Couldn't read the selected file" to "Не удалось прочитать выбранный файл",
+    "Restored — Xray restarted" to "Восстановлено — Xray перезапущен",
+    "Backup failed" to "Не удалось сделать бэкап",
+    "Restore failed" to "Не удалось восстановить",
+
+    // Panel admin (account / API tokens / restart)
+    "Panel admin" to "Администрирование панели",
+    "Admin account" to "Учётная запись админа",
+    "Change the panel login username and password. Enter the current ones to confirm." to
+        "Сменить логин и пароль входа в панель. Введите текущие для подтверждения.",
+    "Current username" to "Текущий логин",
+    "Current password" to "Текущий пароль",
+    "New username" to "Новый логин",
+    "New password" to "Новый пароль",
+    "Change credentials" to "Сменить учётные данные",
+    "Change credentials?" to "Сменить учётные данные?",
+    "The panel login changes immediately. Your API token keeps working, but other sessions are signed out." to
+        "Логин панели сменится сразу. Ваш API-токен продолжит работать, но другие сессии будут разлогинены.",
+    "Change" to "Сменить",
+    "API tokens" to "API-токены",
+    "No API tokens yet." to "Пока нет API-токенов.",
+    "Create token" to "Создать токен",
+    "Token name" to "Имя токена",
+    "Token created" to "Токен создан",
+    "Copy it now — it's shown only once and can't be retrieved later." to
+        "Скопируйте сейчас — он показывается один раз и потом недоступен.",
+    "Copy & close" to "Скопировать и закрыть",
+    "Delete token?" to "Удалить токен?",
+    "Apps using" to "Приложения, использующие",
+    "will stop working. This can't be undone." to "перестанут работать. Отменить нельзя.",
+    "Panel" to "Панель",
+    "Restart the panel service. The app's connection drops for a few seconds while it comes back." to
+        "Перезапустить службу панели. Подключение приложения прервётся на несколько секунд, пока она поднимется.",
+    "Restart panel" to "Перезапустить панель",
+    "Restart panel?" to "Перезапустить панель?",
+    "The panel service restarts and the app reconnects in a few seconds." to
+        "Служба панели перезапустится, приложение переподключится через несколько секунд.",
+
+    // Auth lost mid-session (bounced back to Connect)
+    "Your API token is no longer valid. Reconnect with a working one." to
+        "API-токен больше не действителен. Переподключитесь с рабочим.",
+    "Your session is no longer valid. Sign in again." to
+        "Сессия больше не действительна. Войдите снова.",
 )

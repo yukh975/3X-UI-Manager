@@ -4,12 +4,18 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.AllInbox
+import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.AltRoute
+import androidx.compose.material.icons.outlined.Article
+import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -54,8 +60,14 @@ import net.yukh.xui.ui.screen.inbounds.InboundsViewModel
 import net.yukh.xui.ui.screen.nodes.NodeEditorScreen
 import net.yukh.xui.ui.screen.nodes.NodesScreen
 import net.yukh.xui.ui.screen.nodes.NodesViewModel
+import net.yukh.xui.ui.screen.backup.BackupScreen
+import net.yukh.xui.ui.screen.paneladmin.PanelAdminScreen
 import net.yukh.xui.ui.screen.settings.SettingsScreen
+import net.yukh.xui.ui.screen.outbounds.OutboundsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
+import net.yukh.xui.ui.screen.xrayedit.DnsScreen
+import net.yukh.xui.ui.screen.xrayedit.GeneralScreen
+import net.yukh.xui.ui.screen.xrayedit.RoutingScreen
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -89,6 +101,12 @@ fun MainScreen(
     val currentTab = tabs.firstOrNull { it.route == currentRoute } ?: tabs.first()
     var menuOpen by remember { mutableStateOf(false) }
     var showXrayConfig by remember { mutableStateOf(false) }
+    var showOutbounds by remember { mutableStateOf(false) }
+    var showRouting by remember { mutableStateOf(false) }
+    var showDns by remember { mutableStateOf(false) }
+    var showGeneral by remember { mutableStateOf(false) }
+    var showBackup by remember { mutableStateOf(false) }
+    var showPanelAdmin by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
 
     // The editor-bearing VMs are created here and shared with the tab screens, so
@@ -113,9 +131,39 @@ fun MainScreen(
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
+                            text = { Text(tr("Outbounds")) },
+                            leadingIcon = { Icon(Icons.Outlined.SwapVert, contentDescription = null) },
+                            onClick = { menuOpen = false; showOutbounds = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("Routing")) },
+                            leadingIcon = { Icon(Icons.Outlined.AltRoute, contentDescription = null) },
+                            onClick = { menuOpen = false; showRouting = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("DNS")) },
+                            leadingIcon = { Icon(Icons.Outlined.Dns, contentDescription = null) },
+                            onClick = { menuOpen = false; showDns = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("General / Logs")) },
+                            leadingIcon = { Icon(Icons.Outlined.Article, contentDescription = null) },
+                            onClick = { menuOpen = false; showGeneral = true },
+                        )
+                        DropdownMenuItem(
                             text = { Text(tr("Xray config")) },
                             leadingIcon = { Icon(Icons.Outlined.Tune, contentDescription = null) },
                             onClick = { menuOpen = false; showXrayConfig = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("Backup / restore")) },
+                            leadingIcon = { Icon(Icons.Outlined.Backup, contentDescription = null) },
+                            onClick = { menuOpen = false; showBackup = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("Panel admin")) },
+                            leadingIcon = { Icon(Icons.Outlined.AdminPanelSettings, contentDescription = null) },
+                            onClick = { menuOpen = false; showPanelAdmin = true },
                         )
                         DropdownMenuItem(
                             text = { Text(tr("Settings")) },
@@ -218,6 +266,36 @@ fun MainScreen(
     if (showXrayConfig) {
         BackHandler(onBack = { showXrayConfig = false })
         XrayConfigScreen(onClose = { showXrayConfig = false })
+    }
+
+    if (showOutbounds) {
+        BackHandler(onBack = { showOutbounds = false })
+        OutboundsScreen(onClose = { showOutbounds = false })
+    }
+
+    if (showRouting) {
+        BackHandler(onBack = { showRouting = false })
+        RoutingScreen(onClose = { showRouting = false })
+    }
+
+    if (showDns) {
+        BackHandler(onBack = { showDns = false })
+        DnsScreen(onClose = { showDns = false })
+    }
+
+    if (showGeneral) {
+        BackHandler(onBack = { showGeneral = false })
+        GeneralScreen(onClose = { showGeneral = false })
+    }
+
+    if (showBackup) {
+        BackHandler(onBack = { showBackup = false })
+        BackupScreen(onClose = { showBackup = false })
+    }
+
+    if (showPanelAdmin) {
+        BackHandler(onBack = { showPanelAdmin = false })
+        PanelAdminScreen(onClose = { showPanelAdmin = false })
     }
 
     if (showSettings) {

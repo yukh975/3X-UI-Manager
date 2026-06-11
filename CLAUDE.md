@@ -18,8 +18,11 @@ its "Текущее состояние" section is the latest snapshot.
    (`feat(android): …` / `fix(android): …`) + push to `origin`. Don't push `upstream`.
 2. **Build/release only on a `vX.Y.Z` tag** (branch pushes don't build). Don't tag
    per change — batch under one tag when the user says they're ready ("собирай").
-3. **Compile locally before tagging**: `cd android && ./gradlew :app:assembleDebug`.
-   Only boot the emulator for visual checks when a change touches layout.
+3. **Dev loop for every change:** write code → compile locally
+   (`cd android && ./gradlew :app:assembleDebug`) → **install on the local
+   emulator and verify the functionality actually works** → only when fully
+   debugged, tag `vX.Y.Z` to trigger the GitLab build + release. Don't tag until
+   it's emulator-verified.
 4. Keep **both changelogs** (`android/CHANGELOG.md` + `.ru.md`) and **both READMEs**
    updated. The GitLab Release notes are generated (in Russian) from `CHANGELOG.ru.md`.
 5. In the **Russian** UI, do **not** translate the words `inbound` / `outbound`.
@@ -28,9 +31,12 @@ its "Текущее состояние" section is the latest snapshot.
 
 ## Quick facts
 - GitLab: `yukh/3x-ui`, project id **15**, `git.home.yukh.net`. API token at
-  `~/.gl-token` (local). Latest **released**: **v0.3.12** ("первый стабильный" was
-  v0.3.11). **v0.3.13 is committed on `android-app` but NOT yet tagged** (online-by-
-  server fix) — tag it when the user says "собирай".
+  `~/.gl-token` (local). Latest **released**: **v0.3.17** ("первый стабильный" was
+  v0.3.11). v0.3.17 = full structured **Xray-config editor** (⋮ menu): Outbounds,
+  Routing, DNS, General/Logs (+ raw-JSON fallback) + `vless://` import. v0.3.16
+  added a custom adaptive app icon (3X monogram) + geo accordion. v0.3.15 added
+  dashboard metric-history charts. v0.3.14 shipped traffic-this-month + geo updater
+  + v3.3.0 API compat + the online-by-server fix.
 - Release APK filename now carries the version: `3x-ui-manager-<version>.apk`.
   CI has no `test:unit` job (removed — no tests, didn't gate the release).
 - Release signing keystore: `~/.config/3x-ui-android-keystore/` (local) **and**
@@ -44,9 +50,22 @@ its "Текущее состояние" section is the latest snapshot.
   the inbound distinguishes main (null/0) from node inbounds.
 - Editors are full-screen overlays in `MainScreen` (NOT `Dialog` — Dialogs don't
   get insets); Delete lives in a pinned `bottomBar`.
+- **Xray editor (v0.3.17)** lives in `ui/screen/xrayedit/` (+ `ui/screen/outbounds/`);
+  all sections round-trip the one config JsonObject via `XrayConfigIO.kt`. GOTCHA:
+  3x-ui stores outbound settings **flat** (`settings.address/port/id/flow/encryption`,
+  `streamSettings` a sibling), NOT raw-Xray `vnext[]`/`servers[]`. Field specs come
+  from the panel's **Vue source** (frontend not in tree — `git show
+  bc00d37a:frontend/src/pages/xray/*.vue` + `models/outbound.js`). Xray config works
+  with an API token on v3.3.0 (the "session only" gate is a fallback). See
+  `docs/RESUME-NEXT-SESSION.md` for what's still raw-JSON (Observatory, xHTTP-advanced,
+  hysteria, basic block/direct helpers).
 - Node 3x-ui self-update: `POST /panel/api/nodes/updatePanel` `{ids:[…]}` (Nodes
   screen shows an "Update" button when a node's version ≠ latest).
 - Filed upstream bug: MHSanaei/3x-ui **#5100** (resetting an inbound's traffic on
-  the master doesn't propagate to slave nodes).
+  the master doesn't propagate to slave nodes) — **fixed upstream in v3.3.0 (#5103)**.
+- **3X-UI panel manual (RU + EN)** lives on branch **`docs/manual`** (NOT
+  android-app), MR **!2** → `main`: `docs/3X-UI-MANUAL.ru.md` (canonical) +
+  `docs/3X-UI-MANUAL.md` (English). Targets panel **v3.3.0**; 16 sections / 142
+  subsections. Edit RU first, then sync EN.
 
 (Detailed rationale for every point above is in `docs/ANDROID-HANDOFF.md`.)
