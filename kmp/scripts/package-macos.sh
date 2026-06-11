@@ -40,9 +40,20 @@ echo "==> arch check ok: $LAUNCHER_ARCH"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 codesign --force --deep --sign - "$APP"
 
+if [ "$ARCH_LABEL" = "Intel" ]; then
+  ARCH_REQUIREMENT='• Mac на Intel-процессоре.\
+  (Запустится и на Apple Silicon через Rosetta, но для M1/M2/M3/M4\
+  лучше взять родную сборку «3X-UI Manager (Apple Silicon).dmg».)'
+else
+  ARCH_REQUIREMENT='• Mac на Apple Silicon (M1/M2/M3/M4).\
+  На Intel-процессорах эта сборка не запустится — для них есть\
+  отдельный образ «3X-UI Manager (Intel).dmg».'
+fi
+
 STAGE=$(mktemp -d)
 cp -R "$APP" "$STAGE/"
-cp composeApp/packaging/KAK-USTANOVIT.ru.txt "$STAGE/КАК УСТАНОВИТЬ.txt"
+sed "s|%ARCH_REQUIREMENT%|$ARCH_REQUIREMENT|" \
+  composeApp/packaging/README.ru.template.txt > "$STAGE/README.txt"
 
 OUT="composeApp/build/compose/binaries/main/dmg/3X-UI Manager ($ARCH_LABEL).dmg"
 mkdir -p "$(dirname "$OUT")"
@@ -54,7 +65,7 @@ create-dmg \
   --icon-size 100 \
   --icon "3X-UI Manager.app" 175 195 \
   --app-drop-link 505 195 \
-  --icon "КАК УСТАНОВИТЬ.txt" 340 380 \
+  --icon "README.txt" 340 380 \
   --no-internet-enable \
   "$OUT" "$STAGE"
 rm -rf "$STAGE"
