@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.20] — Unreleased
+## [0.3.20] — 2026-06-11
 
 ### Changed
 - **An invalid token / expired session now returns you to the Connect screen.**
