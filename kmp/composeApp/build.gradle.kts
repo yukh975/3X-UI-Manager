@@ -50,6 +50,10 @@ compose.desktop {
             packageVersion = "1.0.0"
             macOS {
                 bundleID = "net.yukh.xui.desktop"
+                // 3X monogram app icon, rendered from the Android adaptive icon
+                // (icons/AppIcon.svg → .icns). Without this jpackage uses the
+                // generic Java icon.
+                iconFile.set(project.file("icons/AppIcon.icns"))
             }
         }
     }
