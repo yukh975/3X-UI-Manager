@@ -54,6 +54,11 @@ Structured editors over the panel's Xray config — each round-trips the **whole
 ### Backup / restore (⋮ menu)
 - **Back up** the panel's whole database (settings, inbounds, clients **and** the Xray config) to a file via the system file picker, and **restore** the panel from one. Engine-agnostic — the panel saves SQLite as `x-ui.db` and PostgreSQL as `x-ui.dump`, and imports either back. Restore confirms first and restarts Xray (a brief connection drop). Works with an API token.
 
+### Panel admin (⋮ menu)
+- **Admin account** — change the panel login username + password (current credentials required to confirm).
+- **API tokens** — list, create (the plaintext is shown once to copy), enable/disable, delete.
+- **Restart panel** — restart the panel service (confirmed; the app reconnects after a few seconds).
+
 ### Other
 - **Language**: English (default) or Russian, switchable in **Settings** (⋮ menu) — no restart needed.
 - Confirmation dialog on every **save** and **delete** so nothing changes by accident.

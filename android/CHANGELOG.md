@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.19] — Unreleased
+
+### Added
+- **Panel admin (⋮ menu):** manage the panel itself, all over the token-accessible
+  settings API.
+  - **Admin account** — change the panel login username + password (the current
+    credentials are required to confirm; an API token keeps working afterwards).
+  - **API tokens** — list, create (the new token's plaintext value is shown once
+    to copy), enable / disable, and delete.
+  - **Restart panel** — restart the panel service (confirmed first; the app
+    reconnects after a few seconds).
+
 ## [0.3.18] — 2026-06-11
 
 ### Added

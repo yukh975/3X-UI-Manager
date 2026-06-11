@@ -9,6 +9,7 @@ import net.yukh.xui.data.api.ApiResponse
 import net.yukh.xui.data.api.XuiApi
 import net.yukh.xui.data.api.XuiApiFactory
 import net.yukh.xui.data.api.dto.ApiAck
+import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
@@ -373,6 +374,26 @@ class PanelRepository @Inject constructor(
 
     suspend fun updateXraySetting(configJson: String, testUrl: String): Result<Unit> =
         authedAck { it.updateXraySetting(configJson, testUrl) }
+
+    // ---- Panel admin (settings) -------------------------------------------
+
+    /** Change the admin username + password; old credentials must match. */
+    suspend fun changeCredentials(
+        oldUsername: String, oldPassword: String, newUsername: String, newPassword: String,
+    ): Result<Unit> = authedAck { it.updateUser(oldUsername, oldPassword, newUsername, newPassword) }
+
+    /** Restart the panel service (the connection drops briefly). */
+    suspend fun restartPanel(): Result<Unit> = authedAck { it.restartPanel() }
+
+    suspend fun listApiTokens(): Result<List<ApiToken>> = authedData { it.listApiTokens() }
+
+    /** Create a token; the result carries the plaintext value (shown once). */
+    suspend fun createApiToken(name: String): Result<ApiToken> = authedData { it.createApiToken(name) }
+
+    suspend fun deleteApiToken(id: Int): Result<Unit> = authedAck { it.deleteApiToken(id) }
+
+    suspend fun setApiTokenEnabled(id: Int, enabled: Boolean): Result<Unit> =
+        authedAck { it.setApiTokenEnabled(id, enabled) }
 
     // ---- Internals --------------------------------------------------------
 

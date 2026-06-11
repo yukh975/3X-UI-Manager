@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.AllInbox
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Dashboard
@@ -60,6 +61,7 @@ import net.yukh.xui.ui.screen.nodes.NodeEditorScreen
 import net.yukh.xui.ui.screen.nodes.NodesScreen
 import net.yukh.xui.ui.screen.nodes.NodesViewModel
 import net.yukh.xui.ui.screen.backup.BackupScreen
+import net.yukh.xui.ui.screen.paneladmin.PanelAdminScreen
 import net.yukh.xui.ui.screen.settings.SettingsScreen
 import net.yukh.xui.ui.screen.outbounds.OutboundsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
@@ -104,6 +106,7 @@ fun MainScreen(
     var showDns by remember { mutableStateOf(false) }
     var showGeneral by remember { mutableStateOf(false) }
     var showBackup by remember { mutableStateOf(false) }
+    var showPanelAdmin by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
 
     // The editor-bearing VMs are created here and shared with the tab screens, so
@@ -156,6 +159,11 @@ fun MainScreen(
                             text = { Text(tr("Backup / restore")) },
                             leadingIcon = { Icon(Icons.Outlined.Backup, contentDescription = null) },
                             onClick = { menuOpen = false; showBackup = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("Panel admin")) },
+                            leadingIcon = { Icon(Icons.Outlined.AdminPanelSettings, contentDescription = null) },
+                            onClick = { menuOpen = false; showPanelAdmin = true },
                         )
                         DropdownMenuItem(
                             text = { Text(tr("Settings")) },
@@ -283,6 +291,11 @@ fun MainScreen(
     if (showBackup) {
         BackHandler(onBack = { showBackup = false })
         BackupScreen(onClose = { showBackup = false })
+    }
+
+    if (showPanelAdmin) {
+        BackHandler(onBack = { showPanelAdmin = false })
+        PanelAdminScreen(onClose = { showPanelAdmin = false })
     }
 
     if (showSettings) {

@@ -1,6 +1,7 @@
 package net.yukh.xui.data.api
 
 import net.yukh.xui.data.api.dto.ApiAck
+import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
@@ -197,4 +198,37 @@ interface XuiApi {
         @Field("xraySetting") xraySetting: String,
         @Field("outboundTestUrl") outboundTestUrl: String,
     ): ApiAck
+
+    // ---- Panel admin (settings) -------------------------------------------
+
+    // Change the admin username + password. The panel verifies the old
+    // credentials against the logged-in (token → first admin) user.
+    @FormUrlEncoded
+    @POST("panel/api/setting/updateUser")
+    suspend fun updateUser(
+        @Field("oldUsername") oldUsername: String,
+        @Field("oldPassword") oldPassword: String,
+        @Field("newUsername") newUsername: String,
+        @Field("newPassword") newPassword: String,
+    ): ApiAck
+
+    // Restart the panel service (after a short delay) — the app's connection
+    // drops briefly while it comes back.
+    @POST("panel/api/setting/restartPanel")
+    suspend fun restartPanel(): ApiAck
+
+    @GET("panel/api/setting/apiTokens")
+    suspend fun listApiTokens(): ApiResponse<List<ApiToken>>
+
+    // Returns the new token with its plaintext value (shown only once).
+    @FormUrlEncoded
+    @POST("panel/api/setting/apiTokens/create")
+    suspend fun createApiToken(@Field("name") name: String): ApiResponse<ApiToken>
+
+    @POST("panel/api/setting/apiTokens/delete/{id}")
+    suspend fun deleteApiToken(@Path("id") id: Int): ApiAck
+
+    @FormUrlEncoded
+    @POST("panel/api/setting/apiTokens/setEnabled/{id}")
+    suspend fun setApiTokenEnabled(@Path("id") id: Int, @Field("enabled") enabled: Boolean): ApiAck
 }

@@ -464,4 +464,37 @@ val ruStrings: Map<String, String> = mapOf(
     "Restored — Xray restarted" to "Восстановлено — Xray перезапущен",
     "Backup failed" to "Не удалось сделать бэкап",
     "Restore failed" to "Не удалось восстановить",
+
+    // Panel admin (account / API tokens / restart)
+    "Panel admin" to "Администрирование панели",
+    "Admin account" to "Учётная запись админа",
+    "Change the panel login username and password. Enter the current ones to confirm." to
+        "Сменить логин и пароль входа в панель. Введите текущие для подтверждения.",
+    "Current username" to "Текущий логин",
+    "Current password" to "Текущий пароль",
+    "New username" to "Новый логин",
+    "New password" to "Новый пароль",
+    "Change credentials" to "Сменить учётные данные",
+    "Change credentials?" to "Сменить учётные данные?",
+    "The panel login changes immediately. Your API token keeps working, but other sessions are signed out." to
+        "Логин панели сменится сразу. Ваш API-токен продолжит работать, но другие сессии будут разлогинены.",
+    "Change" to "Сменить",
+    "API tokens" to "API-токены",
+    "No API tokens yet." to "Пока нет API-токенов.",
+    "Create token" to "Создать токен",
+    "Token name" to "Имя токена",
+    "Token created" to "Токен создан",
+    "Copy it now — it's shown only once and can't be retrieved later." to
+        "Скопируйте сейчас — он показывается один раз и потом недоступен.",
+    "Copy & close" to "Скопировать и закрыть",
+    "Delete token?" to "Удалить токен?",
+    "Apps using" to "Приложения, использующие",
+    "will stop working. This can't be undone." to "перестанут работать. Отменить нельзя.",
+    "Panel" to "Панель",
+    "Restart the panel service. The app's connection drops for a few seconds while it comes back." to
+        "Перезапустить службу панели. Подключение приложения прервётся на несколько секунд, пока она поднимется.",
+    "Restart panel" to "Перезапустить панель",
+    "Restart panel?" to "Перезапустить панель?",
+    "The panel service restarts and the app reconnects in a few seconds." to
+        "Служба панели перезапустится, приложение переподключится через несколько секунд.",
 )
