@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.23] — unreleased
+## [0.3.23] — 2026-06-11
 
 ### Fixed
 - **No passcode prompt right after a manual sign-in.** With an app-lock passcode
