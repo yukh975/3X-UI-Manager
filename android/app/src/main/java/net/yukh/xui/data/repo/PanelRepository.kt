@@ -50,6 +50,11 @@ class PanelRepository @Inject constructor(
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
 
+    /** Set when a mid-session auth failure forces a drop to Connect (so that
+     *  screen can explain why); cleared when a fresh connect is attempted. */
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError.asStateFlow()
+
     private var api: XuiApi? = null
     private var cookieJar: InMemoryCookieJar? = null
     private var csrf: CsrfState? = null
@@ -90,6 +95,7 @@ class PanelRepository @Inject constructor(
             currentSubBase = subBaseUrl
             cachedSettings = null
             _connected.value = true
+            _authError.value = null
         }
     }
 
@@ -138,6 +144,7 @@ class PanelRepository @Inject constructor(
             currentSubBase = subBaseUrl
             cachedSettings = null
             _connected.value = true
+            _authError.value = null
         }
     }
 
@@ -405,6 +412,7 @@ class PanelRepository @Inject constructor(
         currentBaseUrl = baseUrl
         cachedSettings = null
         _connected.value = true
+        _authError.value = null
     }
 
     private suspend inline fun <T> authedData(
@@ -416,6 +424,7 @@ class PanelRepository @Inject constructor(
             val again = api ?: return r
             return safeData { block(again) }
         }
+        if (isUnauthorized(r)) onAuthLost()
         return r
     }
 
@@ -428,7 +437,26 @@ class PanelRepository @Inject constructor(
             val again = api ?: return r
             return safeAck { block(again) }
         }
+        if (isUnauthorized(r)) onAuthLost()
         return r
+    }
+
+    /**
+     * A mid-session 401 that reauth couldn't fix means the credential is no
+     * longer valid (a token was deleted/disabled in the panel, or the password
+     * changed under a credentials profile). Drop to the Connect screen with a
+     * message instead of leaving the app "connected" but failing every call. The
+     * profile stays saved so the fields are pre-filled for a quick fix.
+     */
+    private fun onAuthLost() {
+        if (!_connected.value) return
+        val isToken = store.getProfile()?.auth is ConnectionAuth.Token
+        _authError.value = if (isToken) {
+            "Your API token is no longer valid. Reconnect with a working one."
+        } else {
+            "Your session is no longer valid. Sign in again."
+        }
+        _connected.value = false
     }
 
     private fun isUnauthorized(r: Result<*>): Boolean {

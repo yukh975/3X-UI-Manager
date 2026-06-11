@@ -78,7 +78,7 @@ Create a token in the panel under **Settings → Security → API Token**.
 
 **Why a token is convenient:** a **login** session lasts `sessionMaxAge` (default **360 min / 6 h**, under Settings → Security) and then drops — the app re-authenticates from the saved username/password, which **re-prompts 2FA** if it's enabled. A **token doesn't expire on a timer**, so it never drops you and never re-prompts 2FA.
 
-The one edge case: if a token is later **disabled or recreated** in the panel, its requests start failing with `401`. The app can silently re-authenticate only a saved **login/password** profile (not a token), so a token connection just shows the error and you reconnect — rare in practice, since tokens don't time out.
+The one edge case: if a token is later **disabled or recreated** in the panel, its requests fail with `401`. A token can't be silently re-authenticated (only a saved login/password profile can), so the app **returns you to the Connect screen** with a clear "your API token is no longer valid" message and your details pre-filled — re-enter a working token and reconnect. Rare in practice, since tokens don't time out.
 
 ---
 

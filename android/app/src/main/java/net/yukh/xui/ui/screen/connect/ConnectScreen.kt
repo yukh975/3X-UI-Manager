@@ -144,7 +144,7 @@ fun ConnectScreen(
 
             state.error?.let {
                 Text(
-                    text = it,
+                    text = tr(it),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyLarge,
                 )

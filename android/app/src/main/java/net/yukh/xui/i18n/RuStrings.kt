@@ -493,4 +493,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Restart panel?" to "Перезапустить панель?",
     "The panel service restarts and the app reconnects in a few seconds." to
         "Служба панели перезапустится, приложение переподключится через несколько секунд.",
+
+    // Auth lost mid-session (bounced back to Connect)
+    "Your API token is no longer valid. Reconnect with a working one." to
+        "API-токен больше не действителен. Переподключитесь с рабочим.",
+    "Your session is no longer valid. Sign in again." to
+        "Сессия больше не действительна. Войдите снова.",
 )

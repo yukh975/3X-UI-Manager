@@ -53,6 +53,16 @@ object XuiApiFactory {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
+            // Mark requests as XHR (like the web UI) so the panel answers a
+            // rejected token / expired session with 401 — not 404 — letting the
+            // app tell "auth lost" apart from a genuine "not found".
+            .addInterceptor { chain ->
+                chain.proceed(
+                    chain.request().newBuilder()
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .build(),
+                )
+            }
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BASIC

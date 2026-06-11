@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.20] — Unreleased
+
+### Changed
+- **An invalid token / expired session now returns you to the Connect screen.**
+  If the API token is deleted or disabled in the panel (or a login session
+  expires and can't be renewed), the app no longer stays "connected" while every
+  request silently fails — it drops back to Connect with a clear message ("Your
+  API token is no longer valid…") and the fields pre-filled, so you can re-enter
+  a working token and reconnect. Requests now send
+  `X-Requested-With: XMLHttpRequest` so the panel reports an auth failure as
+  **401** (not 404), which the app can tell apart from a genuine "not found".
+
 ## [0.3.19] — 2026-06-11
 
 ### Added
