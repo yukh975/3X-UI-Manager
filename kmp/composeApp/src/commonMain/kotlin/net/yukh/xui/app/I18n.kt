@@ -71,6 +71,15 @@ val ruStrings: Map<String, String> = mapOf(
     "not all inbounds reset monthly" to "не все inbounds сбрасываются ежемесячно",
     "Geo databases" to "Гео-базы",
     "Update" to "Обновить",
+    "Start" to "Запустить",
+    "Stop" to "Остановить",
+    "Stop Xray?" to "Остановить Xray?",
+    "Restart Xray?" to "Перезапустить Xray?",
+    "This briefly drops every active connection." to "Это кратко разорвёт все активные подключения.",
+    "Update all" to "Обновить все",
+    "Update all geo databases?" to "Обновить все гео-базы?",
+    "Downloads the latest of every geo database and restarts Xray, briefly dropping every active connection." to
+        "Скачает свежие версии всех гео-баз и перезапустит Xray, кратко разорвав все активные подключения.",
     "Update geo database?" to "Обновить гео-базу?",
     "Downloads the latest database and restarts Xray, briefly dropping every active connection." to
         "Скачает свежую базу и перезапустит Xray, кратко разорвав все активные подключения.",

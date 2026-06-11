@@ -96,6 +96,11 @@ fun App() {
             var clientLinks by remember { mutableStateOf<List<String>>(emptyList()) }
             var clientLinksLoading by remember { mutableStateOf(false) }
             var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
+            var geoAllUpdating by remember { mutableStateOf(false) }
+            var xrayBusy by remember { mutableStateOf(false) }
+            // Optimistic Xray running-state, pinned ~6 s after a control action so a
+            // lagging 5 s poll doesn't flicker the state back.
+            var xrayOverride by remember { mutableStateOf<Boolean?>(null) }
             var editorSaving by remember { mutableStateOf(false) }
             var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
@@ -160,6 +165,31 @@ fun App() {
                     error = tr(lang, "Your API token is no longer valid. Reconnect with a working one.")
                 } catch (e: Throwable) {
                     error = e.message ?: "Network error"
+                }
+            }
+
+            // Xray control: [running]=true → start/restart (restartXrayService),
+            // false → stop. Optimistically pin the new state ~6 s so the poll
+            // doesn't flicker it back, then refresh.
+            fun xrayCtl(running: Boolean) {
+                if (xrayBusy) return
+                xrayBusy = true; xrayOverride = running
+                scope.launch {
+                    try { if (running) api?.restartXray() else api?.stopXray() } catch (e: Throwable) {}
+                    xrayBusy = false
+                    delay(6_000)
+                    xrayOverride = null
+                    refreshAll()
+                }
+            }
+
+            fun geoUpdateAll() {
+                if (geoAllUpdating) return
+                geoAllUpdating = true
+                scope.launch {
+                    try { api?.updateAllGeofiles() } catch (e: Throwable) {}
+                    geoAllUpdating = false
+                    refreshAll()
                 }
             }
 
@@ -475,6 +505,7 @@ fun App() {
                                     mainTraffic = traffic[0],
                                     geoFiles = GEO_FILES,
                                     geoUpdating = geoUpdating,
+                                    geoUpdatingAll = geoAllUpdating,
                                     onGeoUpdate = { f ->
                                         scope.launch {
                                             geoUpdating = geoUpdating + f
@@ -483,6 +514,12 @@ fun App() {
                                             refreshAll()
                                         }
                                     },
+                                    onGeoUpdateAll = { geoUpdateAll() },
+                                    xrayRunning = xrayOverride ?: (status?.xrayRunning ?: false),
+                                    xrayBusy = xrayBusy,
+                                    onXrayStart = { xrayCtl(true) },
+                                    onXrayStop = { xrayCtl(false) },
+                                    onXrayRestart = { xrayCtl(true) },
                                     refreshing = refreshing,
                                     error = error,
                                     onRefresh = { scope.launch { refreshing = true; refreshAll(); refreshing = false } },

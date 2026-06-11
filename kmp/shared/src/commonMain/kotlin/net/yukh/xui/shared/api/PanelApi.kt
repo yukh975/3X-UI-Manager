@@ -223,6 +223,10 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     suspend fun updateGeofile(fileName: String): ApiAck =
         client.post("$base/panel/api/server/updateGeofile/$fileName") { auth() }.body()
 
+    /** Re-download ALL built-in geo databases at once and restart Xray. */
+    suspend fun updateAllGeofiles(): ApiAck =
+        client.post("$base/panel/api/server/updateGeofile") { auth() }.body()
+
     // ---- Backup / restore -------------------------------------------------
 
     /** Download the panel database backup (the whole DB). Engine-agnostic: the

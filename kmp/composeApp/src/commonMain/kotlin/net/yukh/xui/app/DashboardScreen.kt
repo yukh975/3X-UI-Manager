@@ -40,7 +40,14 @@ fun DashboardScreen(
     mainTraffic: TrafficSummary?,
     geoFiles: List<String>,
     geoUpdating: Set<String>,
+    geoUpdatingAll: Boolean,
     onGeoUpdate: (String) -> Unit,
+    onGeoUpdateAll: () -> Unit,
+    xrayRunning: Boolean,
+    xrayBusy: Boolean,
+    onXrayStart: () -> Unit,
+    onXrayStop: () -> Unit,
+    onXrayRestart: () -> Unit,
     refreshing: Boolean,
     error: String?,
     onRefresh: () -> Unit,
@@ -48,6 +55,8 @@ fun DashboardScreen(
     onDisconnect: () -> Unit,
 ) {
     var pendingGeo by remember { mutableStateOf<String?>(null) }
+    var pendingGeoAll by remember { mutableStateOf(false) }
+    var pendingXray by remember { mutableStateOf<XrayAct?>(null) }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -84,7 +93,15 @@ fun DashboardScreen(
             modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            XrayCard(status)
+            XrayCard(
+                version = status.xray.version,
+                running = xrayRunning,
+                busy = xrayBusy,
+                stateText = if (xrayRunning) tr("Running") else status.xray.state.ifBlank { tr("Stopped") },
+                onStart = onXrayStart,
+                onStop = { pendingXray = XrayAct.Stop },
+                onRestart = { pendingXray = XrayAct.Restart },
+            )
             BarCard(tr("CPU") + if (status.cpuCores > 0) " · ${status.cpuCores} ${tr("cores")}" else "",
                 status.cpu.formatPercent(), (status.cpu / 100.0).toFloat(), onClick = { onMetric(MetricBlock.CPU) })
             BarCard(tr("Memory"), status.memPercent.formatPercent(),
@@ -104,8 +121,39 @@ fun DashboardScreen(
             if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
             if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
             mainTraffic?.let { TrafficCard(it) }
-            if (geoFiles.isNotEmpty()) GeoCard(geoFiles, geoUpdating, onUpdate = { pendingGeo = it })
+            if (geoFiles.isNotEmpty()) GeoCard(
+                files = geoFiles,
+                updating = geoUpdating,
+                updatingAll = geoUpdatingAll,
+                onUpdate = { pendingGeo = it },
+                onUpdateAll = { pendingGeoAll = true },
+            )
         }
+    }
+
+    pendingXray?.let { act ->
+        AlertDialog(
+            onDismissRequest = { pendingXray = null },
+            title = { Text(if (act == XrayAct.Stop) tr("Stop Xray?") else tr("Restart Xray?")) },
+            text = { Text(tr("This briefly drops every active connection.")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (act == XrayAct.Stop) onXrayStop() else onXrayRestart()
+                    pendingXray = null
+                }) { Text(if (act == XrayAct.Stop) tr("Stop") else tr("Restart")) }
+            },
+            dismissButton = { TextButton(onClick = { pendingXray = null }) { Text(tr("Cancel")) } },
+        )
+    }
+
+    if (pendingGeoAll) {
+        AlertDialog(
+            onDismissRequest = { pendingGeoAll = false },
+            title = { Text(tr("Update all geo databases?")) },
+            text = { Text(tr("Downloads the latest of every geo database and restarts Xray, briefly dropping every active connection.")) },
+            confirmButton = { TextButton(onClick = { onGeoUpdateAll(); pendingGeoAll = false }) { Text(tr("Update all")) } },
+            dismissButton = { TextButton(onClick = { pendingGeoAll = false }) { Text(tr("Cancel")) } },
+        )
     }
 
     pendingGeo?.let { file ->
@@ -140,23 +188,45 @@ private fun TrafficCard(t: TrafficSummary) {
     }
 }
 
+/** Collapsed accordion (header only) that expands to the per-file list + an
+ *  "Update all" action, like the Android dashboard. */
 @Composable
-private fun GeoCard(files: List<String>, updating: Set<String>, onUpdate: (String) -> Unit) {
+private fun GeoCard(
+    files: List<String>,
+    updating: Set<String>,
+    updatingAll: Boolean,
+    onUpdate: (String) -> Unit,
+    onUpdateAll: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(tr("Geo databases"), style = MaterialTheme.typography.labelMedium)
-            files.forEach { name ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    if (name in updating) {
-                        Text("…", style = MaterialTheme.typography.titleMedium)
-                    } else {
-                        TextButton(onClick = { onUpdate(name) }) { Text(tr("Update")) }
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(tr("Geo databases"), style = MaterialTheme.typography.labelMedium)
+                Text(if (expanded) "▾" else "▸", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (expanded) {
+                files.forEach { name ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        if (name in updating || updatingAll) {
+                            Text("…", style = MaterialTheme.typography.titleMedium)
+                        } else {
+                            TextButton(onClick = { onUpdate(name) }) { Text(tr("Update")) }
+                        }
                     }
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    if (updatingAll) Text("…", style = MaterialTheme.typography.titleMedium)
+                    else TextButton(onClick = onUpdateAll) { Text(tr("Update all")) }
                 }
             }
         }
@@ -165,21 +235,48 @@ private fun GeoCard(files: List<String>, updating: Set<String>, onUpdate: (Strin
 
 private fun oneDp(v: Double): String = ((v * 10).toLong() / 10.0).toString()
 
+private enum class XrayAct { Stop, Restart }
+
 @Composable
-private fun XrayCard(status: ServerStatus) {
+private fun XrayCard(
+    version: String,
+    running: Boolean,
+    busy: Boolean,
+    stateText: String,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onRestart: () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                tr("Xray") + if (status.xray.version.isNotBlank()) " · v${status.xray.version}" else "",
+                tr("Xray") + if (version.isNotBlank()) " · v$version" else "",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                if (status.xrayRunning) tr("Running") else status.xray.state.ifBlank { tr("Stopped") },
-                style = MaterialTheme.typography.titleMedium,
-                color = if (status.xrayRunning) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.error,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stateText,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (running) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                )
+                if (busy) {
+                    Text("…", style = MaterialTheme.typography.titleMedium)
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (running) {
+                            TextButton(onClick = onStop) { Text(tr("Stop")) }
+                            TextButton(onClick = onRestart) { Text(tr("Restart")) }
+                        } else {
+                            TextButton(onClick = onStart) { Text(tr("Start")) }
+                        }
+                    }
+                }
+            }
         }
     }
 }
