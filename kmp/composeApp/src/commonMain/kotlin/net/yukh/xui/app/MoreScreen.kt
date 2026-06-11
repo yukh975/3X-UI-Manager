@@ -50,6 +50,7 @@ fun MoreScreen(
     onRoutingX: () -> Unit,
     onOutboundsX: () -> Unit,
     onPanelAdmin: () -> Unit,
+    onBackup: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
     var hasCode by remember { mutableStateOf(lock.hasPasscode()) }
@@ -120,6 +121,9 @@ fun MoreScreen(
 
         // ---- Panel admin ----
         NavCard(tr("Panel admin"), onPanelAdmin)
+
+        // ---- Backup / restore ----
+        NavCard(tr("Backup / restore"), onBackup)
 
         // ---- About ----
         Card(modifier = Modifier.fillMaxWidth()) {

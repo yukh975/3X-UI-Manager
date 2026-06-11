@@ -312,4 +312,24 @@ val ruStrings: Map<String, String> = mapOf(
     "5 hours" to "5 часов",
     "Load" to "Нагрузка",
     "Network" to "Сеть",
+
+    // Backup / restore
+    "Backup / restore" to "Бэкап / восстановление",
+    "The backup is the panel's whole database — settings, inbounds, clients and the Xray config. SQLite saves as x-ui.db, PostgreSQL as x-ui.dump; either restores back here." to
+        "Бэкап — это вся база панели: настройки, inbounds, клиенты и конфиг Xray. SQLite сохраняется как x-ui.db, PostgreSQL как x-ui.dump; и то, и другое восстанавливается обратно.",
+    "Back up" to "Сделать бэкап",
+    "Download the database and save it via the share sheet." to "Скачать базу и сохранить через меню «Поделиться».",
+    "Back up to file" to "Сохранить в файл",
+    "Backup ready — choose where to save" to "Бэкап готов — выберите, куда сохранить",
+    "Backup failed" to "Не удалось сделать бэкап",
+    "Restore" to "Восстановить",
+    "Replace the panel database from a backup file. This overwrites everything and restarts Xray." to
+        "Заменить базу панели из файла бэкапа. Это перезапишет всё и перезапустит Xray.",
+    "Restore from file" to "Восстановить из файла",
+    "Restore from this backup?" to "Восстановить из этого бэкапа?",
+    "Importing" to "Импорт",
+    "overwrites the panel database and restarts Xray. This can't be undone." to
+        "перезапишет базу панели и перезапустит Xray. Отменить нельзя.",
+    "Restored — Xray restarted" to "Восстановлено — Xray перезапущен",
+    "Restore failed" to "Не удалось восстановить",
 )

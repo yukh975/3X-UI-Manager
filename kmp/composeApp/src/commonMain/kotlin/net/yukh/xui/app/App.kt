@@ -86,6 +86,7 @@ fun App() {
             var showRoutingX by remember { mutableStateOf(false) }
             var showOutboundsX by remember { mutableStateOf(false) }
             var metricChart by remember { mutableStateOf<MetricChartState?>(null) }
+            var showBackup by remember { mutableStateOf(false) }
             var showPanelAdmin by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
@@ -442,6 +443,8 @@ fun App() {
                     )
                 } else if (showPanelAdmin && api != null) {
                     PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })
+                } else if (showBackup && api != null) {
+                    BackupScreen(api = api!!, lang = lang, onClose = { showBackup = false })
                 } else {
                     val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes", "More")
                     val icons = listOf("📊", "🔌", "👥", "🌐", "⚙️")
@@ -532,6 +535,7 @@ fun App() {
                                     onRoutingX = { showRoutingX = true; editorError = null; scope.launch { loadXray() } },
                                     onOutboundsX = { showOutboundsX = true; editorError = null; scope.launch { loadXray() } },
                                     onPanelAdmin = { showPanelAdmin = true },
+                                    onBackup = { showBackup = true },
                                     onDisconnect = doDisconnect,
                                 )
                             }

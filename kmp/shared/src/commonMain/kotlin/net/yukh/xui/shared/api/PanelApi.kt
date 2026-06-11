@@ -6,13 +6,16 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -55,6 +58,18 @@ internal val sharedJson = Json {
 /** Thrown when the panel rejects our token mid-session (HTTP 401) — it was
  *  deleted or disabled in the panel. The app drops back to the Connect screen. */
 class AuthExpiredException : Exception("Authentication is no longer valid")
+
+/** A downloaded panel DB backup: raw bytes + the panel-chosen filename
+ *  (x-ui.db for SQLite, x-ui.dump for PostgreSQL). */
+class DbBackup(val filename: String, val bytes: ByteArray)
+
+/** Pull the filename out of a Content-Disposition header (bare/quoted/RFC 5987). */
+fun contentDispositionFilename(header: String?): String? {
+    if (header.isNullOrBlank()) return null
+    Regex("""filename\*=(?:UTF-8'')?["']?([^"';]+)""", RegexOption.IGNORE_CASE).find(header)?.groupValues?.get(1)?.let { return it.trim() }
+    Regex("""filename=["']?([^"';]+)""", RegexOption.IGNORE_CASE).find(header)?.groupValues?.get(1)?.let { return it.trim() }
+    return null
+}
 
 class PanelApi(baseUrl: String, private val token: String, private val allowInsecure: Boolean = false) {
     private val base = baseUrl.trimEnd('/')
@@ -207,6 +222,29 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     /** Re-download one built-in geo database (.dat) and restart Xray. */
     suspend fun updateGeofile(fileName: String): ApiAck =
         client.post("$base/panel/api/server/updateGeofile/$fileName") { auth() }.body()
+
+    // ---- Backup / restore -------------------------------------------------
+
+    /** Download the panel database backup (the whole DB). Engine-agnostic: the
+     *  panel returns x-ui.db (SQLite) or x-ui.dump (PostgreSQL); the filename
+     *  comes back in Content-Disposition. */
+    suspend fun getDb(): DbBackup {
+        val resp = client.get("$base/panel/api/server/getDb") { auth() }
+        val name = contentDispositionFilename(resp.headers[HttpHeaders.ContentDisposition]) ?: "x-ui.db"
+        return DbBackup(name, resp.body())
+    }
+
+    /** Restore the panel from a backup file (multipart field `db`); the panel
+     *  imports it under its own engine and restarts Xray. */
+    suspend fun importDb(filename: String, bytes: ByteArray): ApiAck =
+        client.submitFormWithBinaryData(
+            url = "$base/panel/api/server/importDB",
+            formData = formData {
+                append("db", bytes, Headers.build {
+                    append(HttpHeaders.ContentDisposition, "filename=\"$filename\"")
+                })
+            },
+        ) { auth() }.body()
 
     // ---- Panel admin (settings) -------------------------------------------
 
