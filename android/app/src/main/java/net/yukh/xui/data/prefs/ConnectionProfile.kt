@@ -35,12 +35,9 @@ data class ConnectionProfile(
 }
 
 /**
- * Two supported auth flavors.
- *  - [Token]: long-lived API token created in the panel under
- *    Settings → Security → API Token. Sent as `Authorization: Bearer …`.
- *  - [Credentials]: username + password (and an ad-hoc 2FA code at login
- *    time). 2FA codes are NEVER persisted; on each app start the user
- *    must re-submit to derive a fresh session.
+ * Auth is a long-lived API token (created in the panel under Settings → Security
+ * → API Token), sent as `Authorization: Bearer …`. The app is token-only and
+ * targets panel **v3.3.0+**, where a token reaches the whole management API.
  */
 @Serializable
 sealed class ConnectionAuth {
@@ -48,11 +45,4 @@ sealed class ConnectionAuth {
     @Serializable
     @SerialName("token")
     data class Token(val token: String) : ConnectionAuth()
-
-    @Serializable
-    @SerialName("credentials")
-    data class Credentials(
-        val username: String,
-        val password: String,
-    ) : ConnectionAuth()
 }

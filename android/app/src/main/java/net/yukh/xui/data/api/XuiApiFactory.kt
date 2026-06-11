@@ -3,10 +3,7 @@ package net.yukh.xui.data.api
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import net.yukh.xui.data.auth.BearerInterceptor
-import net.yukh.xui.data.auth.CsrfInterceptor
-import net.yukh.xui.data.auth.CsrfState
 import net.yukh.xui.data.auth.InsecureTls
-import okhttp3.CookieJar
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -14,11 +11,11 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 
 /**
- * Builds a Retrofit-backed [XuiApi] for one of the two supported auth modes.
+ * Builds a Retrofit-backed token-authenticated [XuiApi].
  *
- * The factory is intentionally dumb: it does NOT perform login or token
- * validation. That's the repository's job — the factory just wires the
- * right interceptors so subsequent calls are authenticated.
+ * The factory is intentionally dumb: it does NOT validate the token. That's the
+ * repository's job — the factory just wires the Bearer interceptor so subsequent
+ * calls are authenticated.
  */
 object XuiApiFactory {
 
@@ -30,20 +27,6 @@ object XuiApiFactory {
     ): XuiApi {
         val client = baseClient(allowInsecureTls)
             .addInterceptor(BearerInterceptor { token })
-            .build()
-        return makeRetrofit(baseUrl, client, json).create(XuiApi::class.java)
-    }
-
-    fun sessionAuthed(
-        baseUrl: String,
-        allowInsecureTls: Boolean,
-        cookieJar: CookieJar,
-        csrf: CsrfState,
-        json: Json,
-    ): XuiApi {
-        val client = baseClient(allowInsecureTls)
-            .cookieJar(cookieJar)
-            .addInterceptor(CsrfInterceptor(csrf))
             .build()
         return makeRetrofit(baseUrl, client, json).create(XuiApi::class.java)
     }

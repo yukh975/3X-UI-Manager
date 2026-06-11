@@ -6,6 +6,17 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.21] — unreleased
+
+### Changed
+- **The app is now token-only and requires panel v3.3.0 or newer.** Login +
+  password (and 2FA) sign-in has been removed entirely — the Connect screen asks
+  for a panel URL and an **API token** only. On v3.3.0+ a token reaches the whole
+  management API, so login no longer buys anything; dropping it removes the
+  session/CSRF/cookie machinery and the periodic re-auth (and its 2FA re-prompt).
+  An existing token profile keeps working; if you only ever signed in with a
+  login, create a token in the panel under **Settings → Security → API Token**.
+
 ## [0.3.20] — 2026-06-11
 
 ### Changed

@@ -49,17 +49,17 @@ val ruStrings: Map<String, String> = mapOf(
         "Отключает проверку сертификата — включайте только для своей панели.",
     "Subscription base URL (optional)" to "Базовый URL подписки (опционально)",
     "Connect" to "Подключиться",
-    "Sign in" to "Войти",
-    "Signing in…" to "Вход…",
+    "Connecting…" to "Подключение…",
+    "Sign in with an API token. Requires panel v3.3.0 or newer." to
+        "Вход по API-токену. Нужна панель версии v3.3.0 или новее.",
     "Create one in Settings → Security → API Token on the panel." to
         "Создайте его в панели: Settings → Security → API Token.",
-    "Optional. On panel v3.3.0+ the app reads the subscription " +
-        "base automatically (token or login). Set it here only for " +
-        "older panels, or a reverse proxy whose public URL differs " +
-        "— e.g. https://host:2096/sub/." to
-        "Необязательно. На панели v3.3.0+ приложение само читает базу подписки " +
-            "(по токену или логину). Задавайте здесь только для панелей старше v3.3.0 " +
-            "или обратного прокси, чей публичный URL отличается — напр. https://host:2096/sub/.",
+    "Optional. The app reads the subscription base from the panel " +
+        "automatically. Set it here only for a reverse proxy whose " +
+        "public URL differs — e.g. https://host:2096/sub/." to
+        "Необязательно. Приложение само читает базу подписки из панели. " +
+            "Задавайте здесь только для обратного прокси, чей публичный URL " +
+            "отличается — напр. https://host:2096/sub/.",
 
     // Dashboard
     "Xray" to "Xray",

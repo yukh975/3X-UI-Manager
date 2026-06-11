@@ -18,7 +18,6 @@ import net.yukh.xui.data.api.dto.MetricPoint
 import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
-import net.yukh.xui.data.api.dto.LoginRequest
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.NodeModel
@@ -26,8 +25,6 @@ import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.data.api.dto.XraySettingEnvelope
-import net.yukh.xui.data.auth.CsrfState
-import net.yukh.xui.data.auth.InMemoryCookieJar
 import net.yukh.xui.data.prefs.ConnectionAuth
 import net.yukh.xui.data.prefs.ConnectionProfile
 import net.yukh.xui.data.prefs.ConnectionStore
@@ -56,8 +53,6 @@ class PanelRepository @Inject constructor(
     val authError: StateFlow<String?> = _authError.asStateFlow()
 
     private var api: XuiApi? = null
-    private var cookieJar: InMemoryCookieJar? = null
-    private var csrf: CsrfState? = null
     private var currentBaseUrl: String? = null
 
     /** Optional user-set subscription base URL from the active profile. */
@@ -87,59 +82,7 @@ class PanelRepository @Inject constructor(
             store.saveProfile(
                 ConnectionProfile(baseUrl, allowInsecureTls, ConnectionAuth.Token(token), subBaseUrl),
             )
-            cookieJar?.clear()
-            cookieJar = null
-            csrf = null
             api = candidate
-            currentBaseUrl = baseUrl
-            currentSubBase = subBaseUrl
-            cachedSettings = null
-            _connected.value = true
-            _authError.value = null
-        }
-    }
-
-    suspend fun connectWithCredentials(
-        baseUrl: String,
-        allowInsecureTls: Boolean,
-        username: String,
-        password: String,
-        twoFactorCode: String?,
-        subBaseUrl: String = "",
-    ): Result<ServerStatus> {
-        val jar = InMemoryCookieJar()
-        val csrfHolder = CsrfState()
-        val candidate = XuiApiFactory.sessionAuthed(
-            baseUrl, allowInsecureTls, jar, csrfHolder, json,
-        )
-
-        // 1. Seed CSRF. GET → no token needed yet, server creates session.
-        val csrfBootstrap = safeData { candidate.getCsrfToken() }
-        csrfBootstrap.onFailure { return Result.failure(it) }
-            .onSuccess { csrfHolder.set(it) }
-
-        // 2. Login. Success returns {success:true, msg:"…", obj:null} — that's
-        //    an ApiAck shape; treating it through safeData would incorrectly
-        //    mark a missing obj as failure.
-        val loginResult = safeAck { candidate.login(LoginRequest(username, password, twoFactorCode)) }
-        loginResult.onFailure { return Result.failure(it) }
-
-        // 3. Refresh CSRF — panel rotates it on session creation.
-        safeData { candidate.getCsrfToken() }.onSuccess { csrfHolder.set(it) }
-
-        // 4. Verify the session actually works.
-        val status = safeData { candidate.getServerStatus() }
-        return status.onSuccess {
-            store.saveProfile(
-                ConnectionProfile(
-                    baseUrl, allowInsecureTls,
-                    ConnectionAuth.Credentials(username, password),
-                    subBaseUrl,
-                ),
-            )
-            api = candidate
-            cookieJar = jar
-            csrf = csrfHolder
             currentBaseUrl = baseUrl
             currentSubBase = subBaseUrl
             cachedSettings = null
@@ -150,29 +93,11 @@ class PanelRepository @Inject constructor(
 
     fun unbind() {
         api = null
-        cookieJar?.clear()
-        cookieJar = null
-        csrf = null
         currentBaseUrl = null
         currentSubBase = null
         cachedSettings = null
         _connected.value = false
         store.clear()
-    }
-
-    /** A login/password profile is saved (so we can auto-relogin). */
-    fun hasStoredCredentials(): Boolean =
-        store.getProfile()?.auth is ConnectionAuth.Credentials
-
-    /**
-     * At app start, silently re-establish a session from a stored
-     * login/password profile so the user isn't dropped to the connect screen
-     * after the panel's session expired or the app restarted. No-op (returns
-     * false) for token profiles, 2FA accounts, or if already connected.
-     */
-    suspend fun tryAutoReconnect(): Boolean {
-        if (_connected.value) return true
-        return reauth()
     }
 
     // ---- Server -----------------------------------------------------------
@@ -407,8 +332,6 @@ class PanelRepository @Inject constructor(
 
     private fun bindTokenInternal(baseUrl: String, allowInsecureTls: Boolean, token: String) {
         api = XuiApiFactory.tokenAuthed(baseUrl, allowInsecureTls, token, json)
-        cookieJar = null
-        csrf = null
         currentBaseUrl = baseUrl
         cachedSettings = null
         _connected.value = true
@@ -420,10 +343,6 @@ class PanelRepository @Inject constructor(
     ): Result<T> {
         val current = api ?: return Result.failure(PanelError.NotConnected)
         val r = safeData { block(current) }
-        if (isUnauthorized(r) && reauth()) {
-            val again = api ?: return r
-            return safeData { block(again) }
-        }
         if (isUnauthorized(r)) onAuthLost()
         return r
     }
@@ -433,48 +352,25 @@ class PanelRepository @Inject constructor(
     ): Result<Unit> {
         val current = api ?: return Result.failure(PanelError.NotConnected)
         val r = safeAck { block(current) }
-        if (isUnauthorized(r) && reauth()) {
-            val again = api ?: return r
-            return safeAck { block(again) }
-        }
         if (isUnauthorized(r)) onAuthLost()
         return r
     }
 
     /**
-     * A mid-session 401 that reauth couldn't fix means the credential is no
-     * longer valid (a token was deleted/disabled in the panel, or the password
-     * changed under a credentials profile). Drop to the Connect screen with a
-     * message instead of leaving the app "connected" but failing every call. The
-     * profile stays saved so the fields are pre-filled for a quick fix.
+     * A mid-session 401 means the API token is no longer valid (deleted or
+     * disabled in the panel). Drop to the Connect screen with a message instead
+     * of leaving the app "connected" but failing every call. The profile stays
+     * saved so the fields are pre-filled for a quick fix.
      */
     private fun onAuthLost() {
         if (!_connected.value) return
-        val isToken = store.getProfile()?.auth is ConnectionAuth.Token
-        _authError.value = if (isToken) {
-            "Your API token is no longer valid. Reconnect with a working one."
-        } else {
-            "Your session is no longer valid. Sign in again."
-        }
+        _authError.value = "Your API token is no longer valid. Reconnect with a working one."
         _connected.value = false
     }
 
     private fun isUnauthorized(r: Result<*>): Boolean {
         val e = r.exceptionOrNull()
         return e is PanelError.Http && e.code == 401
-    }
-
-    /**
-     * Re-establish a session from stored login/password credentials (no 2FA).
-     * Used on a 401 mid-session and at app start. Token profiles and
-     * 2FA-protected accounts return false (the user must act).
-     */
-    private suspend fun reauth(): Boolean {
-        val p = store.getProfile() ?: return false
-        val auth = p.auth as? ConnectionAuth.Credentials ?: return false
-        return connectWithCredentials(
-            p.baseUrl, p.allowInsecureTls, auth.username, auth.password, null, p.subBaseUrl,
-        ).isSuccess
     }
 
     /**

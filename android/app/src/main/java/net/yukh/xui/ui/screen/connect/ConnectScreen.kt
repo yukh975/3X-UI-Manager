@@ -1,6 +1,5 @@
 package net.yukh.xui.ui.screen.connect
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,9 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,6 +47,7 @@ fun ConnectScreen(
     vm: ConnectViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    var tokenVisible by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(tr("Connect to panel")) }) },
@@ -63,6 +60,12 @@ fun ConnectScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Text(
+                tr("Sign in with an API token. Requires panel v3.3.0 or newer."),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
             OutlinedTextField(
                 value = state.url,
                 onValueChange = vm::setUrl,
@@ -74,15 +77,24 @@ fun ConnectScreen(
                 supportingText = { Text(tr("Include the webBasePath if your admin set one")) },
             )
 
-            AuthMethodPicker(
-                selected = state.method,
-                onSelect = vm::setMethod,
+            OutlinedTextField(
+                value = state.token,
+                onValueChange = vm::setToken,
+                label = { Text(tr("API token")) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                supportingText = { Text(tr("Create one in Settings → Security → API Token on the panel.")) },
+                trailingIcon = {
+                    IconButton(onClick = { tokenVisible = !tokenVisible }) {
+                        Icon(
+                            imageVector = if (tokenVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                            contentDescription = if (tokenVisible) tr("Hide token") else tr("Show token"),
+                        )
+                    }
+                },
             )
-
-            when (state.method) {
-                AuthMethod.Token -> TokenSection(state = state, vm = vm)
-                AuthMethod.Credentials -> CredentialsSection(state = state, vm = vm)
-            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -97,10 +109,7 @@ fun ConnectScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Switch(
-                    checked = state.allowInsecureTls,
-                    onCheckedChange = vm::setAllowInsecureTls,
-                )
+                Switch(checked = state.allowInsecureTls, onCheckedChange = vm::setAllowInsecureTls)
             }
 
             OutlinedTextField(
@@ -114,10 +123,9 @@ fun ConnectScreen(
                 supportingText = {
                     Text(
                         tr(
-                            "Optional. On panel v3.3.0+ the app reads the subscription " +
-                                "base automatically (token or login). Set it here only for " +
-                                "older panels, or a reverse proxy whose public URL differs " +
-                                "— e.g. https://host:2096/sub/.",
+                            "Optional. The app reads the subscription base from the panel " +
+                                "automatically. Set it here only for a reverse proxy whose " +
+                                "public URL differs — e.g. https://host:2096/sub/.",
                         ),
                     )
                 },
@@ -136,9 +144,9 @@ fun ConnectScreen(
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
-                    Text("  " + tr("Signing in…"))
+                    Text("  " + tr("Connecting…"))
                 } else {
-                    Text(if (state.method == AuthMethod.Token) tr("Connect") else tr("Sign in"))
+                    Text(tr("Connect"))
                 }
             }
 
@@ -151,100 +159,4 @@ fun ConnectScreen(
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AuthMethodPicker(
-    selected: AuthMethod,
-    onSelect: (AuthMethod) -> Unit,
-) {
-    // Short labels so the segmented control fits one line in both EN and RU
-    // ("Login & password" / "Логин и пароль" overflowed and wrapped).
-    val items = listOf(
-        AuthMethod.Token to "API Token",
-        AuthMethod.Credentials to "Login",
-    )
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        items.forEachIndexed { index, (method, label) ->
-            SegmentedButton(
-                selected = selected == method,
-                onClick = { onSelect(method) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
-            ) { Text(tr(label)) }
-        }
-    }
-}
-
-@Composable
-private fun TokenSection(state: ConnectUiState, vm: ConnectViewModel) {
-    var visible by remember { mutableStateOf(false) }
-    OutlinedTextField(
-        value = state.token,
-        onValueChange = vm::setToken,
-        label = { Text(tr("API token")) },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
-        supportingText = {
-            Text(tr("Create one in Settings → Security → API Token on the panel."))
-        },
-        trailingIcon = {
-            IconButton(onClick = { visible = !visible }) {
-                Icon(
-                    imageVector = if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                    contentDescription = if (visible) tr("Hide token") else tr("Show token"),
-                )
-            }
-        },
-    )
-}
-
-@Composable
-private fun CredentialsSection(state: ConnectUiState, vm: ConnectViewModel) {
-    var passwordVisible by remember { mutableStateOf(false) }
-
-    OutlinedTextField(
-        value = state.username,
-        onValueChange = vm::setUsername,
-        label = { Text(tr("Username")) },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-    )
-
-    OutlinedTextField(
-        value = state.password,
-        onValueChange = vm::setPassword,
-        label = { Text(tr("Password")) },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-        trailingIcon = {
-            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                Icon(
-                    imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                    contentDescription = if (passwordVisible) tr("Hide password") else tr("Show password"),
-                )
-            }
-        },
-    )
-
-    OutlinedTextField(
-        value = state.twoFactorCode,
-        onValueChange = vm::setTwoFactorCode,
-        label = { Text(tr("2FA code")) },
-        placeholder = { Text(tr("Leave empty if 2FA is disabled")) },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        supportingText = {
-            Text(tr("Only required if 2FA is enabled on your account."))
-        },
-    )
-
-    // Hidden by default — the field above already communicates this — but kept
-    // around in case we want to add a probe later that flips this on.
-    AnimatedVisibility(visible = false) { Text("") }
 }

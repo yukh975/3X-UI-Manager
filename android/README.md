@@ -9,10 +9,10 @@ Native Android client for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) 
 ## Features
 
 ### Connect
-- Two auth modes (pick on the connect screen): **API token** (Bearer) or **login + password** (with optional 2FA).
+- **API token** (Bearer) only — paste a token from the panel. Requires panel **v3.3.0 or newer**.
 - **Self-signed TLS** toggle for panels with a self-signed certificate.
 - **Subscription base URL** field (see [Subscriptions](#subscriptions)).
-- Credentials are stored encrypted (`EncryptedSharedPreferences`, AES-256, key in the Android Keystore).
+- The token is stored encrypted (`EncryptedSharedPreferences`, AES-256, key in the Android Keystore).
 
 ### Dashboard
 - Live server status, polled every 3 s: **Xray** running/stopped + version, one-tap **Restart Xray** (confirmed).
@@ -44,7 +44,7 @@ Native Android client for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) 
 - **Add / edit / delete**: name, address, port, scheme, base path, API token, TLS verify mode, allow-private-address.
 
 ### Xray config (⋮ menu)
-Structured editors over the panel's Xray config — each round-trips the **whole** config, preserving sibling and unknown keys. Field sets mirror the panel's own forms. (Needs API-token access on panel **v3.3.0+**, otherwise a login session.)
+Structured editors over the panel's Xray config — each round-trips the **whole** config, preserving sibling and unknown keys. Field sets mirror the panel's own forms. (Needs panel **v3.3.0+**.)
 - **Outbounds** — list (add / edit / delete / reorder) + per-protocol forms (vless, vmess, trojan, shadowsocks, socks, http, freedom, blackhole, wireguard) with transport + TLS/REALITY; **import from a `vless://` link**.
 - **Routing** — rules (source / dest / inbound → outbound or balancer, reorderable) + balancers (strategy / selector / fallback) + routing strategy.
 - **DNS** — enable, DNS-level options, servers (bare string or full object), FakeDNS pools.
@@ -67,18 +67,15 @@ Structured editors over the panel's Xray config — each round-trips the **whole
 
 ## Authentication
 
-| Mode | What works |
-|------|-----------|
-| **API token** (Bearer) | On panel **v3.3.0+**, everything the app does — dashboard, inbounds, clients, nodes, the **Xray config editor**, **settings**, **subscription links** and **backup / restore**. The token doesn't time out, so it never drops you mid-session. |
-| **Login + password** (session, optional 2FA) | The same surface. Needed only for panels **older than v3.3.0**, where settings and the Xray config are exposed to a logged-in session but not to a token. |
+The app authenticates with an **API token** (Bearer) only, and requires panel **v3.3.0 or newer**. There is no login/password mode.
 
-On panel **v3.3.0** the whole management API moved under `/panel/api/*`, which a Bearer token authenticates (as the panel's first admin). So a token now also covers **settings**, the **Xray-config editor** and **subscription-base auto-discovery** — things that used to need a session. A 3x-ui token is **full admin** (there are no read-only or scoped tokens), so guard it like the password.
+On panel **v3.3.0** the whole management API moved under `/panel/api/*`, which a Bearer token authenticates (as the panel's first admin). So a token covers **everything the app does** — dashboard, inbounds, clients, nodes, the **Xray config editor**, **settings**, **subscription links** and **backup / restore**. A 3x-ui token is **full admin** (there are no read-only or scoped tokens), so guard it like the password.
 
 Create a token in the panel under **Settings → Security → API Token**.
 
-**Why a token is convenient:** a **login** session lasts `sessionMaxAge` (default **360 min / 6 h**, under Settings → Security) and then drops — the app re-authenticates from the saved username/password, which **re-prompts 2FA** if it's enabled. A **token doesn't expire on a timer**, so it never drops you and never re-prompts 2FA.
+**Why a token (and not login):** a token **doesn't expire on a timer**, so it never drops you mid-session and never re-prompts 2FA — unlike a login session, which lasts `sessionMaxAge` (default **360 min / 6 h**) and then drops. Pre-v3.3.0 panels exposed settings and the Xray config only to a logged-in session, which is why login used to be supported; on v3.3.0+ a token reaches all of it, so the app is now token-only.
 
-The one edge case: if a token is later **disabled or recreated** in the panel, its requests fail with `401`. A token can't be silently re-authenticated (only a saved login/password profile can), so the app **returns you to the Connect screen** with a clear "your API token is no longer valid" message and your details pre-filled — re-enter a working token and reconnect. Rare in practice, since tokens don't time out.
+The one edge case: if a token is later **disabled or recreated** in the panel, its requests fail with `401`. The app then **returns you to the Connect screen** with a clear "your API token is no longer valid" message and your details pre-filled — re-enter a working token and reconnect. Rare in practice, since tokens don't time out.
 
 ---
 
@@ -92,8 +89,8 @@ A **subscription link** is one URL that hands a client app *all* of a user's con
 
 The `subId` is unique per client (the app already has it), so each client gets its own link. The only shared part is the **subscription server base**, which is a panel setting.
 
-- **Auto (panel v3.3.0+):** the app reads the base from the panel automatically — with **either** an API token or a login session — so the subscription QR + link appear per client with no setup.
-- **Manual override:** set the base **once** in the connect screen's **Subscription base URL** field when the auto-read doesn't fit — a panel **older than v3.3.0** (its settings aren't token-readable), or a **reverse proxy** in front of the subscription whose public URI differs from what the panel stores. Enter either:
+- **Auto (panel v3.3.0+):** the app reads the base from the panel automatically over the token — so the subscription QR + link appear per client with no setup.
+- **Manual override:** set the base **once** in the connect screen's **Subscription base URL** field when the auto-read doesn't fit — a **reverse proxy** in front of the subscription whose public URI differs from what the panel stores. Enter either:
   - your **reverse-proxy URI** (e.g. `https://sub.example.com/`), or
   - the panel's **Subscription URL** as shown in the panel.
 

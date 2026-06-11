@@ -9,7 +9,6 @@ import net.yukh.xui.data.api.dto.EnableRequest
 import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
-import net.yukh.xui.data.api.dto.LoginRequest
 import net.yukh.xui.data.api.dto.MetricPoint
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeIdsRequest
@@ -31,20 +30,6 @@ import retrofit2.http.Path
 import retrofit2.http.Streaming
 
 interface XuiApi {
-
-    // ---- Authentication (session/cookie flow) ------------------------------
-
-    @GET("csrf-token")
-    suspend fun getCsrfToken(): ApiResponse<String>
-
-    @POST("getTwoFactorEnable")
-    suspend fun getTwoFactorEnable(): ApiResponse<Boolean>
-
-    @POST("login")
-    suspend fun login(@Body req: LoginRequest): ApiAck
-
-    @POST("logout")
-    suspend fun logout(): ApiAck
 
     // ---- Server -----------------------------------------------------------
 
