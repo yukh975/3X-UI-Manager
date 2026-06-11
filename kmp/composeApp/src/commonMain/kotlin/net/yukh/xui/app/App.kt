@@ -27,6 +27,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientCreatePayload
@@ -144,6 +145,12 @@ fun App() {
                     a.nodes().let { if (it.success) nodes = it.obj ?: emptyList() }
                     a.onlines().let { if (it.success) onlines = it.obj ?: emptyList() }
                     error = null
+                } catch (e: AuthExpiredException) {
+                    // Token revoked/disabled in the panel — drop to Connect with a
+                    // clear message (fields stay pre-filled for a quick fix).
+                    api?.close(); api = null
+                    connected = false
+                    error = tr(lang, "Your API token is no longer valid. Reconnect with a working one.")
                 } catch (e: Throwable) {
                     error = e.message ?: "Network error"
                 }

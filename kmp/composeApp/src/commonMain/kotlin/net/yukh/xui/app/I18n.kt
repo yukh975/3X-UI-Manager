@@ -41,6 +41,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Connecting…" to "Подключение…",
     "Allow self-signed TLS" to "Разрешить самоподписанный TLS",
     "Login failed — check URL / token" to "Не удалось войти — проверьте URL / токен",
+    "Your API token is no longer valid. Reconnect with a working one." to
+        "API-токен больше не действителен. Переподключитесь с рабочим.",
 
     // Dashboard
     "Refresh" to "Обновить",

@@ -3,6 +3,8 @@ package net.yukh.xui.shared.api
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
+import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
@@ -12,6 +14,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.parameters
 import io.ktor.serialization.kotlinx.json.json
@@ -47,10 +50,22 @@ internal val sharedJson = Json {
  * Android `XuiApi` for the panel/api endpoints that work with a Bearer token.
  * (Session-only endpoints — settings, Xray config — are not here.)
  */
+/** Thrown when the panel rejects our token mid-session (HTTP 401) — it was
+ *  deleted or disabled in the panel. The app drops back to the Connect screen. */
+class AuthExpiredException : Exception("Authentication is no longer valid")
+
 class PanelApi(baseUrl: String, private val token: String, private val allowInsecure: Boolean = false) {
     private val base = baseUrl.trimEnd('/')
     private val client = platformHttpClient(allowInsecure) {
         install(ContentNegotiation) { json(sharedJson) }
+        // Mark requests as XHR (like the web UI) so the panel answers a rejected
+        // token with 401 — not 404 — which we surface as AuthExpiredException.
+        install(DefaultRequest) { header("X-Requested-With", "XMLHttpRequest") }
+        HttpResponseValidator {
+            validateResponse { resp ->
+                if (resp.status == HttpStatusCode.Unauthorized) throw AuthExpiredException()
+            }
+        }
     }
 
     private fun HttpRequestBuilder.auth() {
