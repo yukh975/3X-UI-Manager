@@ -27,7 +27,10 @@ kotlin {
 
         commonMain.dependencies {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines")
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization")
+            // api (not implementation): InboundModel exposes JsonElement fields, so
+            // consumers (composeApp) need the type on their classpath — on the JVM
+            // target it isn't transitive otherwise.
+            api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization")
             implementation("io.ktor:ktor-client-core:$ktor")
             implementation("io.ktor:ktor-client-content-negotiation:$ktor")
             implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor")
