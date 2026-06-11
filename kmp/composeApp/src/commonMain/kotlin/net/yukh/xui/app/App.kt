@@ -106,7 +106,10 @@ fun App() {
             var api by remember { mutableStateOf<PanelApi?>(null) }
             val store = remember { SessionStore() }
             val lock = remember { AppLock() }
-            var locked by remember { mutableStateOf(lock.hasPasscode()) }
+            // Start unlocked; the lock is armed only when a saved session is
+            // auto-restored at launch (see LaunchedEffect below) or on ON_STOP
+            // while connected. A fresh manual sign-in must not trigger it.
+            var locked by remember { mutableStateOf(false) }
             val scope = rememberCoroutineScope()
 
             // Re-lock whenever the app leaves the foreground, so returning to it
@@ -279,6 +282,10 @@ fun App() {
                         baseUrl = saved.baseUrl
                         token = saved.token
                         allowInsecure = saved.allowInsecure
+                        // Returning user with a saved session: arm the lock before
+                        // the panel can render. A fresh manual sign-in (onConnect)
+                        // never sets this, so it won't prompt right after login.
+                        if (lock.hasPasscode()) locked = true
                         connect(saved.baseUrl, saved.token, saved.allowInsecure)
                     }
                 }
