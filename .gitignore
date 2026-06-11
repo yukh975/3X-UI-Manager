@@ -19,6 +19,9 @@ bin/
 dist/
 !web/dist/
 web/dist/*
+
+# …but the Android app has a real source package named "backup" — keep it.
+!/android/app/src/main/java/net/yukh/xui/ui/screen/backup/
 !web/dist/.gitkeep
 release/
 node_modules/

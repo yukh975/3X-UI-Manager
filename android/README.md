@@ -51,6 +51,9 @@ Structured editors over the panel's Xray config — each round-trips the **whole
 - **General / Logs** — log levels, routing strategy, outbound test URL, traffic-stats toggles.
 - **Xray config (raw)** — the full config as JSON, a fallback for anything the forms don't cover (Observatory, advanced xHTTP, hysteria, reverse, …).
 
+### Backup / restore (⋮ menu)
+- **Back up** the panel's whole database (settings, inbounds, clients **and** the Xray config) to a file via the system file picker, and **restore** the panel from one. Engine-agnostic — the panel saves SQLite as `x-ui.db` and PostgreSQL as `x-ui.dump`, and imports either back. Restore confirms first and restarts Xray (a brief connection drop). Works with an API token.
+
 ### Other
 - **Language**: English (default) or Russian, switchable in **Settings** (⋮ menu) — no restart needed.
 - Confirmation dialog on every **save** and **delete** so nothing changes by accident.

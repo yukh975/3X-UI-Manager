@@ -30,6 +30,9 @@ import net.yukh.xui.data.auth.InMemoryCookieJar
 import net.yukh.xui.data.prefs.ConnectionAuth
 import net.yukh.xui.data.prefs.ConnectionProfile
 import net.yukh.xui.data.prefs.ConnectionStore
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -193,6 +196,34 @@ class PanelRepository @Inject constructor(
     /** Re-download all built-in geo databases at once and restart Xray. */
     suspend fun updateAllGeofiles(): Result<Unit> =
         authedAck { it.updateAllGeofiles() }
+
+    // ---- Backup / restore -------------------------------------------------
+
+    /** Download the panel's database backup. The panel chooses the engine-
+     *  specific filename (x-ui.db / x-ui.dump), returned in Content-Disposition;
+     *  the whole config (settings, inbounds, clients, Xray config) lives in it. */
+    suspend fun downloadDb(): Result<DbBackup> {
+        val current = api ?: return Result.failure(PanelError.NotConnected)
+        return catching {
+            val resp = current.getDb()
+            val body = resp.body()
+            if (!resp.isSuccessful || body == null) {
+                Result.failure(PanelError.Http(resp.code()))
+            } else {
+                val name = contentDispositionFilename(resp.headers()["Content-Disposition"]) ?: "x-ui.db"
+                Result.success(DbBackup(name, body.bytes()))
+            }
+        }
+    }
+
+    /** Restore the panel from a backup file. The panel imports it under its own
+     *  engine and restarts Xray (a brief connection drop). */
+    suspend fun importDb(filename: String, bytes: ByteArray): Result<Unit> {
+        val part = MultipartBody.Part.createFormData(
+            "db", filename, bytes.toRequestBody("application/octet-stream".toMediaTypeOrNull()),
+        )
+        return authedAck { it.importDb(part) }
+    }
 
     // ---- Inbounds ---------------------------------------------------------
 
@@ -446,6 +477,21 @@ class PanelRepository @Inject constructor(
     } catch (e: Exception) {
         Result.failure(e)
     }
+}
+
+/** A downloaded panel database backup: the raw bytes + the panel-chosen
+ *  filename (x-ui.db for SQLite, x-ui.dump for PostgreSQL). */
+class DbBackup(val filename: String, val bytes: ByteArray)
+
+/** Pull the filename out of a Content-Disposition header value, handling the
+ *  bare, quoted, and RFC 5987 (filename*=) forms. Null if absent. */
+internal fun contentDispositionFilename(header: String?): String? {
+    if (header.isNullOrBlank()) return null
+    Regex("""filename\*=(?:UTF-8'')?["']?([^"';]+)""", RegexOption.IGNORE_CASE)
+        .find(header)?.groupValues?.get(1)?.let { return it.trim() }
+    Regex("""filename=["']?([^"';]+)""", RegexOption.IGNORE_CASE)
+        .find(header)?.groupValues?.get(1)?.let { return it.trim() }
+    return null
 }
 
 /**

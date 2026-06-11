@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.AllInbox
+import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.MoreVert
@@ -58,6 +59,7 @@ import net.yukh.xui.ui.screen.inbounds.InboundsViewModel
 import net.yukh.xui.ui.screen.nodes.NodeEditorScreen
 import net.yukh.xui.ui.screen.nodes.NodesScreen
 import net.yukh.xui.ui.screen.nodes.NodesViewModel
+import net.yukh.xui.ui.screen.backup.BackupScreen
 import net.yukh.xui.ui.screen.settings.SettingsScreen
 import net.yukh.xui.ui.screen.outbounds.OutboundsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
@@ -101,6 +103,7 @@ fun MainScreen(
     var showRouting by remember { mutableStateOf(false) }
     var showDns by remember { mutableStateOf(false) }
     var showGeneral by remember { mutableStateOf(false) }
+    var showBackup by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
 
     // The editor-bearing VMs are created here and shared with the tab screens, so
@@ -148,6 +151,11 @@ fun MainScreen(
                             text = { Text(tr("Xray config")) },
                             leadingIcon = { Icon(Icons.Outlined.Tune, contentDescription = null) },
                             onClick = { menuOpen = false; showXrayConfig = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("Backup / restore")) },
+                            leadingIcon = { Icon(Icons.Outlined.Backup, contentDescription = null) },
+                            onClick = { menuOpen = false; showBackup = true },
                         )
                         DropdownMenuItem(
                             text = { Text(tr("Settings")) },
@@ -270,6 +278,11 @@ fun MainScreen(
     if (showGeneral) {
         BackHandler(onBack = { showGeneral = false })
         GeneralScreen(onClose = { showGeneral = false })
+    }
+
+    if (showBackup) {
+        BackHandler(onBack = { showBackup = false })
+        BackupScreen(onClose = { showBackup = false })
     }
 
     if (showSettings) {

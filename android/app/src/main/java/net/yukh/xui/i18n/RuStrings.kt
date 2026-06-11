@@ -439,4 +439,29 @@ val ruStrings: Map<String, String> = mapOf(
     "m ago" to "м назад",
     "h ago" to "ч назад",
     "d ago" to "д назад",
+
+    // Backup / restore
+    "Backup / restore" to "Бэкап / восстановление",
+    "Back up" to "Сделать бэкап",
+    "Back up to file" to "Сохранить в файл",
+    "Download the database and save it to a file on this device." to
+        "Скачать базу и сохранить в файл на этом устройстве.",
+    "The backup is the panel's whole database — settings, inbounds, clients and the Xray config. The panel saves SQLite as x-ui.db and PostgreSQL as x-ui.dump; either restores back here." to
+        "Бэкап — это вся база панели: настройки, inbounds, клиенты и конфиг Xray. " +
+        "Панель сохраняет SQLite как x-ui.db, а PostgreSQL как x-ui.dump; и то, и другое восстанавливается обратно сюда.",
+    "Restore" to "Восстановить",
+    "Restore from file" to "Восстановить из файла",
+    "Replace the panel database from a backup file. This overwrites everything and restarts Xray — every active connection drops briefly." to
+        "Заменить базу панели из файла бэкапа. Это перезапишет всё и перезапустит Xray — " +
+        "все активные подключения кратко разорвутся.",
+    "Restore from this backup?" to "Восстановить из этого бэкапа?",
+    "Importing" to "Импорт",
+    "overwrites the panel database and restarts Xray. This can't be undone." to
+        "перезапишет базу панели и перезапустит Xray. Отменить нельзя.",
+    "Backup saved" to "Бэкап сохранён",
+    "Couldn't write the backup file" to "Не удалось записать файл бэкапа",
+    "Couldn't read the selected file" to "Не удалось прочитать выбранный файл",
+    "Restored — Xray restarted" to "Восстановлено — Xray перезапущен",
+    "Backup failed" to "Не удалось сделать бэкап",
+    "Restore failed" to "Не удалось восстановить",
 )

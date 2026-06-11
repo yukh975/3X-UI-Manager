@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.18] — Unreleased
+
+### Added
+- **Backup / restore (⋮ menu):** download the panel's database backup to a file,
+  and restore the panel from one. The backup is the **whole database** — settings,
+  inbounds, clients and the Xray config — so a single file captures everything.
+  The panel chooses the engine-specific file (SQLite `x-ui.db` / PostgreSQL
+  `x-ui.dump`) and imports either back, so the app stays engine-agnostic. Uses the
+  system file picker (Storage Access Framework); restore confirms first and
+  restarts Xray (a brief connection drop). Works with an API token
+  (`GET /panel/api/server/getDb`, `POST /panel/api/server/importDB`).
+
 ## [0.3.17] — 2026-06-10
 
 ### Added

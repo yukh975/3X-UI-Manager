@@ -16,12 +16,18 @@ import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
+import okhttp3.MultipartBody
+import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Streaming
 
 interface XuiApi {
 
@@ -73,6 +79,22 @@ interface XuiApi {
 
     @POST("panel/api/server/updateGeofile")
     suspend fun updateAllGeofiles(): ApiAck
+
+    // ---- Backup / restore -------------------------------------------------
+
+    // Download the panel database backup. Streaming; the engine-specific
+    // filename (x-ui.db on SQLite, x-ui.dump on PostgreSQL) is returned in the
+    // Content-Disposition header — the panel picks it, so the client stays
+    // engine-agnostic.
+    @Streaming
+    @GET("panel/api/server/getDb")
+    suspend fun getDb(): Response<ResponseBody>
+
+    // Restore the panel from a backup file (multipart form field `db`). The
+    // panel imports it (under its own engine) and restarts the Xray service.
+    @Multipart
+    @POST("panel/api/server/importDB")
+    suspend fun importDb(@Part file: MultipartBody.Part): ApiAck
 
     // ---- Inbounds ---------------------------------------------------------
 
