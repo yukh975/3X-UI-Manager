@@ -84,6 +84,7 @@ fun App() {
             var showGeneralX by remember { mutableStateOf(false) }
             var showDnsX by remember { mutableStateOf(false) }
             var showRoutingX by remember { mutableStateOf(false) }
+            var showOutboundsX by remember { mutableStateOf(false) }
             var showPanelAdmin by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
@@ -408,6 +409,16 @@ fun App() {
                         onSave = { saveXrayThen { showRoutingX = false } },
                         onCancel = { showRoutingX = false; editorError = null },
                     )
+                } else if (showOutboundsX) {
+                    OutboundsXrayScreen(
+                        configJson = xrayConfigJson,
+                        loading = xrayLoading,
+                        saving = editorSaving,
+                        error = editorError,
+                        onConfigChange = { xrayConfigJson = it },
+                        onSave = { saveXrayThen { showOutboundsX = false } },
+                        onCancel = { showOutboundsX = false; editorError = null },
+                    )
                 } else if (showPanelAdmin && api != null) {
                     PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })
                 } else {
@@ -487,6 +498,7 @@ fun App() {
                                     onGeneralX = { showGeneralX = true; editorError = null; scope.launch { loadXray() } },
                                     onDnsX = { showDnsX = true; editorError = null; scope.launch { loadXray() } },
                                     onRoutingX = { showRoutingX = true; editorError = null; scope.launch { loadXray() } },
+                                    onOutboundsX = { showOutboundsX = true; editorError = null; scope.launch { loadXray() } },
                                     onPanelAdmin = { showPanelAdmin = true },
                                     onDisconnect = doDisconnect,
                                 )
