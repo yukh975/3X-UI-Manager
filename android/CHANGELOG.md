@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.22] — unreleased
+## [0.3.22] — 2026-06-11
 
 ### Fixed
 - **The app lock (passcode / biometric) is no longer asked while signed out.**
