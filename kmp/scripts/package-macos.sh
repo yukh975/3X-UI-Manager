@@ -22,10 +22,21 @@ VERSION=$(sed -n 's/.*appVersionName(): String = "\(.*\)".*/\1/p' \
 [ -n "$VERSION" ] || { echo "cannot read appVersionName from Platform.desktop.kt" >&2; exit 1; }
 
 echo "==> building $ARCH_LABEL package, app version $VERSION (JDK: $(java -version 2>&1 | head -1))"
-rm -rf composeApp/build/compose/binaries/main
+# Wipe ALL of build/compose: tmp/main/runtime caches the jlink runtime image,
+# and a stale one from the other arch gets bundled silently (arm64 JVM inside
+# an x86_64 launcher → won't start on Intel).
+rm -rf composeApp/build/compose
 ./gradlew :composeApp:createDistributable
 
 APP="composeApp/build/compose/binaries/main/app/3X-UI Manager.app"
+
+# Sanity: the bundled JVM must match the launcher arch.
+LAUNCHER_ARCH=$(file "$APP/Contents/MacOS/3X-UI Manager" | grep -oE 'x86_64|arm64' | head -1)
+JVM_ARCH=$(file "$APP/Contents/runtime/Contents/Home/lib/server/libjvm.dylib" | grep -oE 'x86_64|arm64' | head -1)
+if [ "$LAUNCHER_ARCH" != "$JVM_ARCH" ]; then
+  echo "ARCH MISMATCH: launcher=$LAUNCHER_ARCH jvm=$JVM_ARCH" >&2; exit 1
+fi
+echo "==> arch check ok: $LAUNCHER_ARCH"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 codesign --force --deep --sign - "$APP"
 
