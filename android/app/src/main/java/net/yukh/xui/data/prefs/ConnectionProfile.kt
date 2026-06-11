@@ -17,10 +17,10 @@ data class ConnectionProfile(
     val auth: ConnectionAuth,
     /**
      * Optional subscription base URL, e.g. `https://panel.example.com:2096/sub/`.
-     * The subscription server's host/port/path aren't reachable with an API
-     * token (they live behind the panel's session-only settings), so the user
-     * can set this once to enable subscription links + QR in token mode. When
-     * blank, the app falls back to reading sub settings (login/password only).
+     * On v3.3.0 the app reads the base from panel settings automatically (token
+     * or login), so this is only needed as an override — for panels older than
+     * v3.3.0 (settings not token-readable) or a reverse proxy whose public URL
+     * differs from what the panel stores. When blank, the base is auto-read.
      */
     val subBaseUrl: String = "",
 ) {

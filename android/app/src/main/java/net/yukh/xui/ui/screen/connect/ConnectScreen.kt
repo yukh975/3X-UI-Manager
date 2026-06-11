@@ -114,10 +114,10 @@ fun ConnectScreen(
                 supportingText = {
                     Text(
                         tr(
-                            "For subscription links/QR with an API token, enter your " +
-                                "reverse-proxy URI (if you use one) or the panel's " +
-                                "Subscription URL, e.g. https://host:2096/sub/. Leave " +
-                                "empty with login/password.",
+                            "Optional. On panel v3.3.0+ the app reads the subscription " +
+                                "base automatically (token or login). Set it here only for " +
+                                "older panels, or a reverse proxy whose public URL differs " +
+                                "— e.g. https://host:2096/sub/.",
                         ),
                     )
                 },

@@ -278,19 +278,20 @@ class PanelRepository @Inject constructor(
         authedData { it.getClientLinks(email) }
 
     /**
-     * Build a client's subscription URL. Needs panel sub settings, which are
-     * only reachable with session (login/password) auth — with a token the
-     * settings call is redirected to login and this returns null. The result
-     * is cached so repeated share-sheet opens don't re-fetch settings.
+     * Build a client's subscription URL. The base is either the user-set
+     * override or read from panel settings; on v3.3.0 those settings are
+     * token-readable (the setting call moved under /panel/api), so this works
+     * with a token too — only older panels need a login session. The result is
+     * cached so repeated share-sheet opens don't re-fetch settings.
      */
     suspend fun getSubscriptionUrl(client: Client): String? {
         if (client.subId.isBlank()) return null
-        // Prefer the user-set subscription base (works with API token).
+        // Prefer the user-set subscription base (handy for reverse proxies).
         currentSubBase?.takeIf { it.isNotBlank() }?.let { base ->
             val b = if (base.endsWith("/")) base else "$base/"
             return b + client.subId
         }
-        // Fall back to reading panel sub settings (login/password only).
+        // Otherwise read the base from panel settings (token-readable on v3.3.0).
         val host = currentBaseUrl?.let { PanelSettings.hostOf(it) } ?: return null
         val settings = cachedSettings ?: authedData { it.getAllSettings() }
             .getOrNull()

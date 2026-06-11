@@ -18,6 +18,13 @@ uses [Semantic Versioning](https://semver.org/).
   - **Restart panel** — restart the panel service (confirmed first; the app
     reconnects after a few seconds).
 
+### Changed
+- Corrected the stale "an API token can't do this" wording across the app and
+  READMEs: on panel **v3.3.0+** a token covers the Xray config editor, settings
+  and subscription links. The Xray-config screen's gate is now a neutral "couldn't
+  load" message (it only appears on an actual load failure), and the subscription
+  hints note that the base is auto-read with a token too.
+
 ## [0.3.18] — 2026-06-11
 
 ### Added

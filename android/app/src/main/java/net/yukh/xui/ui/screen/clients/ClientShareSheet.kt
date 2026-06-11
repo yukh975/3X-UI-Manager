@@ -106,10 +106,10 @@ fun ClientShareSheet(
                     subUrl != null -> QrAndLink(content = subUrl, context = context)
                     else -> Text(
                         tr(
-                            "No subscription URL. With an API token, set the " +
+                            "No subscription URL. On panel v3.3.0+ the app reads the " +
+                                "base automatically (token or login). Otherwise set the " +
                                 "\"Subscription base URL\" on the connect screen " +
-                                "(e.g. https://host:2096/sub/) — or connect with " +
-                                "login/password so the app can read it automatically.",
+                                "(e.g. https://host:2096/sub/).",
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -126,8 +126,8 @@ class ClientsViewModel @Inject constructor(
                     _state.update { it.copy(linksLoading = false, linksError = e.message) }
                 }
         }
-        // Subscription URL needs panel settings (session auth) — fetch in
-        // parallel and degrade silently if unavailable (token mode).
+        // Subscription URL needs panel settings (token-readable on v3.3.0) —
+        // fetch in parallel and degrade silently if unavailable (old panels).
         viewModelScope.launch {
             val subUrl = client?.let { repo.getSubscriptionUrl(it) }
             _state.update { it.copy(selectedSubUrl = subUrl, subUrlChecked = true) }

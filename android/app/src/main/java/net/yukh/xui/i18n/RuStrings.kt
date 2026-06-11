@@ -53,12 +53,13 @@ val ruStrings: Map<String, String> = mapOf(
     "Signing in…" to "Вход…",
     "Create one in Settings → Security → API Token on the panel." to
         "Создайте его в панели: Settings → Security → API Token.",
-    "For subscription links/QR with an API token, enter your reverse-proxy URI " +
-        "(if you use one) or the panel's Subscription URL, e.g. https://host:2096/sub/. " +
-        "Leave empty with login/password." to
-        "Для ссылок/QR подписки в режиме API-токена укажите URI обратного прокси " +
-            "(если используется) или Subscription URL панели, напр. https://host:2096/sub/. " +
-            "С логином/паролем оставьте пустым.",
+    "Optional. On panel v3.3.0+ the app reads the subscription " +
+        "base automatically (token or login). Set it here only for " +
+        "older panels, or a reverse proxy whose public URL differs " +
+        "— e.g. https://host:2096/sub/." to
+        "Необязательно. На панели v3.3.0+ приложение само читает базу подписки " +
+            "(по токену или логину). Задавайте здесь только для панелей старше v3.3.0 " +
+            "или обратного прокси, чей публичный URL отличается — напр. https://host:2096/sub/.",
 
     // Dashboard
     "Xray" to "Xray",
@@ -384,15 +385,10 @@ val ruStrings: Map<String, String> = mapOf(
     "The remote panel itself is untouched; it's just removed from this list." to
         "Сама удалённая панель не трогается — она лишь убирается из этого списка.",
 
-    // Xray config screen (paragraphs are split across tr() calls; the Russian
-    // fragments concatenate into a coherent sentence, keep the trailing spaces)
-    "Xray configuration isn't available with an API token." to
-        "Конфигурация Xray недоступна с API-токеном.",
-    "The panel only exposes the Xray config (outbounds, routing, " to
-        "Панель отдаёт конфиг Xray (outbounds, routing, ",
-    "DNS) to a logged-in session. Reconnect with login/password " to
-        "DNS) только авторизованной сессии. Переподключитесь по логину/паролю, ",
-    "to edit it." to "чтобы редактировать его.",
+    // Xray config "couldn't load" gate (shown only when the config load fails)
+    "Couldn't load the Xray config" to "Не удалось загрузить конфиг Xray",
+    "On panel v3.3.0+ the Xray config works with an API token. On older panels it's only exposed to a login session — reconnect with login/password." to
+        "На панели v3.3.0+ конфиг Xray работает по API-токену. На более старых панелях он доступен только сессии по логину — переподключитесь по логину/паролю.",
     "Full Xray config — outbounds, routing, DNS, etc. Same as the " to
         "Полный конфиг Xray — outbounds, routing, DNS и т.д. То же, что ",
     "panel's Xray Configuration page. Save, then restart Xray to apply." to
@@ -405,13 +401,13 @@ val ruStrings: Map<String, String> = mapOf(
     "No connection links for this client." to "Нет ссылок-соединений у этого клиента.",
     "will be removed from every attached inbound." to
         "будет удалён из всех привязанных inbound'ов.",
-    "No subscription URL. With an API token, set the " +
+    "No subscription URL. On panel v3.3.0+ the app reads the " +
+        "base automatically (token or login). Otherwise set the " +
         "\"Subscription base URL\" on the connect screen " +
-        "(e.g. https://host:2096/sub/) — or connect with " +
-        "login/password so the app can read it automatically." to
-        "Нет ссылки подписки. С API-токеном задайте «Базовый URL подписки» на " +
-            "экране подключения (напр. https://host:2096/sub/) — или войдите по " +
-            "логину/паролю, чтобы приложение прочитало её автоматически.",
+        "(e.g. https://host:2096/sub/)." to
+        "Нет ссылки подписки. На панели v3.3.0+ приложение читает базу " +
+            "автоматически (по токену или логину). Иначе задайте «Базовый URL подписки» " +
+            "на экране подключения (напр. https://host:2096/sub/).",
     "Collapse" to "Свернуть",
     "Expand" to "Развернуть",
     "Copy" to "Копировать",

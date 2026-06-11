@@ -76,7 +76,9 @@ On panel **v3.3.0** the whole management API moved under `/panel/api/*`, which a
 
 Create a token in the panel under **Settings → Security → API Token**.
 
-**Session length (login mode):** the panel session lasts `sessionMaxAge` (default **360 min / 6 h**, configurable under Settings → Security) — after which login mode re-authenticates and re-prompts 2FA. Token mode has no such timeout.
+**Why a token is convenient:** a **login** session lasts `sessionMaxAge` (default **360 min / 6 h**, under Settings → Security) and then drops — the app re-authenticates from the saved username/password, which **re-prompts 2FA** if it's enabled. A **token doesn't expire on a timer**, so it never drops you and never re-prompts 2FA.
+
+The one edge case: if a token is later **disabled or recreated** in the panel, its requests start failing with `401`. The app can silently re-authenticate only a saved **login/password** profile (not a token), so a token connection just shows the error and you reconnect — rare in practice, since tokens don't time out.
 
 ---
 

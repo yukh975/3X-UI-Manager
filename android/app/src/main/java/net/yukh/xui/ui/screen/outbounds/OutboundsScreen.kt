@@ -150,13 +150,11 @@ fun OutboundsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        tr("Xray configuration isn't available with an API token."),
+                        tr("Couldn't load the Xray config"),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        tr("The panel only exposes the Xray config (outbounds, routing, ") +
-                            tr("DNS) to a logged-in session. Reconnect with login/password ") +
-                            tr("to edit it."),
+                        tr("On panel v3.3.0+ the Xray config works with an API token. On older panels it's only exposed to a login session — reconnect with login/password."),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
