@@ -60,6 +60,7 @@ Structured editors over the panel's Xray config — each round-trips the **whole
 - **Restart panel** — restart the panel service (confirmed; the app reconnects after a few seconds).
 
 ### Other
+- **App lock**: an optional 4–8 digit passcode (+ biometric unlock) in **Settings** (⋮ menu). It guards the **signed-in panel UI only** — re-locking when the app is backgrounded while connected and on launch when a saved session is restored. It is **not** asked on the Connect screen (signed out) or right after a fresh manual sign-in.
 - **Language**: English (default) or Russian, switchable in **Settings** (⋮ menu) — no restart needed.
 - Confirmation dialog on every **save** and **delete** so nothing changes by accident.
 

@@ -31,12 +31,32 @@ its "Текущее состояние" section is the latest snapshot.
 
 ## Quick facts
 - GitLab: `yukh/3x-ui`, project id **15**, `git.home.yukh.net`. API token at
-  `~/.gl-token` (local). Latest **released**: **v0.3.17** ("первый стабильный" was
-  v0.3.11). v0.3.17 = full structured **Xray-config editor** (⋮ menu): Outbounds,
-  Routing, DNS, General/Logs (+ raw-JSON fallback) + `vless://` import. v0.3.16
-  added a custom adaptive app icon (3X monogram) + geo accordion. v0.3.15 added
-  dashboard metric-history charts. v0.3.14 shipped traffic-this-month + geo updater
-  + v3.3.0 API compat + the online-by-server fix.
+  `~/.gl-token` (local). Latest **released**: **v0.3.23** ("первый стабильный" was
+  v0.3.11). Recent: v0.3.23 = no passcode prompt right after a manual sign-in;
+  v0.3.22 = app-lock only gates the signed-in UI (not the Connect screen);
+  **v0.3.21 = token-only auth** (login/password/2FA removed; requires panel
+  **v3.3.0+**; Connect screen has a where-to-get-the-token footnote); v0.3.20 =
+  401 → back to Connect (X-Requested-With header); v0.3.19 = Panel admin (admin
+  creds, API tokens, restart panel); v0.3.18 = backup/restore (engine-agnostic
+  getDb/importDB); v0.3.17 = structured Xray-config editor + `vless://` import.
+- **App-lock rule (both apps):** the passcode/biometric lock guards the
+  signed-in panel UI only — armed when a saved session is auto-restored at
+  launch or on ON_STOP while connected. Never shown signed-out or right after a
+  fresh manual sign-in. Android: `security/LockState.kt` + `MainActivity`;
+  KMP: `App.kt` (locked && connected gate).
+- **Desktop (macOS) build exists** on the `ios-app` branch: `kmp/composeApp` has
+  a `jvm("desktop")` target (window 1290×880). Package with
+  `kmp/scripts/package-macos.sh "<Apple Silicon|Intel>"` — it builds the
+  distributable, patches the real app version into CFBundleShortVersionString
+  (jpackage refuses MAJOR=0, Gradle packageVersion stays 1.0.0), signs ad-hoc,
+  and wraps a create-dmg image (brew install create-dmg) with a per-arch
+  README.txt (template in `composeApp/packaging/`). The JDK arch picks the
+  target: arm64 JDK → Apple Silicon; `arch -x86_64` + an x64 JDK → Intel. The
+  script wipes build/compose (cached jlink runtime would silently mix arches)
+  and verifies launcher/JVM arch match. 3X app icon: `composeApp/icons/`.
+- **Version sync rule:** Android is the source of truth. On a release bump also
+  update `kmp/composeApp/.../Platform.desktop.kt` (appVersionName) and
+  `kmp/iosApp/iosApp/Info.plist` (CFBundleShortVersionString/CFBundleVersion).
 - Release APK filename now carries the version: `3x-ui-manager-<version>.apk`.
   CI has no `test:unit` job (removed — no tests, didn't gate the release).
 - Release signing keystore: `~/.config/3x-ui-android-keystore/` (local) **and**

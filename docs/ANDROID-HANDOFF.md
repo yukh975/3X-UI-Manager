@@ -3,6 +3,15 @@
 > Self-contained context so work can continue from any machine / new chat
 > session. If you're an AI assistant picking this up: read this fully first.
 > Last updated: 2026-06-08 (after release **v0.3.9**).
+>
+> ⚠️ **Partially stale — written at v0.3.9.** The current snapshot lives in
+> [RESUME-NEXT-SESSION.md](RESUME-NEXT-SESSION.md) («Текущее состояние») and
+> the Quick facts of [../CLAUDE.md](../CLAUDE.md). Biggest deltas since: the
+> app is **token-only** since v0.3.21 (login/password/2FA removed; requires
+> panel **v3.3.0+**, where the whole API incl. settings/Xray-config moved under
+> `/panel/api/*` — the "session-only" claims below no longer apply); released
+> through **v0.3.23**; the `ios-app` branch has full-parity **iOS + macOS
+> desktop** apps (`kmp/`).
 
 ## What this is
 A **native Android** app (Kotlin + Jetpack Compose) that manages a

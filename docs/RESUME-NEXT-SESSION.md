@@ -8,26 +8,56 @@ Android-приложением (`3X-UI Manager`) без потерь.
 
 ---
 
-## Текущее состояние (snapshot — 2026-06-10)
+## Текущее состояние (snapshot — 2026-06-11)
 
-**Ветки:** `android-app` (основная) и `ios-app` (KMP/iOS в `kmp/`). Обе запушены,
-дерево чистое.
+**Ветки:** `android-app` (основная) и `ios-app` (KMP: iOS + **macOS desktop** в
+`kmp/`). Обе запушены, дерево чистое.
 
-**Релизы:** последний — **v0.3.17** («первый стабильный» был v0.3.11). Накопилось:
-- **v0.3.15** — графики истории метрик (тап по карточке дашборда → линия;
-  выпадающий выбор интервала, по умолчанию реальное время). Источник —
-  `GET /panel/api/server/history/{metric}/{bucket}`.
-- **v0.3.16** — своя adaptive-иконка (монограмма «3X»); гео-аккордеон + «Обновить
-  все» (`POST /panel/api/server/updateGeofile` без имени).
-- **v0.3.17** — **полный структурный редактор конфига Xray** (4 раздела в меню ⋮:
-  Outbounds, Routing, DNS, General/Логи) + импорт из `vless://`. Старый сырой
-  JSON-редактор сохранён.
+**Релизы:** последний — **v0.3.23** («первый стабильный» был v0.3.11). С v0.3.17:
+- **v0.3.18** — **бэкап/восстановление** базы панели (меню ⋮): engine-agnostic
+  (`GET /panel/api/server/getDb` → `x-ui.db`/`x-ui.dump` по Content-Disposition;
+  `POST /panel/api/server/importDB`, multipart-поле `db`).
+- **v0.3.19** — **Panel admin** (меню ⋮): смена логина/пароля админа
+  (`setting/updateUser`), API-токены (список/создать/вкл-выкл/удалить),
+  перезапуск панели (`setting/restartPanel`).
+- **v0.3.20** — потеря авторизации (401) → возврат на экран входа с сообщением;
+  запросы шлют `X-Requested-With: XMLHttpRequest`, чтобы панель отвечала 401,
+  а не 404.
+- **v0.3.21** — **только токен**: вход по логину/паролю/2FA полностью вырезан
+  (удалены CsrfInterceptor/CsrfState/InMemoryCookieJar/LoginRequest; требуется
+  панель **v3.3.0+**). Сноска на экране входа, где взять токен.
+- **v0.3.22** — блокировка (код-пароль/отпечаток) не спрашивается, когда не
+  залогинен (гейт `locked && connected` + арм на ON_STOP только при connected).
+- **v0.3.23** — код-пароль не спрашивается сразу после ручного входа (замок
+  включается только при авто-восстановлении сохранённой сессии на старте;
+  Android: `LockState` смотрит и на наличие профиля в `ConnectionStore`).
+- **Правило версий:** Android — источник истины; при бампе синхронизировать
+  `kmp/composeApp/.../Platform.desktop.kt` (appVersionName) и
+  `kmp/iosApp/iosApp/Info.plist`. Сейчас везде **0.3.23**.
+
+**Десктоп (macOS), ветка `ios-app`:** у `kmp/composeApp` есть таргет
+`jvm("desktop")` (окно 1290×880, вход `net.yukh.xui.app.MainKt`). Упаковка —
+`kmp/scripts/package-macos.sh "<Apple Silicon|Intel>"`: собирает дистрибутив,
+патчит реальную версию в `CFBundleShortVersionString` (jpackage не пускает
+MAJOR=0, поэтому Gradle `packageVersion` навсегда 1.0.0 — это версия
+инсталлятора), подписывает ad-hoc и заворачивает в DMG через **create-dmg**
+(`brew install create-dmg`) с per-arch `README.txt`
+(шаблон `kmp/composeApp/packaging/README.ru.template.txt`). Архитектуру выбирает
+JDK: arm64 JDK → Apple Silicon; `arch -x86_64` + x64 JDK → Intel. Скрипт сам
+чистит `build/compose` (там кэшируется jlink-рантайм — без чистки в
+x86_64-лаунчер молча попадает arm64-JVM) и проверяет совпадение архитектур.
+Иконка 3X — `kmp/composeApp/icons/` (рендер из Android adaptive-иконки),
+подключена через `macOS.iconFile`. KMP-приложение полностью token-only, паритет
+с Android по v0.3.23 (включая правки членства клиента в inbound'ах при edit и
+обе починки блокировки).
 
 **Рабочий цикл (ВАЖНО, актуально):** код → локальная сборка
-(`cd android && ./gradlew :app:assembleDebug`) → пользователь смотрит APK сам
-(часто на реальном устройстве). **Эмулятор НЕ запускать без явной просьбы** — на
-этом Intel-Mac он сильно тормозит/падает (headless swiftshader стабилен, windowed
-— нет). Релиз только по тегу `vX.Y.Z` по команде пользователя. APK:
+(`cd android && ./gradlew :app:assembleDebug`) → **поставить на локальный
+эмулятор и проверить, что функциональность реально работает** (AVD `xui_pixel7`,
+headless; adb в `/opt/homebrew/share/android-commandlinetools/platform-tools/`)
+→ только после отладки тег `vX.Y.Z` по команде пользователя («собирай»). Машина
+— Apple Silicon (см. memory `local-build-toolchain`); прежняя заметка про
+тормозящий эмулятор относилась к старому Intel-Mac. APK:
 `android/app/build/outputs/apk/debug/3x-ui-manager-debug.apk` (applicationId
 `net.yukh.xui.debug`, ставится рядом с релизной).
 
@@ -60,18 +90,23 @@ Android-приложением (`3X-UI Manager`) без потерь.
 `POST /panel/api/nodes/updatePanel`), трафик за месяц, фикс «онлайн по серверам»
 (по `nodeId` инбаунда), совместимость с панелью v3.3.0.
 
-**iOS (ветка `ios-app`, папка `kmp/`) — рабочий каркас, собирается/линкуется:**
-- `shared` (DTO + Ktor `PanelApi`) компилируется под iOS.
-- `composeApp` (Connect → нижняя навигация Dashboard/Inbounds/Clients/Nodes, опрос
-  5 с, **сохранение сессии + авто-вход** через NSUserDefaults) линкуется в
-  `ComposeApp.framework` для `iosArm64` и `iosSimulatorArm64`.
-- `iosApp` — SwiftUI-хост + `iosApp.xcodeproj` (рукописный, **на Mac не
-  валидирован**). `kmp/gradle.properties` с увеличенным heap.
-- **Ещё не запускалось** на симуляторе/устройстве (этот Mac — Intel, нет
-  iOS-runtime). Quickstart и fallback — в [`../ios/README.md`](../ios/README.md)
-  (главное: сначала `git checkout ios-app`).
-- Дальше: запуск на arm64-Mac → self-signed TLS → токен в Keychain →
-  create/edit/delete → биометрия → RU/EN.
+**iOS (ветка `ios-app`, папка `kmp/`) — полный паритет с Android v0.3.23,
+работает на симуляторе:**
+- `shared` — Ktor `PanelApi` token-only (XHR-заголовок, AuthExpiredException,
+  метрики-история, updateUser/restartPanel/apiTokens, getDb/importDb,
+  гео-апдейты, Xray start/stop/restart) + все DTO + `json/JsonEdit.kt`.
+- `composeApp` — все экраны Android-версии: дашборд (Xray-кнопки, гео-аккордеон,
+  графики метрик), inbounds/клиенты (членство в inbound'ах редактируется и при
+  edit)/узлы, Xray-редакторы (Outbounds/Routing/DNS/General), Panel admin,
+  бэкап/восстановление, блокировка (обе починки), RU/EN.
+- Запуск: `cd kmp && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp
+  -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+  -derivedDataPath /tmp/xui-ios-dd CODE_SIGNING_ALLOWED=NO build` (нужны
+  JAVA_HOME+ANDROID_HOME), затем `xcrun simctl install/launch` (bundle id
+  `net.yukh.xui.ios`; авто-логин через `defaults write net.yukh.xui.ios
+  xui.baseUrl/xui.token`). На реальный iPhone — через Xcode с командой
+  разработчика (signing — на стороне пользователя).
+- Версия в `Info.plist` — 0.3.23/32300, иконка 3X в Assets.xcassets.
 
 **Бэклог:** [TODO.md](TODO.md) — пуст: «трафик за месяц» и обновление гео-баз
 сделаны в v0.3.14. Остались только отложенные/опциональные идеи (дата обновления
