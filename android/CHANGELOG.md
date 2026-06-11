@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.18] — Unreleased
+## [0.3.18] — 2026-06-11
 
 ### Added
 - **Backup / restore (⋮ menu):** download the panel's database backup to a file,
@@ -17,6 +17,12 @@ uses [Semantic Versioning](https://semver.org/).
   system file picker (Storage Access Framework); restore confirms first and
   restarts Xray (a brief connection drop). Works with an API token
   (`GET /panel/api/server/getDb`, `POST /panel/api/server/importDB`).
+
+### Changed
+- Docs: clarified that on panel **v3.3.0+** an API token covers **settings**, the
+  **Xray config editor** and **subscription-link auto-discovery** too — the whole
+  management surface moved under `/panel/api/*`, which a token authenticates. The
+  README previously documented these as login-session-only.
 
 ## [0.3.17] — 2026-06-10
 

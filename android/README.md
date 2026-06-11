@@ -64,14 +64,14 @@ Structured editors over the panel's Xray config — each round-trips the **whole
 
 | Mode | What works |
 |------|-----------|
-| **API token** (Bearer) | Dashboard, Inbounds, Clients, Nodes — everything under `/panel/api/*` |
-| **Login + password** (session, optional 2FA) | Everything above **plus** subscription links read automatically, and the Xray config editor |
+| **API token** (Bearer) | On panel **v3.3.0+**, everything the app does — dashboard, inbounds, clients, nodes, the **Xray config editor**, **settings**, **subscription links** and **backup / restore**. The token doesn't time out, so it never drops you mid-session. |
+| **Login + password** (session, optional 2FA) | The same surface. Needed only for panels **older than v3.3.0**, where settings and the Xray config are exposed to a logged-in session but not to a token. |
 
-The panel only exposes its **settings** and the **Xray config** to a logged-in session, not to an API token. So with a token, the subscription link and the Xray-config screen need either the manual subscription URL (below) or login/password.
+On panel **v3.3.0** the whole management API moved under `/panel/api/*`, which a Bearer token authenticates (as the panel's first admin). So a token now also covers **settings**, the **Xray-config editor** and **subscription-base auto-discovery** — things that used to need a session. A 3x-ui token is **full admin** (there are no read-only or scoped tokens), so guard it like the password.
 
 Create a token in the panel under **Settings → Security → API Token**.
 
-**Session length:** the panel session lasts `sessionMaxAge` (default **360 min / 6 h**, configurable in the panel under Settings → Security).
+**Session length (login mode):** the panel session lasts `sessionMaxAge` (default **360 min / 6 h**, configurable under Settings → Security) — after which login mode re-authenticates and re-prompts 2FA. Token mode has no such timeout.
 
 ---
 
@@ -85,9 +85,9 @@ A **subscription link** is one URL that hands a client app *all* of a user's con
 
 The `subId` is unique per client (the app already has it), so each client gets its own link. The only shared part is the **subscription server base**, which is a panel setting.
 
-- **Login/password mode:** the app reads the base from the panel automatically — subscription QR + link appear per client with no setup.
-- **API-token mode:** the token can't read panel settings, so set the base **once** in the connect screen's **Subscription base URL** field. Enter either:
-  - your **reverse-proxy URI**, if you front the subscription with a reverse proxy (e.g. `https://sub.example.com/`), or
+- **Auto (panel v3.3.0+):** the app reads the base from the panel automatically — with **either** an API token or a login session — so the subscription QR + link appear per client with no setup.
+- **Manual override:** set the base **once** in the connect screen's **Subscription base URL** field when the auto-read doesn't fit — a panel **older than v3.3.0** (its settings aren't token-readable), or a **reverse proxy** in front of the subscription whose public URI differs from what the panel stores. Enter either:
+  - your **reverse-proxy URI** (e.g. `https://sub.example.com/`), or
   - the panel's **Subscription URL** as shown in the panel.
 
   Then the app builds each client's link as `base + subId`.
