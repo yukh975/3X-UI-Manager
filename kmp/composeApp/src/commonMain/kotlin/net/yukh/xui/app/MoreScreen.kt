@@ -47,6 +47,7 @@ fun MoreScreen(
     onXrayConfig: () -> Unit,
     onGeneralX: () -> Unit,
     onDnsX: () -> Unit,
+    onRoutingX: () -> Unit,
     onPanelAdmin: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
@@ -113,6 +114,7 @@ fun MoreScreen(
         // ---- Xray: structured sections ----
         NavCard(tr("General / Logs"), onGeneralX)
         NavCard(tr("DNS"), onDnsX)
+        NavCard(tr("Routing"), onRoutingX)
 
         // ---- Panel admin ----
         NavCard(tr("Panel admin"), onPanelAdmin)
