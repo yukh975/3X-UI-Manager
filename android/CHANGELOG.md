@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.19] — Unreleased
+## [0.3.19] — 2026-06-11
 
 ### Added
 - **Panel admin (⋮ menu):** manage the panel itself, all over the token-accessible
