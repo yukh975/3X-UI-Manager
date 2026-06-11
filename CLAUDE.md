@@ -12,6 +12,8 @@ state, architecture, hard-won API facts, build/signing, and what's next.
 [`docs/RESUME-NEXT-SESSION.md`](docs/RESUME-NEXT-SESSION.md) (step-by-step, RU) —
 its "Текущее состояние" section is the latest snapshot.
 👉 Backlog of agreed-but-not-done features: [`docs/TODO.md`](docs/TODO.md).
+👉 On a machine without the assistant's local memory: a synced copy lives in
+[`docs/ai-memory/`](docs/ai-memory/) (build toolchain, upstream-sync workflow).
 
 ## Standing rules (do these without being re-asked)
 1. Work on branch **`android-app`**. After each meaningful change: focused commit
