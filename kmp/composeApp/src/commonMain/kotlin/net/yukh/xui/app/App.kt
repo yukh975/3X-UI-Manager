@@ -85,6 +85,7 @@ fun App() {
             var showDnsX by remember { mutableStateOf(false) }
             var showRoutingX by remember { mutableStateOf(false) }
             var showOutboundsX by remember { mutableStateOf(false) }
+            var metricChart by remember { mutableStateOf<MetricChartState?>(null) }
             var showPanelAdmin by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
@@ -200,6 +201,26 @@ fun App() {
                     editorError = r.msg.ifBlank { "Xray config unavailable (needs panel v3.3.0+)" }
                 }
                 xrayLoading = false
+            }
+
+            // Fetch the open metric chart's series (one call per line), keeping the
+            // result only if the user hasn't switched block/interval meanwhile.
+            suspend fun loadMetricSeries() {
+                val mc = metricChart ?: return
+                val a = api ?: return
+                val series = coroutineScope {
+                    mc.block.series.map { def ->
+                        async {
+                            val pts = runCatching { a.metricHistory(def.key, mc.bucket) }.getOrNull()
+                                ?.let { if (it.success) it.obj ?: emptyList() else emptyList() } ?: emptyList()
+                            ChartSeries(def.label, pts)
+                        }
+                    }.awaitAll()
+                }
+                val cur = metricChart
+                if (cur != null && cur.block == mc.block && cur.bucket == mc.bucket) {
+                    metricChart = cur.copy(series = series, loading = false)
+                }
             }
 
             // Save the (possibly structurally-edited) Xray config, then run [close]
@@ -441,7 +462,7 @@ fun App() {
                     ) { inner ->
                         Box(modifier = Modifier.fillMaxSize().padding(inner)) {
                             when (tab) {
-                                0 -> DashboardScreen(
+                                0 -> { DashboardScreen(
                                     host = baseUrl,
                                     status = status,
                                     onlineCount = onlines.size,
@@ -462,8 +483,19 @@ fun App() {
                                     refreshing = refreshing,
                                     error = error,
                                     onRefresh = { scope.launch { refreshing = true; refreshAll(); refreshing = false } },
+                                    onMetric = { block ->
+                                        metricChart = MetricChartState(block = block, bucket = 2, loading = true)
+                                        scope.launch { loadMetricSeries() }
+                                    },
                                     onDisconnect = doDisconnect,
                                 )
+                                metricChart?.let { mc ->
+                                    MetricHistoryDialog(
+                                        state = mc,
+                                        onBucket = { b -> metricChart = mc.copy(bucket = b, loading = true); scope.launch { loadMetricSeries() } },
+                                        onDismiss = { metricChart = null },
+                                    )
+                                } }
                                 1 -> InboundsListScreen(
                                     inbounds,
                                     onAdd = { editingInboundNew = true; editorError = null; editingInbound = InboundModel() },

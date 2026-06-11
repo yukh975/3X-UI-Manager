@@ -44,6 +44,7 @@ fun DashboardScreen(
     refreshing: Boolean,
     error: String?,
     onRefresh: () -> Unit,
+    onMetric: (MetricBlock) -> Unit,
     onDisconnect: () -> Unit,
 ) {
     var pendingGeo by remember { mutableStateOf<String?>(null) }
@@ -85,20 +86,20 @@ fun DashboardScreen(
         ) {
             XrayCard(status)
             BarCard(tr("CPU") + if (status.cpuCores > 0) " · ${status.cpuCores} ${tr("cores")}" else "",
-                status.cpu.formatPercent(), (status.cpu / 100.0).toFloat())
+                status.cpu.formatPercent(), (status.cpu / 100.0).toFloat(), onClick = { onMetric(MetricBlock.CPU) })
             BarCard(tr("Memory"), status.memPercent.formatPercent(),
                 (status.memPercent / 100.0).toFloat(),
-                "${status.mem.current.formatBytes()} / ${status.mem.total.formatBytes()}")
+                "${status.mem.current.formatBytes()} / ${status.mem.total.formatBytes()}", onClick = { onMetric(MetricBlock.MEMORY) })
             if (status.disk.total > 0) {
                 BarCard(tr("Disk"), status.diskPercent.formatPercent(),
                     (status.diskPercent / 100.0).toFloat(),
-                    "${status.disk.current.formatBytes()} / ${status.disk.total.formatBytes()}")
+                    "${status.disk.current.formatBytes()} / ${status.disk.total.formatBytes()}", onClick = { onMetric(MetricBlock.DISK) })
             }
             ValueCard(tr("Load 1·5·15m"),
-                "${oneDp(status.load1)}·${oneDp(status.load5)}·${oneDp(status.load15)}")
+                "${oneDp(status.load1)}·${oneDp(status.load5)}·${oneDp(status.load15)}", onClick = { onMetric(MetricBlock.LOAD) })
             ValueCard(tr("Net ↑ / ↓ per s"),
-                "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}")
-            ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}")
+                "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}", onClick = { onMetric(MetricBlock.NET) })
+            ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}", onClick = { onMetric(MetricBlock.CONN) })
             OnlineCard(onlineCount, onlineGroups, onlineLoading, onExpandOnline)
             if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
             if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
@@ -184,8 +185,8 @@ private fun XrayCard(status: ServerStatus) {
 }
 
 @Composable
-private fun BarCard(title: String, value: String, progress: Float, secondary: String? = null) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun BarCard(title: String, value: String, progress: Float, secondary: String? = null, onClick: (() -> Unit)? = null) {
+    Card(modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it }) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(title, style = MaterialTheme.typography.labelMedium)
@@ -204,8 +205,8 @@ private fun BarCard(title: String, value: String, progress: Float, secondary: St
 }
 
 @Composable
-private fun ValueCard(title: String, value: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun ValueCard(title: String, value: String, onClick: (() -> Unit)? = null) {
+    Card(modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,

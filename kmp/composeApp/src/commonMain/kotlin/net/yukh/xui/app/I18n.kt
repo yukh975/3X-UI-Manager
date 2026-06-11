@@ -300,4 +300,16 @@ val ruStrings: Map<String, String> = mapOf(
     "Short ID" to "Short ID",
     "Host" to "Host",
     "Path" to "Путь",
+
+    // Metric history chart
+    "history" to "история",
+    "No history yet" to "Истории пока нет",
+    "Real-time" to "Реальное время",
+    "30 min" to "30 мин",
+    "1 hour" to "1 час",
+    "2 hours" to "2 часа",
+    "3 hours" to "3 часа",
+    "5 hours" to "5 часов",
+    "Load" to "Нагрузка",
+    "Network" to "Сеть",
 )

@@ -29,6 +29,7 @@ import net.yukh.xui.shared.dto.EnableRequest
 import net.yukh.xui.shared.dto.InboundIdsRequest
 import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
+import net.yukh.xui.shared.dto.MetricPoint
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.ServerStatus
@@ -75,6 +76,11 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
 
     suspend fun serverStatus(): ApiResponse<ServerStatus> =
         client.get("$base/panel/api/server/status") { auth() }.body()
+
+    /** System-metric history for a chart. [metric] e.g. cpu/mem/diskUsage/load1/
+     *  netUp/tcpCount; [bucket] = aggregation seconds (~60 points). */
+    suspend fun metricHistory(metric: String, bucket: Int): ApiResponse<List<MetricPoint>> =
+        client.get("$base/panel/api/server/history/$metric/$bucket") { auth() }.body()
 
     suspend fun onlines(): ApiResponse<List<String>> =
         client.post("$base/panel/api/clients/onlines") { auth() }.body()
