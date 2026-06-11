@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.23] — unreleased
+
+### Fixed
+- **No passcode prompt right after a manual sign-in.** With an app-lock passcode
+  set, signing in on the Connect screen (entering the URL + token) popped the
+  passcode immediately — pointless, since typing the token is already
+  authentication. The lock now arms only when a saved session is auto-restored at
+  launch (a returning user) or when the app is backgrounded while connected.
+  Follow-up to 0.3.22.
+
 ## [0.3.22] — 2026-06-11
 
 ### Fixed
