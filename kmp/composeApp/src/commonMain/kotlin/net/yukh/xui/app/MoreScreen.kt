@@ -45,6 +45,7 @@ fun MoreScreen(
     onLang: (String) -> Unit,
     lock: AppLock,
     onXrayConfig: () -> Unit,
+    onPanelAdmin: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
     var hasCode by remember { mutableStateOf(lock.hasPasscode()) }
@@ -106,6 +107,9 @@ fun MoreScreen(
                 Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+
+        // ---- Panel admin ----
+        NavCard(tr("Panel admin"), onPanelAdmin)
 
         // ---- About ----
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -182,5 +186,20 @@ private fun LanguageRow(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         RadioButton(selected = selected, onClick = onClick)
         Text(label)
+    }
+}
+
+/** A tappable card row with a trailing chevron, like the Xray-config entry. */
+@Composable
+private fun NavCard(title: String, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }

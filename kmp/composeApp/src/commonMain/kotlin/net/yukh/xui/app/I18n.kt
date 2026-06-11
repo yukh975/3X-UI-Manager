@@ -176,4 +176,43 @@ val ruStrings: Map<String, String> = mapOf(
     "Invalid JSON." to "Некорректный JSON.",
     "Save, then restart Xray to apply. A broken config can take Xray down." to
         "Сохраните и перезапустите Xray, чтобы применить. Сломанный конфиг может уронить Xray.",
+
+    // Panel admin
+    "Back" to "Назад",
+    "Panel admin" to "Администрирование панели",
+    "Admin account" to "Учётная запись админа",
+    "Change the panel login. Enter the current credentials to confirm." to
+        "Сменить логин панели. Введите текущие данные для подтверждения.",
+    "Current username" to "Текущий логин",
+    "Current password" to "Текущий пароль",
+    "New username" to "Новый логин",
+    "New password" to "Новый пароль",
+    "Change credentials" to "Сменить учётные данные",
+    "Change credentials?" to "Сменить учётные данные?",
+    "The panel login changes immediately. Your API token keeps working." to
+        "Логин панели сменится сразу. Ваш API-токен продолжит работать.",
+    "Change" to "Сменить",
+    "API tokens" to "API-токены",
+    "No API tokens yet." to "Пока нет API-токенов.",
+    "Create token" to "Создать токен",
+    "Token name" to "Имя токена",
+    "Token created" to "Токен создан",
+    "Copy it now — it's shown only once." to "Скопируйте сейчас — показывается один раз.",
+    "Copy & close" to "Скопировать и закрыть",
+    "Delete token?" to "Удалить токен?",
+    "Apps using this token will stop working. This can't be undone." to
+        "Приложения с этим токеном перестанут работать. Отменить нельзя.",
+    "Delete" to "Удалить",
+    "Create" to "Создать",
+    "Panel" to "Панель",
+    "Restart panel" to "Перезапустить панель",
+    "Restart panel?" to "Перезапустить панель?",
+    "The panel restarts and the app reconnects in a few seconds." to
+        "Панель перезапустится, приложение переподключится через несколько секунд.",
+    "Restart" to "Перезапустить",
+    "Credentials updated" to "Учётные данные обновлены",
+    "Couldn't change credentials" to "Не удалось сменить учётные данные",
+    "Couldn't create token" to "Не удалось создать токен",
+    "Panel is restarting…" to "Панель перезапускается…",
+    "Couldn't restart the panel" to "Не удалось перезапустить панель",
 )

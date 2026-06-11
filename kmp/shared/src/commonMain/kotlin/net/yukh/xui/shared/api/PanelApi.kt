@@ -21,6 +21,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.ApiResponse
+import net.yukh.xui.shared.dto.ApiToken
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientCreatePayload
 import net.yukh.xui.shared.dto.ClientModel
@@ -200,6 +201,40 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     /** Re-download one built-in geo database (.dat) and restart Xray. */
     suspend fun updateGeofile(fileName: String): ApiAck =
         client.post("$base/panel/api/server/updateGeofile/$fileName") { auth() }.body()
+
+    // ---- Panel admin (settings) -------------------------------------------
+
+    suspend fun updateUser(oldUsername: String, oldPassword: String, newUsername: String, newPassword: String): ApiAck =
+        client.submitForm(
+            url = "$base/panel/api/setting/updateUser",
+            formParameters = parameters {
+                append("oldUsername", oldUsername)
+                append("oldPassword", oldPassword)
+                append("newUsername", newUsername)
+                append("newPassword", newPassword)
+            },
+        ) { auth() }.body()
+
+    suspend fun restartPanel(): ApiAck =
+        client.post("$base/panel/api/setting/restartPanel") { auth() }.body()
+
+    suspend fun listApiTokens(): ApiResponse<List<ApiToken>> =
+        client.get("$base/panel/api/setting/apiTokens") { auth() }.body()
+
+    suspend fun createApiToken(name: String): ApiResponse<ApiToken> =
+        client.submitForm(
+            url = "$base/panel/api/setting/apiTokens/create",
+            formParameters = parameters { append("name", name) },
+        ) { auth() }.body()
+
+    suspend fun deleteApiToken(id: Int): ApiAck =
+        client.post("$base/panel/api/setting/apiTokens/delete/$id") { auth() }.body()
+
+    suspend fun setApiTokenEnabled(id: Int, enabled: Boolean): ApiAck =
+        client.submitForm(
+            url = "$base/panel/api/setting/apiTokens/setEnabled/$id",
+            formParameters = parameters { append("enabled", enabled.toString()) },
+        ) { auth() }.body()
 
     fun close() = client.close()
 }

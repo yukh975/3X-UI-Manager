@@ -81,6 +81,7 @@ fun App() {
             var editingInbound by remember { mutableStateOf<InboundModel?>(null) }
             var editingInboundNew by remember { mutableStateOf(false) }
             var showXray by remember { mutableStateOf(false) }
+            var showPanelAdmin by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
             var xrayLoading by remember { mutableStateOf(false) }
@@ -359,6 +360,8 @@ fun App() {
                         },
                         onCancel = { showXray = false; editorError = null },
                     )
+                } else if (showPanelAdmin && api != null) {
+                    PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })
                 } else {
                     val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes", "More")
                     val icons = listOf("📊", "🔌", "👥", "🌐", "⚙️")
@@ -433,6 +436,7 @@ fun App() {
                                     onLang = { lang = it; store.saveLang(it) },
                                     lock = lock,
                                     onXrayConfig = { showXray = true; editorError = null; scope.launch { loadXray() } },
+                                    onPanelAdmin = { showPanelAdmin = true },
                                     onDisconnect = doDisconnect,
                                 )
                             }
