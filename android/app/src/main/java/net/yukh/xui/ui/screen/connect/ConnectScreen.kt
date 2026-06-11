@@ -85,7 +85,15 @@ fun ConnectScreen(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                supportingText = { Text(tr("Create one in Settings → Security → API Token on the panel.")) },
+                supportingText = {
+                    Text(
+                        tr(
+                            "Where to get it: open the panel in a browser, go to " +
+                                "Settings → Security → API Token, add a token, then copy " +
+                                "it here. (3x-ui tokens are full admin — keep it private.)",
+                        ),
+                    )
+                },
                 trailingIcon = {
                     IconButton(onClick = { tokenVisible = !tokenVisible }) {
                         Icon(

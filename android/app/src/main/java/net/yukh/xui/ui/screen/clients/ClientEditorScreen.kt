@@ -113,7 +113,8 @@ fun ClientEditorScreen(
 
             HorizontalDivider()
 
-            // Inbound membership — editable on create, shown on edit.
+            // Inbound membership — editable on both create and edit (the toggles
+            // diff against the client's current inbounds and attach/detach on save).
             Text(tr("Inbounds"), style = MaterialTheme.typography.titleSmall)
             if (state.inboundsLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)

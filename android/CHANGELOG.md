@@ -16,6 +16,8 @@ uses [Semantic Versioning](https://semver.org/).
   session/CSRF/cookie machinery and the periodic re-auth (and its 2FA re-prompt).
   An existing token profile keeps working; if you only ever signed in with a
   login, create a token in the panel under **Settings → Security → API Token**.
+  The Connect screen now spells out where to find it (a footnote under the token
+  field).
 
 ## [0.3.20] — 2026-06-11
 

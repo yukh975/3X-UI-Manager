@@ -52,8 +52,12 @@ val ruStrings: Map<String, String> = mapOf(
     "Connecting…" to "Подключение…",
     "Sign in with an API token. Requires panel v3.3.0 or newer." to
         "Вход по API-токену. Нужна панель версии v3.3.0 или новее.",
-    "Create one in Settings → Security → API Token on the panel." to
-        "Создайте его в панели: Settings → Security → API Token.",
+    "Where to get it: open the panel in a browser, go to " +
+        "Settings → Security → API Token, add a token, then copy " +
+        "it here. (3x-ui tokens are full admin — keep it private.)" to
+        "Где взять: откройте панель в браузере, перейдите в " +
+            "Settings → Security → API Token, добавьте токен и скопируйте " +
+            "его сюда. (Токен 3x-ui — это полный админ, держите его в секрете.)",
     "Optional. The app reads the subscription base from the panel " +
         "automatically. Set it here only for a reverse proxy whose " +
         "public URL differs — e.g. https://host:2096/sub/." to
