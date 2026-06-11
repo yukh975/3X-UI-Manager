@@ -330,8 +330,25 @@ fun App() {
                             scope.launch {
                                 editorSaving = true; editorError = null
                                 val r = try {
-                                    if (editingClientNew) api?.addClient(ClientCreatePayload(model, inboundIds))
-                                    else api?.updateClient(editingClient!!.email, model)
+                                    if (editingClientNew) {
+                                        api?.addClient(ClientCreatePayload(model, inboundIds))
+                                    } else {
+                                        // Update by the ORIGINAL email (the lookup key); the model may
+                                        // carry a renamed email. Then reconcile inbound membership:
+                                        // attach the newly-checked, detach the unchecked.
+                                        val origEmail = editingClient!!.email
+                                        val newEmail = model.email
+                                        api?.updateClient(origEmail, model)?.also { res ->
+                                            if (res.success) {
+                                                val original = editingClient!!.inboundIds.toSet()
+                                                val selected = inboundIds.toSet()
+                                                val added = (selected - original).toList()
+                                                val removed = (original - selected).toList()
+                                                if (added.isNotEmpty()) api?.attachClient(newEmail, added)
+                                                if (removed.isNotEmpty()) api?.detachClient(newEmail, removed)
+                                            }
+                                        }
+                                    }
                                 } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
                                 if (r?.success == true) { editingClient = null; clientLinks = emptyList(); refreshAll() }

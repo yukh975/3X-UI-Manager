@@ -41,8 +41,10 @@ import net.yukh.xui.shared.dto.InboundSlim
 
 private const val GBC = 1_073_741_824.0
 
-/** Edit a client's basic fields + view its connection links + delete. Create
- *  (with inbound membership) is a later step. Mirrors the Android client editor. */
+/** Edit a client's basic fields + inbound membership + view its connection links
+ *  + delete. Mirrors the Android client editor. The inbound multi-select shows for
+ *  both new and existing clients; on save the caller reconciles the membership
+ *  (attach the newly-checked inbounds, detach the unchecked ones). */
 @Composable
 fun ClientEditorScreen(
     source: Client,
@@ -57,7 +59,8 @@ fun ClientEditorScreen(
     onDelete: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    var selectedInbounds by remember { mutableStateOf(setOf<Int>()) }
+    // Pre-select the client's current inbound membership (empty for a new client).
+    var selectedInbounds by remember { mutableStateOf(source.inboundIds.toSet()) }
     var email by remember { mutableStateOf(source.email) }
     var enable by remember { mutableStateOf(source.enable) }
     var totalGb by remember { mutableStateOf(gbStr(source.totalGB)) }
@@ -104,23 +107,24 @@ fun ClientEditorScreen(
             CField(comment, { comment = it }, tr("Comment (optional)"))
             CToggle(tr("Enabled"), enable) { enable = it }
 
-            if (isNew) {
-                Text(tr("Attach to inbounds"), style = MaterialTheme.typography.labelMedium)
-                availableInbounds.forEach { ib ->
-                    val on = ib.id in selectedInbounds
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            selectedInbounds = if (on) selectedInbounds - ib.id else selectedInbounds + ib.id
-                        },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(checked = on, onCheckedChange = {
-                            selectedInbounds = if (it) selectedInbounds + ib.id else selectedInbounds - ib.id
-                        })
-                        Text(ib.remark.ifBlank { "inbound #${ib.id}" } + "  ·  ${ib.protocol.uppercase()}:${ib.port}")
-                    }
+            // Inbound membership — editable for both new and existing clients.
+            Text(tr("Attach to inbounds"), style = MaterialTheme.typography.labelMedium)
+            availableInbounds.forEach { ib ->
+                val on = ib.id in selectedInbounds
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        selectedInbounds = if (on) selectedInbounds - ib.id else selectedInbounds + ib.id
+                    },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = on, onCheckedChange = {
+                        selectedInbounds = if (it) selectedInbounds + ib.id else selectedInbounds - ib.id
+                    })
+                    Text(ib.remark.ifBlank { "inbound #${ib.id}" } + "  ·  ${ib.protocol.uppercase()}:${ib.port}")
                 }
-            } else {
+            }
+
+            if (!isNew) {
                 OutlinedButton(onClick = onShowLinks, modifier = Modifier.fillMaxWidth()) {
                     Text(tr("Show connection links"))
                 }
