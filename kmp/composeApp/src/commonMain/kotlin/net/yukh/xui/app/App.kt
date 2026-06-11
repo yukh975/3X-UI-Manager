@@ -111,10 +111,14 @@ fun App() {
 
             // Re-lock whenever the app leaves the foreground, so returning to it
             // requires the passcode / biometrics again (not just at cold launch).
+            // Only while signed in: the passcode guards the panel UI, not the
+            // token-entry screen, so a logged-out app never arms the lock.
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
-                    if (event == Lifecycle.Event.ON_STOP && lock.hasPasscode()) locked = true
+                    if (event == Lifecycle.Event.ON_STOP && lock.hasPasscode() && connected) {
+                        locked = true
+                    }
                 }
                 lifecycleOwner.lifecycle.addObserver(observer)
                 onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -291,7 +295,9 @@ fun App() {
             }
 
             CompositionLocalProvider(LocalAppLanguage provides lang) {
-                if (locked) {
+                // The lock only gates the signed-in UI. When not connected the
+                // Connect screen (no panel data) is shown without a passcode.
+                if (locked && connected) {
                     LockScreen(
                         biometryEnabled = lock.biometryEnabled(),
                         onUnlock = { code -> if (lock.check(code)) { locked = false; true } else false },
