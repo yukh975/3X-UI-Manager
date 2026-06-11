@@ -45,6 +45,8 @@ fun MoreScreen(
     onLang: (String) -> Unit,
     lock: AppLock,
     onXrayConfig: () -> Unit,
+    onGeneralX: () -> Unit,
+    onDnsX: () -> Unit,
     onPanelAdmin: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
@@ -107,6 +109,10 @@ fun MoreScreen(
                 Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+
+        // ---- Xray: structured sections ----
+        NavCard(tr("General / Logs"), onGeneralX)
+        NavCard(tr("DNS"), onDnsX)
 
         // ---- Panel admin ----
         NavCard(tr("Panel admin"), onPanelAdmin)

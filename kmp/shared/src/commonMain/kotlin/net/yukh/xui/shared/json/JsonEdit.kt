@@ -86,6 +86,42 @@ fun jsonToggleString(obj: String, path: List<String>, item: String): String {
     return jsonPutStrings(obj, path, next)
 }
 
+/** Each element of the array at [path], serialized as a JSON string (objects as
+ *  `{…}`, primitives as their JSON literal). Lets composeApp hold a list of
+ *  routing rules / DNS servers as strings and edit each via the path helpers.
+ *  Pair with [jsonSetObjectList]. */
+fun jsonGetObjectList(obj: String, path: List<String>): List<String> {
+    if (path.isEmpty()) return emptyList()
+    val parent = parseObj(obj).descend(path.dropLast(1))
+    val arr = parent[path.last()] as? JsonArray ?: return emptyList()
+    return arr.map { prettyJson.encodeToString(JsonElement.serializer(), it) }
+}
+
+/** Set the array at [path] from a list of JSON-element strings (invalid items
+ *  are dropped). An empty list removes the key. */
+fun jsonSetObjectList(obj: String, path: List<String>, items: List<String>): String {
+    val elems = items.mapNotNull { runCatching { parseJson.parseToJsonElement(it) }.getOrNull() }
+    val value = if (elems.isEmpty()) null else JsonArray(elems)
+    return encode(parseObj(obj).withPut(path, value))
+}
+
+/** True if [json] holds a JSON object (vs a bare primitive) — DNS servers can be
+ *  either a plain address string or a full object. */
+fun jsonIsObject(json: String): Boolean =
+    runCatching { parseJson.parseToJsonElement(json) is JsonObject }.getOrDefault(false)
+
+/** The element at [path] as a JSON string ("null" if absent). */
+fun jsonGetChild(obj: String, path: List<String>): String {
+    if (path.isEmpty()) return obj
+    val parent = parseObj(obj).descend(path.dropLast(1))
+    val el = parent[path.last()] ?: return "null"
+    return prettyJson.encodeToString(JsonElement.serializer(), el)
+}
+
+/** Remove the key at [path], returning the new object string. */
+fun jsonRemove(obj: String, path: List<String>): String =
+    encode(parseObj(obj).withPut(path, null))
+
 /** Parse a comma/space/newline-separated list into trimmed non-blank items. */
 fun parseCsvList(text: String): List<String> =
     text.split(',', '\n', ' ').map { it.trim() }.filter { it.isNotEmpty() }

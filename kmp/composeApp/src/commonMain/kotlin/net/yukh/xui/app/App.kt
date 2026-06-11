@@ -81,6 +81,8 @@ fun App() {
             var editingInbound by remember { mutableStateOf<InboundModel?>(null) }
             var editingInboundNew by remember { mutableStateOf(false) }
             var showXray by remember { mutableStateOf(false) }
+            var showGeneralX by remember { mutableStateOf(false) }
+            var showDnsX by remember { mutableStateOf(false) }
             var showPanelAdmin by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
@@ -196,6 +198,19 @@ fun App() {
                     editorError = r.msg.ifBlank { "Xray config unavailable (needs panel v3.3.0+)" }
                 }
                 xrayLoading = false
+            }
+
+            // Save the (possibly structurally-edited) Xray config, then run [close]
+            // on success. Shared by the raw editor + the structured sections.
+            fun saveXrayThen(close: () -> Unit) {
+                scope.launch {
+                    editorSaving = true; editorError = null
+                    val r = try { api?.updateXraySetting(xrayConfigJson, xrayTestUrl) }
+                        catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                    editorSaving = false
+                    if (r?.success == true) close()
+                    else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
+                }
             }
 
             // Auto-restore a saved session + language on first launch.
@@ -360,6 +375,28 @@ fun App() {
                         },
                         onCancel = { showXray = false; editorError = null },
                     )
+                } else if (showGeneralX) {
+                    GeneralXrayScreen(
+                        configJson = xrayConfigJson,
+                        testUrl = xrayTestUrl,
+                        loading = xrayLoading,
+                        saving = editorSaving,
+                        error = editorError,
+                        onConfigChange = { xrayConfigJson = it },
+                        onTestUrlChange = { xrayTestUrl = it },
+                        onSave = { saveXrayThen { showGeneralX = false } },
+                        onCancel = { showGeneralX = false; editorError = null },
+                    )
+                } else if (showDnsX) {
+                    DnsXrayScreen(
+                        configJson = xrayConfigJson,
+                        loading = xrayLoading,
+                        saving = editorSaving,
+                        error = editorError,
+                        onConfigChange = { xrayConfigJson = it },
+                        onSave = { saveXrayThen { showDnsX = false } },
+                        onCancel = { showDnsX = false; editorError = null },
+                    )
                 } else if (showPanelAdmin && api != null) {
                     PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })
                 } else {
@@ -436,6 +473,8 @@ fun App() {
                                     onLang = { lang = it; store.saveLang(it) },
                                     lock = lock,
                                     onXrayConfig = { showXray = true; editorError = null; scope.launch { loadXray() } },
+                                    onGeneralX = { showGeneralX = true; editorError = null; scope.launch { loadXray() } },
+                                    onDnsX = { showDnsX = true; editorError = null; scope.launch { loadXray() } },
                                     onPanelAdmin = { showPanelAdmin = true },
                                     onDisconnect = doDisconnect,
                                 )
