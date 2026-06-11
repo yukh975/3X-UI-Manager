@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.22] — unreleased
+
+### Fixed
+- **The app lock (passcode / biometric) is no longer asked while signed out.**
+  The passcode guards the panel UI, not the token-entry screen, so a logged-out
+  app — sitting on Connect after a disconnect or a dropped token — opens straight
+  to the token field with no passcode prompt. It also no longer arms the lock
+  when you background the Connect screen. While signed in, backgrounding still
+  re-locks and asks for the passcode on return, exactly as before. The passcode
+  itself is kept (not reset on logout) — it's just only enforced when there's a
+  session to protect.
+
 ## [0.3.21] — 2026-06-11
 
 ### Changed
