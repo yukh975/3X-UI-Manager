@@ -1,10 +1,17 @@
 # CLAUDE.md — project context for AI assistants
 
-This is a self-hosted fork of **3x-ui**. The **active work** here is a native
-**Android** management app in [`android/`](android/) (Kotlin + Jetpack Compose),
-plus a **working Kotlin-Multiplatform / Compose-MP iOS foundation** in
-[`kmp/`](kmp/) on the **`ios-app`** branch (builds/links for iOS; see
-[`ios/README.md`](ios/README.md)).
+This repository (`yukh/3X-UI-Manager`) holds the native mobile **management apps**
+for a [3x-ui](https://github.com/MHSanaei/3x-ui) panel — manager only, **no** panel
+Go source. It is split by branch:
+- **`main`** (this branch) — the native **Android** app (Kotlin + Jetpack Compose),
+  a Gradle project at the **repo root** (`app/`, `build.gradle.kts`, …).
+- **`apple`** — the **Apple / iOS** app: a Kotlin-Multiplatform / Compose-MP
+  foundation (+ a desktop/macOS target).
+- **`manual`** — the 3X-UI panel user manual (RU canonical + EN), panel v3.3.0.
+
+The upstream panel is mirrored read-only in the separate repo **`yukh/3x-ui`**
+(project id 15) — a *pure* mirror of MHSanaei/3x-ui, kept only to diff what changed
+on a panel upgrade. Read upstream sources from there; never develop in it.
 
 👉 **Read [`docs/ANDROID-HANDOFF.md`](docs/ANDROID-HANDOFF.md) first** — full
 state, architecture, hard-won API facts, build/signing, and what's next.
@@ -16,24 +23,27 @@ its "Текущее состояние" section is the latest snapshot.
 [`docs/ai-memory/`](docs/ai-memory/) (build toolchain, upstream-sync workflow).
 
 ## Standing rules (do these without being re-asked)
-1. Work on branch **`android-app`**. After each meaningful change: focused commit
-   (`feat(android): …` / `fix(android): …`) + push to `origin`. Don't push `upstream`.
+1. Work on branch **`main`** (Android). Apple work goes on **`apple`**. After each
+   meaningful change: focused commit (`feat(android): …` / `fix(android): …`) +
+   push to `origin`. Don't push `upstream`.
 2. **Build/release only on a `vX.Y.Z` tag** (branch pushes don't build). Don't tag
    per change — batch under one tag when the user says they're ready ("собирай").
 3. **Dev loop for every change:** write code → compile locally
-   (`cd android && ./gradlew :app:assembleDebug`) → **install on the local
-   emulator and verify the functionality actually works** → only when fully
-   debugged, tag `vX.Y.Z` to trigger the GitLab build + release. Don't tag until
-   it's emulator-verified.
-4. Keep **both changelogs** (`android/CHANGELOG.md` + `.ru.md`) and **both READMEs**
-   updated. The GitLab Release notes are generated (in Russian) from `CHANGELOG.ru.md`.
+   (`./gradlew :app:assembleDebug` from the repo root) → let the user test the APK
+   (often on a real device). **Do not launch the emulator unless the user asks**
+   (this Intel Mac is slow/unstable). Only when fully debugged, tag `vX.Y.Z` to
+   trigger the GitLab build + release.
+4. Keep **both changelogs** (`CHANGELOG.md` + `CHANGELOG.ru.md`, at the repo root)
+   and **both READMEs** (`README.md` + `README.ru.md`) updated. The GitLab Release
+   notes are generated (in Russian) from `CHANGELOG.ru.md`.
 5. In the **Russian** UI, do **not** translate the words `inbound` / `outbound`.
 6. Copyright: `© 2026 Yuriy Khachaturian (yukh.net)`.
 7. Delete old/buggy GitLab releases only after the user confirms a build is stable.
 
 ## Quick facts
-- GitLab: `yukh/3x-ui`, project id **15**, `git.home.yukh.net`. API token at
-  `~/.gl-token` (local). Latest **released**: **v0.3.23** ("первый стабильный" was
+- GitLab: `yukh/3X-UI-Manager`, project id **19**, `git.home.yukh.net`. API token
+  at `~/.gl-token` (local). The upstream mirror is `yukh/3x-ui`, project id **15**.
+  Latest **released**: **v0.3.23** ("первый стабильный" was
   v0.3.11). Recent: v0.3.23 = no passcode prompt right after a manual sign-in;
   v0.3.22 = app-lock only gates the signed-in UI (not the Connect screen);
   **v0.3.21 = token-only auth** (login/password/2FA removed; requires panel
@@ -46,7 +56,7 @@ its "Текущее состояние" section is the latest snapshot.
   launch or on ON_STOP while connected. Never shown signed-out or right after a
   fresh manual sign-in. Android: `security/LockState.kt` + `MainActivity`;
   KMP: `App.kt` (locked && connected gate).
-- **Desktop (macOS) build exists** on the `ios-app` branch: `kmp/composeApp` has
+- **Desktop (macOS) build exists** on the `apple` branch: `kmp/composeApp` has
   a `jvm("desktop")` target (window 1290×880). Package with
   `kmp/scripts/package-macos.sh "<Apple Silicon|Intel>"` — it builds the
   distributable, patches the real app version into CFBundleShortVersionString
@@ -85,9 +95,9 @@ its "Текущее состояние" section is the latest snapshot.
   screen shows an "Update" button when a node's version ≠ latest).
 - Filed upstream bug: MHSanaei/3x-ui **#5100** (resetting an inbound's traffic on
   the master doesn't propagate to slave nodes) — **fixed upstream in v3.3.0 (#5103)**.
-- **3X-UI panel manual (RU + EN)** lives on branch **`docs/manual`** (NOT
-  android-app), MR **!2** → `main`: `docs/3X-UI-MANUAL.ru.md` (canonical) +
-  `docs/3X-UI-MANUAL.md` (English). Targets panel **v3.3.0**; 16 sections / 142
-  subsections. Edit RU first, then sync EN.
+- **3X-UI panel manual (RU + EN)** lives on the **`manual`** branch:
+  `docs/3X-UI-MANUAL.ru.md` (canonical) + `docs/3X-UI-MANUAL.md` (English).
+  Targets panel **v3.3.0**; 16 sections / 142 subsections. Edit RU first, then
+  sync EN.
 
 (Detailed rationale for every point above is in `docs/ANDROID-HANDOFF.md`.)

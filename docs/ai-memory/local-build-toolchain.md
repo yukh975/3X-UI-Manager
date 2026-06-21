@@ -11,7 +11,7 @@ This Mac is **Apple Silicon** (supersedes the stale "this Mac is Intel, no iOS r
 
 - **JDK 17 (arm64)** at `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` (Homebrew, keg-only). **JDK 17 (x86_64)** at `~/jdks/jdk-17.0.19+10/Contents/Home` (Temurin tarball; run via `arch -x86_64`) — for the Intel desktop build. Rosetta 2 installed.
 - **Android SDK** at `/opt/homebrew/share/android-commandlinetools`: platform-35, build-tools 35.0.0, platform-tools, emulator. `adb` is NOT on PATH — use `/opt/homebrew/share/android-commandlinetools/platform-tools/adb`.
-- **Gradle env**: builds fail with "Unable to locate a Java Runtime" unless `JAVA_HOME` is exported (the `/tmp/xui_build_env.sh` helper is volatile — just export `JAVA_HOME` + `ANDROID_HOME`). Build: `cd android && ./gradlew :app:assembleDebug`.
+- **Gradle env**: builds fail with "Unable to locate a Java Runtime" unless `JAVA_HOME` is exported (the `/tmp/xui_build_env.sh` helper is volatile — just export `JAVA_HOME` + `ANDROID_HOME`). Build: `./gradlew :app:assembleDebug`.
 - **gradle** 9.5.1 (Homebrew) only to regenerate the **8.10.2 wrapper** into `android/` (gitignored there); `kmp/` ships its committed wrapper.
 - **Emulator AVD** `xui_pixel7` (Pixel 7, android-35 arm64), usually running headless (`-no-window`, swiftshader). Drive with `adb shell input` + `uiautomator dump`; field coordinates shift when the soft keyboard opens — re-dump before tapping. Dashboard cards need a live panel (URL+token given per session; never in repo).
 - **KMP worktree**: branch `ios-app` is checked out as a git worktree at `/tmp/3xui-ios` — **volatile** (/tmp). If missing after a reboot: `git worktree prune && git worktree add /tmp/3xui-ios ios-app`.

@@ -42,13 +42,13 @@ Multiplatform migration plan; built locally on a Mac, never in CI).
    derive from the tag.
 3. **Superseded pipelines auto-cancel** (`interruptible: true` + project
    `auto_cancel_pending_pipelines`). Let GitLab handle it.
-4. **Compile locally before tagging** (reliability): `cd android && ./gradlew
+4. **Compile locally before tagging** (reliability): `./gradlew
    :app:assembleDebug`. But **don't routinely boot the emulator** — only do the
    emulator UI check when a change touches layout and could glitch visually.
 5. **Releases page is Russian.** CI generates the GitLab Release description from
-   the matching version section of `android/CHANGELOG.ru.md`.
-6. **Maintain both changelogs** (`android/CHANGELOG.md` + `.ru.md`) and READMEs
-   (`android/README.md` + `.ru.md`). Copyright: `© 2026 Yuriy Khachaturian (yukh.net)`.
+   the matching version section of `CHANGELOG.ru.md`.
+6. **Maintain both changelogs** (`CHANGELOG.md` + `.ru.md`) and READMEs
+   (`README.md` + `.ru.md`). Copyright: `© 2026 Yuriy Khachaturian (yukh.net)`.
 7. **Clean up old releases**: once a release is confirmed stable, delete earlier
    buggy ones (`DELETE /projects/15/releases/<tag>`) — but only on the user's
    go-ahead. v0.1.0 already deleted.
@@ -87,7 +87,7 @@ Multiplatform migration plan; built locally on a Mac, never in CI).
 
 ### Local build on a fresh Mac
 JDK 17 + Android SDK (platform 35, build-tools 35.0.0, platform-tools) required.
-The Gradle **wrapper is gitignored** (`android/gradlew`, `gradle/wrapper/*.jar`);
+The Gradle **wrapper is gitignored** (`gradlew`, `gradle/wrapper/*.jar`);
 regenerate: system gradle is 9.x (too new for AGP 8.7.3), so generate the 8.10.2
 wrapper in a temp dir containing an empty `settings.gradle.kts`, then copy
 `gradlew` + `gradle-wrapper.jar` into `android/`. Then

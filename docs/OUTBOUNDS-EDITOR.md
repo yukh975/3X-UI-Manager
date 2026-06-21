@@ -4,7 +4,7 @@ Structured Outbounds editor for the Xray config, replacing the raw-JSON textarea
 (`ui/screen/xray/XrayConfigScreen.kt`) with tabbed forms like the web panel, while
 keeping a raw-JSON fallback. Derived from a multi-agent research pass (2026-06-10).
 
-Paths below are under `android/app/src/main/java/net/yukh/xui`.
+Paths below are under `app/src/main/java/net/yukh/xui`.
 
 ## Core architecture
 - The full Xray config round-trips as a `JsonElement` (`XrayConfigViewModel`,

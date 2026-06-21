@@ -1,8 +1,22 @@
-# 3X-UI Manager — приложение для Android
+# 3X-UI Manager
 
-Нативный Android-клиент для управления панелью [3x-ui](https://github.com/MHSanaei/3x-ui) через REST API — дашборд, входящие, клиенты (с QR), узлы и конфиг Xray, на ходу.
+Нативные мобильные клиенты для управления панелью [3x-ui](https://github.com/MHSanaei/3x-ui) через REST API — дашборд, входящие, клиенты (с QR), узлы и конфиг Xray, на ходу.
+
+Эта ветка (`main`) — приложение для **Android** (Kotlin + Jetpack Compose), собирается прямо из корня репозитория.
 
 🇬🇧 [English version](README.md) · 📝 [Список изменений](CHANGELOG.ru.md)
+
+---
+
+## Структура репозитория
+
+| Ветка | Что внутри |
+| --- | --- |
+| **`main`** | Приложение для **Android** (эта ветка). Gradle-проект в корне репозитория (`app/`, `build.gradle.kts`, …). |
+| **`apple`** | Приложение для **Apple / iOS** — основа на Kotlin Multiplatform + Compose-MP. |
+| **`manual`** | **Руководство** пользователя панели 3X-UI (RU — каноничное, + EN), под панель v3.3.0. |
+
+Апстрим живёт в [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui); рядом отдельно держится приватное **полное зеркало** — как read-only ссылка для сравнения, что изменилось при обновлении панели. Этот репозиторий — только приложение-менеджер, без Go-исходников самой панели.
 
 ---
 
@@ -110,19 +124,17 @@
 
 ## Сборка
 
-Откройте папку `android/` в Android Studio — она синхронизирует и скачает всё, включая Gradle wrapper.
+Откройте этот репозиторий в Android Studio — он синхронизирует и скачает всё, включая Gradle wrapper. Из командной строки:
 
 ```bash
-cd android
-gradle wrapper --gradle-version 8.10.2   # один раз
+gradle wrapper --gradle-version 8.10.2   # один раз (jar wrapper'а в .gitignore)
 ./gradlew assembleDebug                   # debug APK
 ./gradlew assembleRelease                 # подписанный release APK (нужен keystore)
-./gradlew testDebugUnitTest               # юнит-тесты
 ```
 
 ## CI / релизы
 
-[`.gitlab-ci.yml`](../.gitlab-ci.yml) собирает **только** по тегу версии (`vX.Y.Z`) или ручному запуску — пуши в ветку сборку не запускают. Пайплайн по тегу собирает **подписанный release APK**, прогоняет юнит-тесты, загружает APK в Generic Package Registry и автоматически создаёт GitLab Release. `versionName`/`versionCode` берутся из тега.
+[`.gitlab-ci.yml`](.gitlab-ci.yml) собирает **только** по тегу версии (`vX.Y.Z`) или ручному запуску — пуши в ветку сборку не запускают. Пайплайн по тегу собирает **подписанный release APK**, загружает его в Generic Package Registry и автоматически создаёт GitLab Release. `versionName`/`versionCode` берутся из тега.
 
 Чтобы выпустить релиз: запушьте тег `vX.Y.Z`.
 

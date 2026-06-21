@@ -1,8 +1,22 @@
-# 3X-UI Manager — Android app
+# 3X-UI Manager
 
-Native Android client for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) panel over its REST API — dashboard, inbounds, clients (with QR sharing), nodes, and the Xray config, on the go.
+Native mobile clients for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) panel over its REST API — dashboard, inbounds, clients (with QR sharing), nodes, and the Xray config, on the go.
+
+This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built straight from the repository root.
 
 🇷🇺 [Версия на русском](README.ru.md) · 📝 [Changelog](CHANGELOG.md)
+
+---
+
+## Repository layout
+
+| Branch | What's there |
+| --- | --- |
+| **`main`** | The **Android** app (this branch). Gradle project at the repo root (`app/`, `build.gradle.kts`, …). |
+| **`apple`** | The **Apple / iOS** app — a Kotlin Multiplatform + Compose-MP foundation. |
+| **`manual`** | The 3X-UI panel **user manual** (RU canonical + EN), targeting panel v3.3.0. |
+
+The upstream project lives at [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui); a private **pure mirror** of it is kept separately as a read-only reference for diffing what changed on a panel upgrade. This repository is the management app only — it carries none of the panel's Go source.
 
 ---
 
@@ -110,19 +124,17 @@ The `subId` is unique per client (the app already has it), so each client gets i
 
 ## Building
 
-Open the `android/` folder in Android Studio — it syncs and downloads everything, including the Gradle wrapper.
+Open this repository in Android Studio — it syncs and downloads everything, including the Gradle wrapper. From the command line:
 
 ```bash
-cd android
-gradle wrapper --gradle-version 8.10.2   # one-time
+gradle wrapper --gradle-version 8.10.2   # one-time (the wrapper jar is git-ignored)
 ./gradlew assembleDebug                   # debug APK
 ./gradlew assembleRelease                 # signed release APK (needs keystore)
-./gradlew testDebugUnitTest               # unit tests
 ```
 
 ## CI / releases
 
-[`.gitlab-ci.yml`](../.gitlab-ci.yml) builds **only** on a version tag (`vX.Y.Z`) or a manual trigger — branch pushes don't build. A tag pipeline builds the **signed release APK**, runs unit tests, uploads the APK to the project's Generic Package Registry, and auto-creates a GitLab Release. `versionName`/`versionCode` derive from the tag.
+[`.gitlab-ci.yml`](.gitlab-ci.yml) builds **only** on a version tag (`vX.Y.Z`) or a manual trigger — branch pushes don't build. A tag pipeline builds the **signed release APK**, uploads it to the project's Generic Package Registry, and auto-creates a GitLab Release. `versionName`/`versionCode` derive from the tag.
 
 To cut a release: push a `vX.Y.Z` tag.
 
