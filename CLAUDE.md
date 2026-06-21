@@ -7,7 +7,9 @@ Go source. It is split by branch:
   a Gradle project at the **repo root** (`app/`, `build.gradle.kts`, …).
 - **`apple`** — the **Apple / iOS** app: a Kotlin-Multiplatform / Compose-MP
   foundation (+ a desktop/macOS target).
-- **`manual`** — the 3X-UI panel user manual (RU canonical + EN), panel v3.3.0.
+
+The 3X-UI panel **user manual** (RU + EN) is a separate repo, **`yukh/3X-UI-Manual`**
+(project id 20) — unrelated to the manager apps.
 
 The upstream panel is mirrored read-only in the separate repo **`yukh/3x-ui`**
 (project id 15) — a *pure* mirror of MHSanaei/3x-ui, kept only to diff what changed
@@ -95,9 +97,9 @@ its "Текущее состояние" section is the latest snapshot.
   screen shows an "Update" button when a node's version ≠ latest).
 - Filed upstream bug: MHSanaei/3x-ui **#5100** (resetting an inbound's traffic on
   the master doesn't propagate to slave nodes) — **fixed upstream in v3.3.0 (#5103)**.
-- **3X-UI panel manual (RU + EN)** lives on the **`manual`** branch:
-  `docs/3X-UI-MANUAL.ru.md` (canonical) + `docs/3X-UI-MANUAL.md` (English).
-  Targets panel **v3.3.0**; 16 sections / 142 subsections. Edit RU first, then
-  sync EN.
+- **3X-UI panel manual (RU + EN)** lives in its own repo **`yukh/3X-UI-Manual`**
+  (project id 20): `3X-UI-MANUAL.ru.md` (canonical) + `3X-UI-MANUAL.md` (English),
+  at the repo root. Targets panel **v3.3.0**; 16 sections / 142 subsections. Edit
+  RU first, then sync EN.
 
 (Detailed rationale for every point above is in `docs/ANDROID-HANDOFF.md`.)
