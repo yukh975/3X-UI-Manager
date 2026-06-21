@@ -8,7 +8,9 @@ Go source. It is split by branch:
   Compose-MP project at the **repo root**, producing **iOS** (via Xcode) and a
   **macOS desktop** app. Modules: `:shared` (logic) + `:composeApp` (UI), with the
   Xcode host in `iosApp/` and the desktop packager in `scripts/package-macos.sh`.
-- **`manual`** — the 3X-UI panel user manual (RU canonical + EN), panel v3.3.0.
+
+The 3X-UI panel **user manual** (RU + EN) is a separate repo, **`yukh/3X-UI-Manual`**
+(project id 20) — unrelated to the manager apps.
 
 The upstream panel is mirrored read-only in the separate repo **`yukh/3x-ui`**
 (project id 15) — a *pure* mirror of MHSanaei/3x-ui, kept only to diff what changed
@@ -58,6 +60,6 @@ Android side but the API/behaviour facts apply to the Apple app too.
   `iosSimulatorArm64` / `jvm("desktop")`. **No Android target** here (that's `main`).
 - The Gradle **wrapper jar is committed** on this branch, so `./gradlew` works out
   of the box (unlike `main`, where it's regenerated).
-- **3X-UI panel manual (RU + EN)** lives on the **`manual`** branch.
+- **3X-UI panel manual (RU + EN)** is its own repo **`yukh/3X-UI-Manual`** (id 20).
 
 (Most API/behaviour rationale is shared with the Android app — see `docs/`.)

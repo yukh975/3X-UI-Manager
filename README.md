@@ -14,7 +14,8 @@ This branch (`apple`) is a **Kotlin Multiplatform + Compose Multiplatform** proj
 | --- | --- |
 | **`main`** | The **Android** app (Kotlin + Jetpack Compose). |
 | **`apple`** | The **Apple** app (this branch) — Kotlin Multiplatform / Compose-MP: **iOS** + **macOS desktop**. |
-| **`manual`** | The 3X-UI panel **user manual** (RU canonical + EN), targeting panel v3.3.0. |
+
+The 3X-UI panel **user manual** (RU canonical + EN) lives in its own repository, **3X-UI-Manual** — it's unrelated to the manager apps.
 
 The upstream project lives at [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui); a private **pure mirror** of it is kept separately as a read-only reference for diffing what changed on a panel upgrade. This repository is the management app only — it carries none of the panel's Go source.
 
