@@ -1,71 +1,63 @@
-# CLAUDE.md — project context for AI assistants
+# CLAUDE.md — project context for AI assistants (apple branch)
 
-This is a self-hosted fork of **3x-ui**. The **active work** here is a native
-**Android** management app in [`android/`](android/) (Kotlin + Jetpack Compose),
-plus a **working Kotlin-Multiplatform / Compose-MP iOS foundation** in
-[`kmp/`](kmp/) on the **`ios-app`** branch (builds/links for iOS; see
-[`ios/README.md`](ios/README.md)).
+This repository (`yukh/3X-UI-Manager`) holds the native mobile **management apps**
+for a [3x-ui](https://github.com/MHSanaei/3x-ui) panel — manager only, **no** panel
+Go source. It is split by branch:
+- **`main`** — the native **Android** app (Kotlin + Jetpack Compose), at the repo root.
+- **`apple`** (this branch) — the **Apple** app: a Kotlin-Multiplatform /
+  Compose-MP project at the **repo root**, producing **iOS** (via Xcode) and a
+  **macOS desktop** app. Modules: `:shared` (logic) + `:composeApp` (UI), with the
+  Xcode host in `iosApp/` and the desktop packager in `scripts/package-macos.sh`.
+- **`manual`** — the 3X-UI panel user manual (RU canonical + EN), panel v3.3.0.
 
-👉 **Read [`docs/ANDROID-HANDOFF.md`](docs/ANDROID-HANDOFF.md) first** — full
-state, architecture, hard-won API facts, build/signing, and what's next.
-👉 Resuming on a new machine? See
-[`docs/RESUME-NEXT-SESSION.md`](docs/RESUME-NEXT-SESSION.md) (step-by-step, RU) —
-its "Текущее состояние" section is the latest snapshot.
-👉 Backlog of agreed-but-not-done features: [`docs/TODO.md`](docs/TODO.md).
+The upstream panel is mirrored read-only in the separate repo **`yukh/3x-ui`**
+(project id 15) — a *pure* mirror of MHSanaei/3x-ui, kept only to diff what changed
+on a panel upgrade. Read upstream sources from there; never develop in it.
+
+👉 Shared background (API facts, hard-won gotchas) lives in
+[`docs/ANDROID-HANDOFF.md`](docs/ANDROID-HANDOFF.md) and
+[`docs/RESUME-NEXT-SESSION.md`](docs/RESUME-NEXT-SESSION.md) — written from the
+Android side but the API/behaviour facts apply to the Apple app too.
 
 ## Standing rules (do these without being re-asked)
-1. Work on branch **`android-app`**. After each meaningful change: focused commit
-   (`feat(android): …` / `fix(android): …`) + push to `origin`. Don't push `upstream`.
-2. **Build/release only on a `vX.Y.Z` tag** (branch pushes don't build). Don't tag
-   per change — batch under one tag when the user says they're ready ("собирай").
-3. **Dev loop for every change:** write code → compile locally
-   (`cd android && ./gradlew :app:assembleDebug`) → **install on the local
-   emulator and verify the functionality actually works** → only when fully
-   debugged, tag `vX.Y.Z` to trigger the GitLab build + release. Don't tag until
-   it's emulator-verified.
-4. Keep **both changelogs** (`android/CHANGELOG.md` + `.ru.md`) and **both READMEs**
-   updated. The GitLab Release notes are generated (in Russian) from `CHANGELOG.ru.md`.
+1. Work on branch **`apple`**. Android work goes on **`main`**. After each
+   meaningful change: focused commit (`feat(apple): …` / `fix(apple): …`) + push to
+   `origin`. Don't push `upstream`.
+2. **Android is the source of truth** for features and versioning; this branch
+   tracks it. On a release version bump (driven from `main`), also update
+   `composeApp/src/desktopMain/.../Platform.desktop.kt` (`appVersionName`) and
+   `iosApp/iosApp/Info.plist` (`CFBundleShortVersionString` / `CFBundleVersion`).
+3. **No GitLab CI on this branch** — a Linux runner can't build Apple targets.
+   - **iOS:** open `iosApp/iosApp.xcodeproj` in Xcode (needs macOS + Xcode).
+   - **macOS desktop:** `JAVA_HOME=<jdk> ./scripts/package-macos.sh "<Apple Silicon|Intel>"`
+     (needs `brew install create-dmg`); arch of the result = arch of the JDK
+     running Gradle. Quick run: `./gradlew :composeApp:run`.
+   - **Don't build on this Intel Mac** unless asked (slow/unstable); the user
+     verifies iOS/desktop on an Apple-Silicon machine.
+4. Keep **both READMEs** (`README.md` + `README.ru.md`) updated.
 5. In the **Russian** UI, do **not** translate the words `inbound` / `outbound`.
 6. Copyright: `© 2026 Yuriy Khachaturian (yukh.net)`.
-7. Delete old/buggy GitLab releases only after the user confirms a build is stable.
 
 ## Quick facts
-- GitLab: `yukh/3x-ui`, project id **15**, `git.home.yukh.net`. API token at
-  `~/.gl-token` (local). Latest **released**: **v0.3.17** ("первый стабильный" was
-  v0.3.11). v0.3.17 = full structured **Xray-config editor** (⋮ menu): Outbounds,
-  Routing, DNS, General/Logs (+ raw-JSON fallback) + `vless://` import. v0.3.16
-  added a custom adaptive app icon (3X monogram) + geo accordion. v0.3.15 added
-  dashboard metric-history charts. v0.3.14 shipped traffic-this-month + geo updater
-  + v3.3.0 API compat + the online-by-server fix.
-- Release APK filename now carries the version: `3x-ui-manager-<version>.apk`.
-  CI has no `test:unit` job (removed — no tests, didn't gate the release).
-- Release signing keystore: `~/.config/3x-ui-android-keystore/` (local) **and**
-  GitLab CI vars (`RELEASE_KEYSTORE_B64` …) — so CI signs releases from any machine.
-- Dashboard Xray control = **Start / Stop / Restart** for all auth types (Stop only
-  breaks the link when the panel is reached *through* Xray; direct connection is
-  fine). Optimistic state is pinned ~6 s so a lagging poll doesn't flicker it back.
-- Online list is grouped **by server**: main = online ∩ clients of main-panel
-  inbounds (`nodeId` 0); each node = its own live `/clients/onlines` (POST), with a
-  fallback to inbound-membership when a node isn't directly reachable. `nodeId` on
-  the inbound distinguishes main (null/0) from node inbounds.
-- Editors are full-screen overlays in `MainScreen` (NOT `Dialog` — Dialogs don't
-  get insets); Delete lives in a pinned `bottomBar`.
-- **Xray editor (v0.3.17)** lives in `ui/screen/xrayedit/` (+ `ui/screen/outbounds/`);
-  all sections round-trip the one config JsonObject via `XrayConfigIO.kt`. GOTCHA:
-  3x-ui stores outbound settings **flat** (`settings.address/port/id/flow/encryption`,
-  `streamSettings` a sibling), NOT raw-Xray `vnext[]`/`servers[]`. Field specs come
-  from the panel's **Vue source** (frontend not in tree — `git show
-  bc00d37a:frontend/src/pages/xray/*.vue` + `models/outbound.js`). Xray config works
-  with an API token on v3.3.0 (the "session only" gate is a fallback). See
-  `docs/RESUME-NEXT-SESSION.md` for what's still raw-JSON (Observatory, xHTTP-advanced,
-  hysteria, basic block/direct helpers).
-- Node 3x-ui self-update: `POST /panel/api/nodes/updatePanel` `{ids:[…]}` (Nodes
-  screen shows an "Update" button when a node's version ≠ latest).
-- Filed upstream bug: MHSanaei/3x-ui **#5100** (resetting an inbound's traffic on
-  the master doesn't propagate to slave nodes) — **fixed upstream in v3.3.0 (#5103)**.
-- **3X-UI panel manual (RU + EN)** lives on branch **`docs/manual`** (NOT
-  android-app), MR **!2** → `main`: `docs/3X-UI-MANUAL.ru.md` (canonical) +
-  `docs/3X-UI-MANUAL.md` (English). Targets panel **v3.3.0**; 16 sections / 142
-  subsections. Edit RU first, then sync EN.
+- GitLab: `yukh/3X-UI-Manager`, project id **19**, `git.home.yukh.net`. API token
+  at `~/.gl-token` (local). The upstream mirror is `yukh/3x-ui`, project id **15**.
+  Released builds are cut from `main` (Android); latest **v0.3.23**.
+- **Auth = API token only** (Bearer), requires panel **v3.3.0+**. A token is full
+  admin (no read-only/scoped tokens) and covers everything the app does — dashboard,
+  inbounds, clients, nodes, Xray config, settings, subscription links, backup/restore.
+- **App-lock rule:** the passcode/biometric lock guards the **signed-in UI only** —
+  armed when a saved session is auto-restored at launch or when backgrounded while
+  connected; never shown signed-out or right after a fresh manual sign-in. The gate
+  is in `composeApp/.../app/App.kt` (`if (locked && connected)`).
+- **Desktop packaging gotcha:** jpackage refuses a `0.x` major, so Gradle's
+  `packageVersion` stays `1.0.0`; the script patches the real version into
+  `CFBundleShortVersionString` post-build and re-signs. It also wipes
+  `composeApp/build/compose` first (a cached jlink runtime would silently mix
+  arches) and verifies launcher/JVM arch match. 3X app icon: `composeApp/icons/`.
+- **Targets:** `:composeApp` = `iosX64` (Intel-sim) / `iosArm64` (device) /
+  `iosSimulatorArm64` / `jvm("desktop")`. **No Android target** here (that's `main`).
+- The Gradle **wrapper jar is committed** on this branch, so `./gradlew` works out
+  of the box (unlike `main`, where it's regenerated).
+- **3X-UI panel manual (RU + EN)** lives on the **`manual`** branch.
 
-(Detailed rationale for every point above is in `docs/ANDROID-HANDOFF.md`.)
+(Most API/behaviour rationale is shared with the Android app — see `docs/`.)

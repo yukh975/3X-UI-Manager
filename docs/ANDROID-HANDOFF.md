@@ -8,14 +8,14 @@
 A **native Android** app (Kotlin + Jetpack Compose) that manages a
 [3x-ui](https://github.com/MHSanaei/3x-ui) VPN panel over its REST API —
 dashboard, inbounds, clients (QR/sub), nodes, Xray config. Lives in the
-[`android/`](../android) folder of this 3x-ui fork. There's also an **`ios-app`**
+[`android/`](../android) folder of this 3x-ui fork. There's also an **`apple`**
 branch holding iOS groundwork ([`ios/README.md`](../ios/README.md): KMP + Compose
 Multiplatform migration plan; built locally on a Mac, never in CI).
 
 ## Repo / infra
 - Self-hosted GitLab fork: **`yukh/3x-ui`, project id `15`**, web
   `https://git.home.yukh.net/yukh/3x-ui`. Default branch `main`; **active dev
-  branch `android-app`**.
+  branch `main`**.
 - Remotes in the working copy: `origin` →
   `ssh://git@git.home.yukh.net:20222/yukh/3x-ui.git` (push here); `upstream` →
   `https://github.com/MHSanaei/3x-ui.git` (pull-only).
@@ -24,7 +24,7 @@ Multiplatform migration plan; built locally on a Mac, never in CI).
 - SSH: host alias in `~/.ssh/config`, port 20222, key `~/.ssh/gitlab.key`.
 
 ## Standing working rules (the user's preferences — follow these)
-1. **Commit + push after each meaningful change** to `origin android-app`
+1. **Commit + push after each meaningful change** to `origin main`
    (focused conventional-commit messages: `feat(android): …`, `fix(android): …`).
    Don't batch a whole session into one commit; don't push to `upstream`.
 2. **Build/release ONLY on a version tag** `vX.Y.Z`. Branch pushes do NOT build
@@ -132,7 +132,7 @@ Don't store the token in the repo; don't stop Xray on it (disrupts service).
 
 ## Likely next steps
 - Await user's "stable" confirmation → delete old releases (rule 7).
-- iOS (`ios-app` branch): scaffold the KMP + Compose MP project per
+- iOS (`apple` branch): scaffold the KMP + Compose MP project per
   `ios/README.md` (Retrofit→Ktor, Hilt→Koin, Keystore→Keychain,
   BiometricPrompt→LocalAuthentication). Built locally on the Mac (Xcode set up).
 - Store publishing (Play + F-Droid) when the user calls a full release.

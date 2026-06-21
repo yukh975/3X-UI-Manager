@@ -1,51 +1,23 @@
-# Ignore editor and IDE settings
+# Gradle / Kotlin build
+.gradle/
+.kotlin/
+build/
+local.properties
+
+# IntelliJ / Android Studio / Fleet
 .idea/
-.vscode/
-.cursor/
-.claude/
-.cache/
-.sync*
+*.iml
 
-# Ignore log files
-*.log
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.xcworkspace/xcuserdata/
 
-# Ignore temporary files
-tmp/
-*.tar.gz
+# macOS packaging output (built locally with scripts/package-macos.sh)
+*.dmg
+*.app/
 
-# Ignore build and distribution directories
-backup/
-bin/
-dist/
-!web/dist/
-web/dist/*
-
-# …but the Android app has a real source package named "backup" — keep it.
-!/android/app/src/main/java/net/yukh/xui/ui/screen/backup/
-!web/dist/.gitkeep
-release/
-node_modules/
-
-# Ignore compiled binaries (Go output at repo root)
-/main
-
-# Ignore script and executable files
-/release.sh
-/x-ui
-
-# Ignore OS specific files
+# OS junk
 .DS_Store
 Thumbs.db
-
-# Ignore Go build files
-*.exe
-x-ui.db
-x-ui.db-shm
-x-ui.db-wal
-*.dump
-
-# Ignore Docker specific files
-docker-compose.override.yml
-
-# Ignore .env (Environment Variables) file
-.env

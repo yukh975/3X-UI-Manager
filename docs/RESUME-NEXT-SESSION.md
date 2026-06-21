@@ -10,8 +10,8 @@ Android-приложением (`3X-UI Manager`) без потерь.
 
 ## Текущее состояние (snapshot — 2026-06-10)
 
-**Ветки:** `android-app` (основная) и `ios-app` (KMP/iOS в `kmp/`). Обе запушены,
-дерево чистое.
+**Ветки:** `main` (Android, в корне) и `apple` (KMP/iOS+desktop, в корне). Обе
+запушены, дерево чистое.
 
 **Релизы:** последний — **v0.3.17** («первый стабильный» был v0.3.11). Накопилось:
 - **v0.3.15** — графики истории метрик (тап по карточке дашборда → линия;
@@ -60,16 +60,16 @@ Android-приложением (`3X-UI Manager`) без потерь.
 `POST /panel/api/nodes/updatePanel`), трафик за месяц, фикс «онлайн по серверам»
 (по `nodeId` инбаунда), совместимость с панелью v3.3.0.
 
-**iOS (ветка `ios-app`, папка `kmp/`) — рабочий каркас, собирается/линкуется:**
+**iOS (ветка `apple`, KMP-проект в корне репозитория) — рабочий каркас, собирается/линкуется:**
 - `shared` (DTO + Ktor `PanelApi`) компилируется под iOS.
 - `composeApp` (Connect → нижняя навигация Dashboard/Inbounds/Clients/Nodes, опрос
   5 с, **сохранение сессии + авто-вход** через NSUserDefaults) линкуется в
   `ComposeApp.framework` для `iosArm64` и `iosSimulatorArm64`.
 - `iosApp` — SwiftUI-хост + `iosApp.xcodeproj` (рукописный, **на Mac не
-  валидирован**). `kmp/gradle.properties` с увеличенным heap.
+  валидирован**). `gradle.properties` с увеличенным heap.
 - **Ещё не запускалось** на симуляторе/устройстве (этот Mac — Intel, нет
   iOS-runtime). Quickstart и fallback — в [`../ios/README.md`](../ios/README.md)
-  (главное: сначала `git checkout ios-app`).
+  (главное: сначала `git checkout apple`).
 - Дальше: запуск на arm64-Mac → self-signed TLS → токен в Keychain →
   create/edit/delete → биометрия → RU/EN.
 
@@ -83,7 +83,7 @@ Android-приложением (`3X-UI Manager`) без потерь.
 заново в начале сессии.
 
 **Документация панели 3X-UI (RU + EN):** на отдельной ветке **`docs/manual`**
-(НЕ в `android-app`!), MR **!2** → `main`. Файлы: `docs/3X-UI-MANUAL.ru.md`
+(НЕ в `main`!), MR **!2** → `main`. Файлы: `docs/3X-UI-MANUAL.ru.md`
 (русский — эталон) и `docs/3X-UI-MANUAL.md` (английский). 16 разделов, 142
 подпункта, многоуровневое оглавление; актуально для **3X-UI 3.3.0** (MTProto,
 WARP-ротация, outbound из подписки, шаблоны страницы подписки, трафик по группам,
@@ -115,7 +115,7 @@ WARP-ротация, outbound из подписки, шаблоны страни
 ```bash
 git clone ssh://git@git.home.yukh.net:20222/yukh/3x-ui.git
 cd 3x-ui
-git checkout android-app
+git checkout main
 git pull
 ```
 
@@ -213,7 +213,7 @@ Host git.home.yukh.net
   ключ там уже есть.
 
 ## Где что лежит
-- Приложение: `android/`. iOS-заготовка: ветка `ios-app`, `ios/README.md`.
+- Приложение: `android/`. iOS-заготовка: ветка `apple`, `ios/README.md`.
 - Изменения: `android/CHANGELOG.md` / `android/CHANGELOG.ru.md`.
 - Описание функционала: `android/README.md` / `android/README.ru.md`.
 - CI: `.gitlab-ci.yml` (собирает только по тегу `vX.Y.Z`).
