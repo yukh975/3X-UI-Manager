@@ -2,6 +2,7 @@ package net.yukh.xui.ui.screen.outbounds
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -10,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,9 +25,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -33,6 +37,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.yukh.xui.data.api.dto.BLACKHOLE_RESPONSE_TYPE
 import net.yukh.xui.data.api.dto.FREEDOM_DOMAIN_STRATEGY
 import net.yukh.xui.data.api.dto.FREEDOM_FRAGMENT_PACKETS
@@ -131,7 +136,7 @@ fun OutboundEditorScreen(
             when (protocol) {
                 "freedom" -> FreedomForm(draft, onDraftChange)
                 "blackhole" -> BlackholeForm(draft, onDraftChange)
-                "socks", "http" -> ServerAuthForm(draft, onDraftChange)
+                "socks", "http" -> ServerAuthForm(draft, protocol, onDraftChange)
                 "vmess" -> VmessForm(draft, onDraftChange)
                 "vless" -> VlessForm(draft, onDraftChange)
                 "trojan" -> TrojanForm(draft, onDraftChange)
@@ -187,7 +192,7 @@ private fun BlackholeForm(draft: JsonObject, onChange: (JsonObject) -> Unit) {
 }
 
 @Composable
-private fun ServerAuthForm(draft: JsonObject, onChange: (JsonObject) -> Unit) {
+private fun ServerAuthForm(draft: JsonObject, protocol: String, onChange: (JsonObject) -> Unit) {
     val s = draft.settings()
     SectionTitle(tr("Server"))
     Field(tr("Address"), s.string("address")) { onChange(draft.putSettings(s.putString("address", it))) }
@@ -196,6 +201,51 @@ private fun ServerAuthForm(draft: JsonObject, onChange: (JsonObject) -> Unit) {
     }
     Field(tr("Username (optional)"), s.string("user")) { onChange(draft.putSettings(s.putString("user", it))) }
     Field(tr("Password (optional)"), s.string("pass")) { onChange(draft.putSettings(s.putString("pass", it))) }
+
+    // HTTP CONNECT headers sent to the upstream proxy (settings.headers, key→value).
+    if (protocol == "http") {
+        HttpHeadersEditor(s.child("headers")) { h ->
+            onChange(draft.putSettings(if (h.isEmpty()) s.put("headers", null) else s.put("headers", h)))
+        }
+    }
+}
+
+/** key→value editor for an HTTP outbound's `settings.headers`. Keeps a local row
+ *  list (so blank/duplicate keys while typing don't fight the map) and emits the
+ *  rebuilt object on every edit; blank-key rows are dropped. */
+@Composable
+private fun HttpHeadersEditor(headers: JsonObject, onChange: (JsonObject) -> Unit) {
+    val rows = remember {
+        mutableStateListOf<Pair<String, String>>().also { list ->
+            headers.entries.forEach { (k, v) -> list.add(k to ((v as? JsonPrimitive)?.content ?: "")) }
+        }
+    }
+    fun emit() {
+        onChange(JsonObject(rows.filter { it.first.isNotBlank() }.associate { it.first to JsonPrimitive(it.second) }))
+    }
+    SectionTitle(tr("Headers"))
+    rows.forEachIndexed { i, (k, v) ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                value = k, onValueChange = { rows[i] = it to v; emit() },
+                label = { Text(tr("Name")) }, singleLine = true, modifier = Modifier.weight(1f),
+            )
+            OutlinedTextField(
+                value = v, onValueChange = { rows[i] = k to it; emit() },
+                label = { Text(tr("Value")) }, singleLine = true, modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = { rows.removeAt(i); emit() }) {
+                Icon(Icons.Outlined.Delete, contentDescription = tr("Delete"))
+            }
+        }
+    }
+    OutlinedButton(onClick = { rows.add("" to "") }) {
+        Icon(Icons.Filled.Add, contentDescription = null); Text("  " + tr("Add header"))
+    }
 }
 
 @Composable
