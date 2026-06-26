@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.3.24] — Unreleased
+## [0.4.1] — Unreleased
 
 ### Added
 - **Export / import clients + delete unbound.** The Clients ⋮ menu gains Export
