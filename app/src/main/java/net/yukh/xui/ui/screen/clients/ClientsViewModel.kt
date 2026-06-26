@@ -30,12 +30,28 @@ data class ClientsUiState(
     val linksError: String? = null,
     val selectedSubUrl: String? = null,
     val subUrlChecked: Boolean = false,
+    val filters: ClientFilters = ClientFilters(),
     val editor: ClientEditorState? = null,
 ) {
-    /** Items filtered by the search query (case-insensitive substring of email). */
+    /** Distinct non-empty client groups in use, sorted — for the editor picker
+     *  and the filter sheet. */
+    val allGroups: List<String>
+        get() = items.map { it.group.trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .sortedBy { it.lowercase() }
+
+    /** Items narrowed by the search query (case-insensitive email substring) and
+     *  the active status/group [filters]. */
     val visibleItems: List<Client>
-        get() = if (searchQuery.isBlank()) items
-        else items.filter { it.email.contains(searchQuery.trim(), ignoreCase = true) }
+        get() {
+            val q = searchQuery.trim()
+            val now = System.currentTimeMillis()
+            return items.filter { c ->
+                (q.isEmpty() || c.email.contains(q, ignoreCase = true)) &&
+                    c.matches(filters, now, online)
+            }
+        }
 }
 
 /** Form state for creating or editing a client. Numeric inputs are kept as
@@ -172,11 +188,7 @@ class ClientsViewModel @Inject constructor(
     // ---- Editor -----------------------------------------------------------
 
     /** Distinct non-empty client groups already in use, for the editor's picker. */
-    private fun existingGroups(): List<String> =
-        _state.value.items.map { it.group.trim() }
-            .filter { it.isNotEmpty() }
-            .distinct()
-            .sortedBy { it.lowercase() }
+    private fun existingGroups(): List<String> = _state.value.allGroups
 
     fun openCreateEditor() {
         _state.update {
@@ -300,6 +312,20 @@ class ClientsViewModel @Inject constructor(
     }
 
     fun setSearchQuery(q: String) = _state.update { it.copy(searchQuery = q) }
+
+    // ---- Filters ----------------------------------------------------------
+
+    fun toggleStatusFilter(s: ClientStatus) = _state.update {
+        val cur = it.filters.statuses
+        it.copy(filters = it.filters.copy(statuses = if (s in cur) cur - s else cur + s))
+    }
+
+    fun toggleGroupFilter(g: String) = _state.update {
+        val cur = it.filters.groups
+        it.copy(filters = it.filters.copy(groups = if (g in cur) cur - g else cur + g))
+    }
+
+    fun clearFilters() = _state.update { it.copy(filters = ClientFilters()) }
 
     fun dismissMessage() = _state.update { it.copy(transientMessage = null) }
 }

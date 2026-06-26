@@ -327,6 +327,16 @@ val ruStrings: Map<String, String> = mapOf(
     "Expires" to "Истекает",
     "Last seen" to "Был онлайн",
 
+    // Client filters
+    "Filters" to "Фильтры",
+    "Status" to "Статус",
+    "Active" to "Активные",
+    "Disabled" to "Выключенные",
+    "Depleted" to "Исчерпанные",
+    "Group" to "Группа",
+    "Clear all" to "Сбросить всё",
+    "No clients match the filters" to "Нет клиентов по фильтрам",
+
     // Client editor (additional)
     "Email / name" to "Email / имя",
     "IP limit (0 = unlimited)" to "Лимит IP (0 = безлимит)",

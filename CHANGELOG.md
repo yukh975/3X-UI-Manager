@@ -8,6 +8,13 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [0.3.24] — Unreleased
 
+### Added
+- **Filter the client list by status and group.** A filter button next to the
+  search box (with a badge for the active count) opens a sheet — mirroring the
+  panel's filter drawer — that narrows the list by status (**Online**, Active,
+  Disabled, Depleted) and by **group** (the groups in use). Sections narrow
+  independently; *Clear all* resets them.
+
 ### Changed
 - **Client group is picked from existing groups.** In the client editor (both
   new and edit) the *Group* field became an autocomplete dropdown listing the

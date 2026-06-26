@@ -17,7 +17,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,7 +38,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,6 +62,8 @@ fun ClientsScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showFilters by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { vm.load() }
 
@@ -90,28 +97,47 @@ fun ClientsScreen(
             ) { Text(tr("No clients yet.")) }
 
             else -> Column(modifier = Modifier.fillMaxSize()) {
-                OutlinedTextField(
-                    value = state.searchQuery,
-                    onValueChange = vm::setSearchQuery,
-                    label = { Text(tr("Search by email")) },
-                    singleLine = true,
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (state.searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { vm.setSearchQuery("") }) {
-                                Icon(Icons.Filled.Clear, contentDescription = tr("Clear"))
-                            }
-                        }
-                    },
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    OutlinedTextField(
+                        value = state.searchQuery,
+                        onValueChange = vm::setSearchQuery,
+                        label = { Text(tr("Search by email")) },
+                        singleLine = true,
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (state.searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { vm.setSearchQuery("") }) {
+                                    Icon(Icons.Filled.Clear, contentDescription = tr("Clear"))
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { showFilters = true }) {
+                        BadgedBox(
+                            badge = {
+                                if (state.filters.count > 0) Badge { Text(state.filters.count.toString()) }
+                            },
+                        ) {
+                            Icon(Icons.Filled.FilterList, contentDescription = tr("Filters"))
+                        }
+                    }
+                }
 
                 val visible = state.visibleItems
                 if (visible.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("${tr("No clients match")} \"${state.searchQuery}\".")
+                        Text(
+                            if (state.searchQuery.isNotBlank())
+                                "${tr("No clients match")} \"${state.searchQuery}\"."
+                            else tr("No clients match the filters"),
+                        )
                     }
                 } else {
                     LazyColumn(
@@ -159,6 +185,18 @@ fun ClientsScreen(
             onDismiss = vm::closeShareSheet,
             onEdit = { vm.openEditEditor(selectedEmail) },
             onDelete = { vm.deleteClient(selectedEmail) },
+        )
+    }
+
+    if (showFilters) {
+        ClientFilterSheet(
+            filters = state.filters,
+            groups = state.allGroups,
+            sheetState = filterSheetState,
+            onToggleStatus = vm::toggleStatusFilter,
+            onToggleGroup = vm::toggleGroupFilter,
+            onClear = vm::clearFilters,
+            onDismiss = { showFilters = false },
         )
     }
 
