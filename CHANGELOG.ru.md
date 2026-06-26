@@ -6,7 +6,7 @@
 
 🇬🇧 [English version](CHANGELOG.md)
 
-## [0.4.1] — Unreleased
+## [0.4.1] — 2026-06-26
 
 ### Добавлено
 - **Inbounds: текущая скорость.** В списке inbound'ов показывается текущая

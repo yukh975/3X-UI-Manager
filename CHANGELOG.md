@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [0.4.1] — Unreleased
+## [0.4.1] — 2026-06-26
 
 ### Added
 - **Inbounds: live speed.** The inbounds list now shows each inbound's current
