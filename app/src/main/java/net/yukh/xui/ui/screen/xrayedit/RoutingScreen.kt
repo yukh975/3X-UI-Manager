@@ -28,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -39,15 +40,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.json.array
 import net.yukh.xui.data.json.asObject
+import net.yukh.xui.data.json.boolOrNull
 import net.yukh.xui.data.json.child
 import net.yukh.xui.data.json.put
 import net.yukh.xui.data.json.putArray
+import net.yukh.xui.data.json.putBool
 import net.yukh.xui.data.json.putString
 import net.yukh.xui.data.json.putStrings
 import net.yukh.xui.data.json.string
@@ -55,7 +62,9 @@ import net.yukh.xui.data.json.strings
 import net.yukh.xui.data.json.parseCsv
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
+import net.yukh.xui.ui.components.ExportJsonDialog
 import net.yukh.xui.ui.components.Field
+import net.yukh.xui.ui.components.ImportJsonDialog
 import net.yukh.xui.ui.components.LabeledDropdown
 import net.yukh.xui.ui.components.SectionTitle
 
@@ -68,6 +77,28 @@ private fun JsonObject.tagList(arrayKey: String): List<String> =
 
 private fun JsonObject.outboundTags(): List<String> =
     array("outbounds").map { it.asObject().string("tag") }.filter { it.isNotBlank() }
+
+/** A rule is enabled unless it carries `enabled: false` (panel v3.4.x strips
+ *  disabled rules from the running config; older panels ignore the flag). */
+private fun JsonObject.ruleEnabled(): Boolean = boolOrNull("enabled") != false
+
+/** The internal stats api rule — its enabled state must stay locked on, or
+ *  traffic accounting breaks (mirrors the panel's isApiRule). */
+private fun JsonObject.isApiRule(): Boolean =
+    string("outboundTag") == "api" && strings("inboundTag").contains("api")
+
+/** Parse a rules-import payload: a bare array, `{rules:[…]}`, or
+ *  `{routing:{rules:[…]}}` (matches the panel's flexible import). */
+private fun parseRulesImport(text: String): List<JsonElement>? {
+    val el = try { Json.parseToJsonElement(text.trim()) } catch (e: Exception) { return null }
+    val arr = when (el) {
+        is JsonArray -> el
+        is JsonObject -> (el["rules"] as? JsonArray)
+            ?: ((el["routing"] as? JsonObject)?.get("rules") as? JsonArray)
+        else -> null
+    }
+    return arr?.toList()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -145,6 +176,8 @@ private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
     val balancers = routing.array("balancers")
     var pendingRule by remember { mutableStateOf<Int?>(null) }
     var pendingBal by remember { mutableStateOf<Int?>(null) }
+    var showExport by remember { mutableStateOf(false) }
+    var showImport by remember { mutableStateOf(false) }
 
     fun setRules(items: List<kotlinx.serialization.json.JsonElement>) = vm.update(cfg.put("routing", routing.putArray("rules", items)))
     fun setBalancers(items: List<kotlinx.serialization.json.JsonElement>) = vm.update(cfg.put("routing", routing.putArray("balancers", items)))
@@ -157,16 +190,32 @@ private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
             vm.update(cfg.put("routing", routing.putString("domainStrategy", it)))
         }
 
-        SectionTitle(tr("Routing rules"))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            SectionTitle(tr("Routing rules"))
+            Box(modifier = Modifier.weight(1f))
+            TextButton(onClick = { showExport = true }, enabled = rules.isNotEmpty()) { Text(tr("Export")) }
+            TextButton(onClick = { showImport = true }) { Text(tr("Import")) }
+        }
         rules.forEachIndexed { i, el ->
             val r = el.asObject()
+            val api = r.isApiRule()
+            // The api stats rule is always active and locked on; others follow `enabled`.
+            val on = api || r.ruleEnabled()
             val target = r.string("outboundTag").ifBlank { r.string("balancerTag").let { if (it.isNotBlank()) "⚖ $it" else "—" } }
             val src = (r.strings("inboundTag") + r.strings("domain") + r.strings("ip")).firstOrNull().orEmpty()
             Card(modifier = Modifier.fillMaxWidth().clickable { vm.openRule(i, r, isNew = false) }) {
-                Row(modifier = Modifier.fillMaxWidth().padding(start = 12.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("#${i + 1}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                        Text("→ $target", style = MaterialTheme.typography.titleSmall)
+                Row(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // The api stats rule stays locked on — render it as a normal "on"
+                    // switch (a disabled Switch misleadingly draws the thumb off) and
+                    // just swallow taps on it.
+                    Switch(
+                        checked = on,
+                        onCheckedChange = { v ->
+                            if (!api) { val a = rules.toMutableList(); a[i] = r.putBool("enabled", v); setRules(a) }
+                        },
+                    )
+                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp).alpha(if (on) 1f else 0.45f)) {
+                        Text("#${i + 1}  → $target", style = MaterialTheme.typography.titleSmall)
                         if (src.isNotBlank()) Text(src, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(onClick = { val a = rules.toMutableList(); if (i > 0) { val x = a.removeAt(i); a.add(i - 1, x); setRules(a) } }, enabled = i > 0) {
@@ -210,6 +259,28 @@ private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
         ConfirmDialog(tr("Delete balancer?"), balancers.getOrNull(idx)?.asObject()?.string("tag").orEmpty(), tr("Delete"), destructive = true,
             onConfirm = { pendingBal = null; val a = balancers.toMutableList(); if (idx in a.indices) a.removeAt(idx); setBalancers(a) },
             onDismiss = { pendingBal = null })
+    }
+
+    if (showExport) {
+        ExportJsonDialog(
+            title = tr("Export rules"),
+            json = xrayPrettyJson.encodeToString(JsonElement.serializer(), rules),
+            onDismiss = { showExport = false },
+        )
+    }
+    if (showImport) {
+        val invalidMsg = tr("Invalid JSON")
+        val importedLabel = tr("Imported")
+        ImportJsonDialog(
+            title = tr("Import rules"),
+            onImport = { txt ->
+                val parsed = parseRulesImport(txt) ?: return@ImportJsonDialog invalidMsg
+                setRules(rules.toList() + parsed)
+                vm.info("$importedLabel: ${parsed.size}")
+                null
+            },
+            onDismiss = { showImport = false },
+        )
     }
 }
 

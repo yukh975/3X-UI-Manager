@@ -31,6 +31,10 @@ fun JsonObject.string(key: String): String = (this[key] as? JsonPrimitive)?.cont
 
 fun JsonObject.bool(key: String): Boolean = (this[key] as? JsonPrimitive)?.booleanOrNull ?: false
 
+/** Boolean value, or null when the key is absent / not a boolean — lets callers
+ *  tell "unset" apart from `false` (e.g. a rule is enabled unless explicitly false). */
+fun JsonObject.boolOrNull(key: String): Boolean? = (this[key] as? JsonPrimitive)?.booleanOrNull
+
 fun JsonObject.child(key: String): JsonObject = (this[key] as? JsonObject) ?: JsonObject(emptyMap())
 
 fun JsonObject.strings(key: String): List<String> =

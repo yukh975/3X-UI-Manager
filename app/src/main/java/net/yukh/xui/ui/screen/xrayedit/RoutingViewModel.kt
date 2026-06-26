@@ -68,6 +68,9 @@ class RoutingViewModel @Inject constructor(
         }
     }
 
+    /** Show a one-off message in the snackbar (e.g. import result). */
+    fun info(msg: String) = _state.update { it.copy(savedMessage = msg) }
+
     fun dismissSavedMessage() = _state.update { it.copy(savedMessage = null) }
     fun dismissError() = _state.update { it.copy(error = null) }
 }

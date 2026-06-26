@@ -41,7 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.yukh.xui.data.json.array
@@ -60,12 +62,26 @@ import net.yukh.xui.data.json.string
 import net.yukh.xui.data.json.strings
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
+import net.yukh.xui.ui.components.ExportJsonDialog
 import net.yukh.xui.ui.components.Field
+import net.yukh.xui.ui.components.ImportJsonDialog
 import net.yukh.xui.ui.components.LabeledDropdown
 import net.yukh.xui.ui.components.SectionTitle
 import net.yukh.xui.ui.components.SwitchRow
 
 private val DNS_QUERY_STRATEGY = listOf("UseIP", "UseIPv4", "UseIPv6", "UseSystem")
+
+/** Parse a DNS-servers import: a bare array, `{servers:[…]}`, or `{dns:{servers:[…]}}`. */
+private fun parseServersImport(text: String): List<JsonElement>? {
+    val el = try { Json.parseToJsonElement(text.trim()) } catch (e: Exception) { return null }
+    val arr = when (el) {
+        is JsonArray -> el
+        is JsonObject -> (el["servers"] as? JsonArray)
+            ?: ((el["dns"] as? JsonObject)?.get("servers") as? JsonArray)
+        else -> null
+    }
+    return arr?.toList()
+}
 
 private fun serverToObject(el: kotlinx.serialization.json.JsonElement): JsonObject = when (el) {
     is JsonObject -> el
@@ -141,6 +157,8 @@ private fun DnsBody(cfg: JsonObject, vm: DnsViewModel) {
     val dnsEnabled = cfg["dns"] is JsonObject
     val dns = cfg.child("dns")
     var pendingDelete by remember { androidx.compose.runtime.mutableStateOf<Int?>(null) }
+    var showExport by remember { mutableStateOf(false) }
+    var showImport by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -169,7 +187,12 @@ private fun DnsBody(cfg: JsonObject, vm: DnsViewModel) {
             SwitchRow(tr("Parallel query"), dns.bool("enableParallelQuery")) { setDns(dns.putBool("enableParallelQuery", it)) }
             SwitchRow(tr("Use system hosts"), dns.bool("useSystemHosts")) { setDns(dns.putBool("useSystemHosts", it)) }
 
-            SectionTitle(tr("DNS servers"))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                SectionTitle(tr("DNS servers"))
+                Box(modifier = Modifier.weight(1f))
+                TextButton(onClick = { showExport = true }, enabled = dns.array("servers").isNotEmpty()) { Text(tr("Export")) }
+                TextButton(onClick = { showImport = true }) { Text(tr("Import")) }
+            }
             val servers = dns.array("servers")
             servers.forEachIndexed { i, el ->
                 val o = serverToObject(el)
@@ -232,6 +255,28 @@ private fun DnsBody(cfg: JsonObject, vm: DnsViewModel) {
                 vm.update(cfg.put("dns", dns.putArray("servers", arr)))
             },
             onDismiss = { pendingDelete = null },
+        )
+    }
+
+    if (showExport) {
+        ExportJsonDialog(
+            title = tr("Export DNS servers"),
+            json = xrayPrettyJson.encodeToString(JsonElement.serializer(), dns.array("servers")),
+            onDismiss = { showExport = false },
+        )
+    }
+    if (showImport) {
+        val invalidMsg = tr("Invalid JSON")
+        val importedLabel = tr("Imported")
+        ImportJsonDialog(
+            title = tr("Import DNS servers"),
+            onImport = { txt ->
+                val parsed = parseServersImport(txt) ?: return@ImportJsonDialog invalidMsg
+                vm.update(cfg.put("dns", dns.putArray("servers", dns.array("servers").toList() + parsed)))
+                vm.info("$importedLabel: ${parsed.size}")
+                null
+            },
+            onDismiss = { showImport = false },
         )
     }
 }
