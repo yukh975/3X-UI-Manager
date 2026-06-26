@@ -9,6 +9,9 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.4.1] — Unreleased
 
 ### Added
+- **Node: route the panel→node connection through an outbound.** The node editor
+  gains a "Connection outbound" picker (Xray outbound tags, blackhole excluded;
+  empty = direct). Panel v3.4.0.
 - **Export / import clients + delete unbound.** The Clients ⋮ menu gains Export
   clients (JSON of every `{client, inboundIds}`, copy/share), Import clients
   (paste that JSON — existing emails are skipped), and Delete unbound clients
@@ -44,6 +47,9 @@ uses [Semantic Versioning](https://semver.org/).
   independently; *Clear all* resets them.
 
 ### Changed
+- **Node deletion is blocked while inbounds are bound.** The Delete button in the
+  node editor is disabled (with a hint) until the node's inbounds are detached —
+  matching the panel, which rejects the deletion otherwise (v3.4.0).
 - **The client list auto-refreshes.** While the Clients tab is open it polls the
   panel every few seconds, so new connections, traffic and online state update
   without a manual pull (panel v3.4.0).

@@ -11,8 +11,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeModel
+import net.yukh.xui.data.json.array
+import net.yukh.xui.data.json.asObject
+import net.yukh.xui.data.json.string
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.data.repo.ServerTraffic
+import net.yukh.xui.ui.screen.xrayedit.loadXrayConfig
 
 data class NodesUiState(
     val items: List<Node> = emptyList(),
@@ -42,6 +46,10 @@ data class NodeEditorState(
     val enable: Boolean = true,
     val allowPrivateAddress: Boolean = false,
     val tlsVerifyMode: String = "verify",
+    val outboundTag: String = "",
+    val availableOutboundTags: List<String> = emptyList(),
+    // Inbounds currently hosted on this node — the panel blocks deletion while > 0.
+    val inboundCount: Int = 0,
     val saving: Boolean = false,
     val error: String? = null,
 ) {
@@ -102,7 +110,10 @@ class NodesViewModel @Inject constructor(
         }
     }
 
-    fun openCreateEditor() = _state.update { it.copy(editor = NodeEditorState(isNew = true)) }
+    fun openCreateEditor() {
+        _state.update { it.copy(editor = NodeEditorState(isNew = true)) }
+        loadOutboundTags()
+    }
 
     fun openEditEditor(id: Int) {
         val n = _state.value.items.firstOrNull { it.id == id } ?: return
@@ -121,8 +132,25 @@ class NodesViewModel @Inject constructor(
                     enable = n.enable,
                     allowPrivateAddress = n.allowPrivateAddress,
                     tlsVerifyMode = n.tlsVerifyMode,
+                    outboundTag = n.outboundTag,
+                    inboundCount = n.inboundCount,
                 ),
             )
+        }
+        loadOutboundTags()
+    }
+
+    /** Outbound tags from the Xray config (excluding blackhole) for the
+     *  "Connection outbound" picker. Degrades to empty if the config isn't readable. */
+    private fun loadOutboundTags() {
+        viewModelScope.launch {
+            val tags = repo.loadXrayConfig().getOrNull()?.config?.array("outbounds")
+                ?.map { it.asObject() }
+                ?.filter { it.string("protocol") != "blackhole" }
+                ?.map { it.string("tag") }
+                ?.filter { it.isNotBlank() }
+                .orEmpty()
+            edit { it.copy(availableOutboundTags = tags) }
         }
     }
 
@@ -142,6 +170,7 @@ class NodesViewModel @Inject constructor(
     fun setEnable(v: Boolean) = edit { it.copy(enable = v) }
     fun setAllowPrivate(v: Boolean) = edit { it.copy(allowPrivateAddress = v) }
     fun setTlsVerifyMode(v: String) = edit { it.copy(tlsVerifyMode = v) }
+    fun setOutboundTag(v: String) = edit { it.copy(outboundTag = v) }
 
     fun saveEditor() {
         val e = _state.value.editor ?: return
@@ -158,6 +187,7 @@ class NodesViewModel @Inject constructor(
             enable = e.enable,
             allowPrivateAddress = e.allowPrivateAddress,
             tlsVerifyMode = e.tlsVerifyMode,
+            outboundTag = e.outboundTag.trim(),
         )
         _state.update { s -> s.editor?.let { s.copy(editor = it.copy(saving = true, error = null)) } ?: s }
         viewModelScope.launch {

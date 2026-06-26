@@ -59,6 +59,7 @@ fun NodeEditorScreen(
     onEnable: (Boolean) -> Unit,
     onAllowPrivate: (Boolean) -> Unit,
     onTlsVerifyMode: (String) -> Unit,
+    onOutboundTag: (String) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
     onClose: () -> Unit,
@@ -89,16 +90,28 @@ fun NodeEditorScreen(
         },
         bottomBar = {
             if (!state.isNew) {
+                // The panel rejects deleting a node while inbounds are bound to it.
+                val canDelete = state.inboundCount == 0
                 Surface(tonalElevation = 3.dp) {
-                    OutlinedButton(
-                        onClick = { confirmDelete = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    Column(
+                        modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
-                        Icon(Icons.Outlined.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Text("  " + tr("Delete node"), color = MaterialTheme.colorScheme.error)
+                        OutlinedButton(
+                            onClick = { confirmDelete = true },
+                            enabled = canDelete,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(Icons.Outlined.Delete, contentDescription = null, tint = if (canDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+                            Text("  " + tr("Delete node"), color = if (canDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+                        }
+                        if (!canDelete) {
+                            Text(
+                                "${tr("Detach its inbounds first")} (${state.inboundCount})",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -172,6 +185,15 @@ fun NodeEditorScreen(
                 onSelect = onTlsVerifyMode,
                 label = tr("TLS verify"),
                 options = listOf("verify", "skip", "pin"),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            // Route the panel→node connection through an Xray outbound (empty = direct).
+            SchemeDropdown(
+                value = state.outboundTag,
+                onSelect = onOutboundTag,
+                label = tr("Connection outbound (empty = direct)"),
+                options = (listOf("") + state.availableOutboundTags + state.outboundTag).distinct(),
                 modifier = Modifier.fillMaxWidth(),
             )
 

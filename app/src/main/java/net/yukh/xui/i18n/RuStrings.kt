@@ -425,6 +425,8 @@ val ruStrings: Map<String, String> = mapOf(
         "Нет узлов. Нажмите +, чтобы добавить удалённую панель.",
     "Add node?" to "Добавить узел?",
     "Update node?" to "Обновить узел?",
+    "Connection outbound (empty = direct)" to "Outbound для подключения (пусто = напрямую)",
+    "Detach its inbounds first" to "Сначала отвяжите его inbound'ы",
     "Update to dev build (latest commit)" to "Обновить до dev-сборки (последний коммит)",
     "Dev builds are unstable." to "Dev-сборки нестабильны.",
     "online" to "онлайн",

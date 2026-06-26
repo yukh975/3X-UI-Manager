@@ -21,6 +21,9 @@ data class Node(
     val allowPrivateAddress: Boolean = false,
     val tlsVerifyMode: String = "verify",
     val pinnedCertSha256: String = "",
+    // Route the panel→node API connection through this Xray outbound tag
+    // (empty = direct). Panel v3.4.0.
+    val outboundTag: String = "",
     // ---- read-only heartbeat status ----
     val status: String = "",
     val latencyMs: Long = 0,
@@ -71,4 +74,5 @@ data class NodeModel(
     val allowPrivateAddress: Boolean = false,
     val tlsVerifyMode: String = "verify",
     val pinnedCertSha256: String = "",
+    val outboundTag: String = "",
 )
