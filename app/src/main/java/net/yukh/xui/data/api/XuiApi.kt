@@ -1,6 +1,9 @@
 package net.yukh.xui.data.api
 
 import net.yukh.xui.data.api.dto.ApiAck
+import net.yukh.xui.data.api.dto.BulkAdjustRequest
+import net.yukh.xui.data.api.dto.BulkDelRequest
+import net.yukh.xui.data.api.dto.BulkEmailsRequest
 import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
@@ -139,6 +142,19 @@ interface XuiApi {
         @Path("email") email: String,
         @Body body: InboundIdsRequest,
     ): ApiAck
+
+    // Bulk actions over a set of client emails (panel v3.4.1).
+    @POST("panel/api/clients/bulkEnable")
+    suspend fun bulkEnableClients(@Body body: BulkEmailsRequest): ApiAck
+
+    @POST("panel/api/clients/bulkDisable")
+    suspend fun bulkDisableClients(@Body body: BulkEmailsRequest): ApiAck
+
+    @POST("panel/api/clients/bulkAdjust")
+    suspend fun bulkAdjustClients(@Body body: BulkAdjustRequest): ApiAck
+
+    @POST("panel/api/clients/bulkDel")
+    suspend fun bulkDeleteClients(@Body body: BulkDelRequest): ApiAck
 
     @POST("panel/api/clients/onlines")
     suspend fun listOnlines(): ApiResponse<List<String>>

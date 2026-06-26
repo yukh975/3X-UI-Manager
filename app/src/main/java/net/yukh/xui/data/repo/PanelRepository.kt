@@ -19,6 +19,9 @@ import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.Node
+import net.yukh.xui.data.api.dto.BulkAdjustRequest
+import net.yukh.xui.data.api.dto.BulkDelRequest
+import net.yukh.xui.data.api.dto.BulkEmailsRequest
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
@@ -245,6 +248,20 @@ class PanelRepository @Inject constructor(
 
     suspend fun detachClient(email: String, inboundIds: List<Int>): Result<Unit> =
         authedAck { it.detachClient(email, InboundIdsRequest(inboundIds)) }
+
+    // ---- Bulk client actions (panel v3.4.1) -------------------------------
+
+    suspend fun bulkSetClientsEnabled(emails: List<String>, enable: Boolean): Result<Unit> =
+        authedAck {
+            val body = BulkEmailsRequest(emails)
+            if (enable) it.bulkEnableClients(body) else it.bulkDisableClients(body)
+        }
+
+    suspend fun bulkAdjustClients(emails: List<String>, addDays: Int, addBytes: Long, flow: String): Result<Unit> =
+        authedAck { it.bulkAdjustClients(BulkAdjustRequest(emails, addDays, addBytes, flow)) }
+
+    suspend fun bulkDeleteClients(emails: List<String>): Result<Unit> =
+        authedAck { it.bulkDeleteClients(BulkDelRequest(emails)) }
 
     suspend fun listOnlines(): Result<List<String>> =
         authedData { it.listOnlines() }

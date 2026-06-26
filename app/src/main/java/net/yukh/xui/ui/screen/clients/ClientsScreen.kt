@@ -1,7 +1,10 @@
 package net.yukh.xui.ui.screen.clients
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,16 +17,24 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -34,6 +45,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,6 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.i18n.LocalAppLanguage
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.LabeledDropdown
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatExpiryDays
 import net.yukh.xui.ui.format.formatLastOnline
@@ -64,8 +78,13 @@ fun ClientsScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showFilters by remember { mutableStateOf(false) }
+    var showAdjust by remember { mutableStateOf(false) }
+    var confirmBulkDelete by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { vm.load() }
+
+    // Hardware back exits selection mode first.
+    BackHandler(enabled = state.selectionMode) { vm.exitSelection() }
 
     LaunchedEffect(state.transientMessage) {
         state.transientMessage?.let {
@@ -97,35 +116,48 @@ fun ClientsScreen(
             ) { Text(tr("No clients yet.")) }
 
             else -> Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    OutlinedTextField(
-                        value = state.searchQuery,
-                        onValueChange = vm::setSearchQuery,
-                        label = { Text(tr("Search by email")) },
-                        singleLine = true,
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                        trailingIcon = {
-                            if (state.searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { vm.setSearchQuery("") }) {
-                                    Icon(Icons.Filled.Clear, contentDescription = tr("Clear"))
-                                }
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
+                if (state.selectionMode) {
+                    SelectionBar(
+                        count = state.selectedEmails.size,
+                        busy = state.bulkInFlight,
+                        onClose = vm::exitSelection,
+                        onSelectAll = vm::selectAllVisible,
+                        onEnable = { vm.bulkSetEnabled(true) },
+                        onDisable = { vm.bulkSetEnabled(false) },
+                        onAdjust = { showAdjust = true },
+                        onDelete = { confirmBulkDelete = true },
                     )
-                    IconButton(onClick = { showFilters = true }) {
-                        BadgedBox(
-                            badge = {
-                                if (state.filters.count > 0) Badge { Text(state.filters.count.toString()) }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = vm::setSearchQuery,
+                            label = { Text(tr("Search by email")) },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (state.searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { vm.setSearchQuery("") }) {
+                                        Icon(Icons.Filled.Clear, contentDescription = tr("Clear"))
+                                    }
+                                }
                             },
-                        ) {
-                            Icon(Icons.Filled.FilterList, contentDescription = tr("Filters"))
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { showFilters = true }) {
+                            BadgedBox(
+                                badge = {
+                                    if (state.filters.count > 0) Badge { Text(state.filters.count.toString()) }
+                                },
+                            ) {
+                                Icon(Icons.Filled.FilterList, contentDescription = tr("Filters"))
+                            }
                         }
                     }
                 }
@@ -149,7 +181,13 @@ fun ClientsScreen(
                             ClientRow(
                                 client = client,
                                 online = client.email in state.online,
-                                onClick = { vm.openShareSheet(client.email) },
+                                selected = client.email in state.selectedEmails,
+                                selectionMode = state.selectionMode,
+                                onClick = {
+                                    if (state.selectionMode) vm.toggleSelected(client.email)
+                                    else vm.openShareSheet(client.email)
+                                },
+                                onLongClick = { vm.startSelection(client.email) },
                             )
                         }
                     }
@@ -200,27 +238,66 @@ fun ClientsScreen(
         )
     }
 
+    if (showAdjust) {
+        BulkAdjustDialog(
+            count = state.selectedEmails.size,
+            onApply = { addDays, addBytes, flow ->
+                vm.bulkAdjust(addDays, addBytes, flow)
+                showAdjust = false
+            },
+            onDismiss = { showAdjust = false },
+        )
+    }
+
+    if (confirmBulkDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmBulkDelete = false },
+            title = { Text(tr("Delete selected clients?")) },
+            text = { Text("${state.selectedEmails.size} ${tr("selected")}") },
+            confirmButton = {
+                TextButton(onClick = { vm.bulkDelete(); confirmBulkDelete = false }) {
+                    Text(tr("Delete"), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmBulkDelete = false }) { Text(tr("Cancel")) } },
+        )
+    }
+
     // The client editor is rendered as a full-screen overlay by MainScreen
     // (activity window) so its insets/keyboard handling work correctly.
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ClientRow(
     client: Client,
     online: Boolean,
+    selected: Boolean,
+    selectionMode: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         colors = CardDefaults.cardColors(
-            containerColor = if (client.enable) MaterialTheme.colorScheme.surfaceVariant
-            else MaterialTheme.colorScheme.surface,
+            containerColor = when {
+                selected -> MaterialTheme.colorScheme.primaryContainer
+                client.enable -> MaterialTheme.colorScheme.surfaceVariant
+                else -> MaterialTheme.colorScheme.surface
+            },
         ),
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (selectionMode) {
+                    Checkbox(
+                        checked = selected,
+                        onCheckedChange = { onClick() },
+                        modifier = Modifier.padding(end = 4.dp),
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .size(10.dp)
@@ -272,4 +349,95 @@ private fun ClientRow(
             )
         }
     }
+}
+
+@Composable
+private fun SelectionBar(
+    count: Int,
+    busy: Boolean,
+    onClose: () -> Unit,
+    onSelectAll: () -> Unit,
+    onEnable: () -> Unit,
+    onDisable: () -> Unit,
+    onAdjust: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = tr("Cancel")) }
+        Text(
+            "$count ${tr("selected")}",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+        if (busy) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        IconButton(onClick = onSelectAll) { Icon(Icons.Filled.DoneAll, contentDescription = tr("Select all")) }
+        Box {
+            IconButton(onClick = { menu = true }, enabled = !busy) {
+                Icon(Icons.Filled.MoreVert, contentDescription = tr("More"))
+            }
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                DropdownMenuItem(text = { Text(tr("Enable")) }, onClick = { menu = false; onEnable() })
+                DropdownMenuItem(text = { Text(tr("Disable")) }, onClick = { menu = false; onDisable() })
+                DropdownMenuItem(text = { Text(tr("Adjust") + "…") }, onClick = { menu = false; onAdjust() })
+                DropdownMenuItem(text = { Text(tr("Delete")) }, onClick = { menu = false; onDelete() })
+            }
+        }
+    }
+}
+
+@Composable
+private fun BulkAdjustDialog(
+    count: Int,
+    onApply: (Int, Long, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var days by remember { mutableStateOf("") }
+    var gb by remember { mutableStateOf("") }
+    var flow by remember { mutableStateOf("") }
+    // API flow value → display label (matches the panel's bulk Adjust flow set).
+    val flowLabels = linkedMapOf(
+        "" to tr("No change"),
+        "none" to tr("Clear flow"),
+        "xtls-rprx-vision" to "xtls-rprx-vision",
+        "xtls-rprx-vision-udp443" to "xtls-rprx-vision-udp443",
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("${tr("Adjust")} ($count)") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = days,
+                    onValueChange = { days = it.filter { c -> c.isDigit() || c == '-' } },
+                    label = { Text(tr("Add days (+/-)")) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = gb,
+                    onValueChange = { gb = it.filter { c -> c.isDigit() || c == '-' || c == '.' } },
+                    label = { Text(tr("Add traffic (GB, +/-)")) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                LabeledDropdown(tr("Set flow"), flowLabels[flow] ?: "", flowLabels.values.toList()) { sel ->
+                    flow = flowLabels.entries.first { it.value == sel }.key
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val addDays = days.toIntOrNull() ?: 0
+                val addBytes = ((gb.toDoubleOrNull() ?: 0.0) * 1024.0 * 1024.0 * 1024.0).toLong()
+                onApply(addDays, addBytes, flow)
+            }) { Text(tr("Apply")) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
+    )
 }

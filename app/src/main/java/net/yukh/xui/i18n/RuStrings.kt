@@ -347,6 +347,21 @@ val ruStrings: Map<String, String> = mapOf(
     "Clear all" to "Сбросить всё",
     "No clients match the filters" to "Нет клиентов по фильтрам",
 
+    // Client bulk actions
+    "selected" to "выбрано",
+    "Select all" to "Выбрать все",
+    "More" to "Ещё",
+    "Enable" to "Включить",
+    "Disable" to "Выключить",
+    "Adjust" to "Изменить",
+    "Delete selected clients?" to "Удалить выбранных клиентов?",
+    "Add days (+/-)" to "Добавить дней (+/-)",
+    "Add traffic (GB, +/-)" to "Добавить трафик (ГБ, +/-)",
+    "Set flow" to "Задать flow",
+    "No change" to "Не менять",
+    "Clear flow" to "Очистить flow",
+    "Apply" to "Применить",
+
     // Client editor (additional)
     "Email / name" to "Email / имя",
     "IP limit (0 = unlimited)" to "Лимит IP (0 = безлимит)",

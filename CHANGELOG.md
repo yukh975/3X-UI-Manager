@@ -9,6 +9,9 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.3.24] — Unreleased
 
 ### Added
+- **Bulk client actions.** Long-press a client to enter selection mode, then
+  enable, disable, adjust (add/subtract days and traffic, set or clear the XTLS
+  flow), or delete the selected clients in one go (panel v3.4.1 bulk endpoints).
 - **HTTP outbound: custom request headers.** A key/value Headers editor was added
   to the HTTP outbound form for the CONNECT headers sent to the upstream proxy
   (`settings.headers`); previously there was no way to set them.

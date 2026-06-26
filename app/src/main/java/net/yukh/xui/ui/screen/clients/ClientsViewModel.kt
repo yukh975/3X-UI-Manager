@@ -31,6 +31,10 @@ data class ClientsUiState(
     val selectedSubUrl: String? = null,
     val subUrlChecked: Boolean = false,
     val filters: ClientFilters = ClientFilters(),
+    // Multi-select / bulk actions
+    val selectionMode: Boolean = false,
+    val selectedEmails: Set<String> = emptySet(),
+    val bulkInFlight: Boolean = false,
     val editor: ClientEditorState? = null,
 ) {
     /** Distinct non-empty client groups in use, sorted — for the editor picker
@@ -326,6 +330,54 @@ class ClientsViewModel @Inject constructor(
     }
 
     fun clearFilters() = _state.update { it.copy(filters = ClientFilters()) }
+
+    // ---- Multi-select / bulk actions --------------------------------------
+
+    fun startSelection(email: String) = _state.update {
+        it.copy(selectionMode = true, selectedEmails = setOf(email))
+    }
+
+    fun toggleSelected(email: String) = _state.update {
+        val next = if (email in it.selectedEmails) it.selectedEmails - email else it.selectedEmails + email
+        it.copy(selectedEmails = next, selectionMode = next.isNotEmpty())
+    }
+
+    fun selectAllVisible() = _state.update {
+        it.copy(selectionMode = true, selectedEmails = it.visibleItems.map { c -> c.email }.toSet())
+    }
+
+    fun exitSelection() = _state.update { it.copy(selectionMode = false, selectedEmails = emptySet()) }
+
+    private fun runBulk(verb: String, block: suspend (List<String>) -> Result<Unit>) {
+        val emails = _state.value.selectedEmails.toList()
+        if (emails.isEmpty() || _state.value.bulkInFlight) return
+        _state.update { it.copy(bulkInFlight = true) }
+        viewModelScope.launch {
+            block(emails)
+                .onSuccess {
+                    _state.update {
+                        it.copy(
+                            bulkInFlight = false,
+                            selectionMode = false,
+                            selectedEmails = emptySet(),
+                            transientMessage = "$verb: ${emails.size}",
+                        )
+                    }
+                    load(force = true)
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(bulkInFlight = false, transientMessage = "Bulk action failed: ${e.message}") }
+                }
+        }
+    }
+
+    fun bulkSetEnabled(enable: Boolean) =
+        runBulk(if (enable) "Enabled" else "Disabled") { repo.bulkSetClientsEnabled(it, enable) }
+
+    fun bulkAdjust(addDays: Int, addBytes: Long, flow: String) =
+        runBulk("Adjusted") { repo.bulkAdjustClients(it, addDays, addBytes, flow) }
+
+    fun bulkDelete() = runBulk("Deleted") { repo.bulkDeleteClients(it) }
 
     fun dismissMessage() = _state.update { it.copy(transientMessage = null) }
 }
