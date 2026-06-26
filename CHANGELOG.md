@@ -6,6 +6,31 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.4.2] — 2026-06-26
+
+### Added
+- **Client list: quick enable/disable toggle.** Each client row now has an
+  on/off switch (same as inbounds), so you can enable or disable a client
+  without opening the detail sheet.
+
+### Fixed
+- **Online-by-server list: correct server attribution.** The "Online" dialog
+  no longer shows a client as connected to multiple servers simultaneously.
+  It now calls `POST /panel/api/clients/onlinesByGuid` (panel v3.4.0+), which
+  returns each online email under exactly one server's GUID — so each user
+  appears on the server they are actually routed through. For older panels
+  (< v3.4.0) the previous membership-based logic is used as a fallback.
+- **Client search field height.** The "Search by email" field was stretching
+  to two lines when the label text was long; it is now constrained to a single
+  line.
+
+### Changed
+- **Routing / DNS export and import buttons** are now icon buttons
+  (↑ import / ↓ export) instead of small text links, making them easier to
+  spot and tap.
+
+---
+
 ## [0.4.1] — 2026-06-26
 
 ### Added

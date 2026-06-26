@@ -47,6 +47,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -166,7 +167,7 @@ fun ClientsScreen(
                         OutlinedTextField(
                             value = state.searchQuery,
                             onValueChange = vm::setSearchQuery,
-                            label = { Text(tr("Search by email")) },
+                            label = { Text(tr("Search by email"), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                             trailingIcon = {
@@ -226,6 +227,7 @@ fun ClientsScreen(
                                     else vm.openShareSheet(client.email)
                                 },
                                 onLongClick = { vm.startSelection(client.email) },
+                                onToggleEnabled = { vm.toggleClientEnabled(client.email, it) },
                             )
                         }
                     }
@@ -377,6 +379,7 @@ private fun ClientRow(
     selectionMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onToggleEnabled: (Boolean) -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -418,11 +421,11 @@ private fun ClientRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (!client.enable) {
-                    Text(
-                        tr("disabled"),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.error,
+                if (!selectionMode) {
+                    Switch(
+                        checked = client.enable,
+                        onCheckedChange = onToggleEnabled,
+                        modifier = Modifier.padding(start = 4.dp),
                     )
                 }
             }

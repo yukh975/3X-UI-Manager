@@ -154,39 +154,56 @@ class DashboardViewModel @Inject constructor(
         _state.update { it.copy(showOnlineList = true, onlineLoading = true, onlineGroups = emptyList()) }
         viewModelScope.launch {
             val online = _state.value.onlineEmails.toSet()
-
-            // The central /clients/onlines returns online emails across the WHOLE
-            // tree (main + every node), so it can't be used as-is for the "main
-            // server" group — it would list node-only clients (e.g. an outbound
-            // credential that's only a member of a node inbound). Attribute online
-            // emails to a server by inbound ownership (nodeId): 0/absent = main.
-            val inbounds = repo.listInbounds().getOrNull().orEmpty()
-            fun membersOf(nodeId: Int): Set<String> =
-                inbounds.filter { (it.nodeId ?: 0) == nodeId }
-                    .flatMap { ib -> ib.clientStats.map { cs -> cs.email } }
-                    .toSet()
-
-            val main = OnlineGroup(
-                "", isMain = true,
-                emails = online.filter { it in membersOf(0) }.sorted(),
-            )
-
             val nodes = repo.listNodes().getOrNull().orEmpty().filter { it.enable }
-            val nodeGroups = nodes.map { node ->
-                async {
-                    // Prefer the node's own live "who's connected to me" list. If the
-                    // node isn't directly reachable from the device, fall back to
-                    // membership so its online clients aren't silently dropped.
-                    val direct = repo.listNodeOnlines(node)
-                    val emails = if (direct.isSuccess) {
-                        direct.getOrNull().orEmpty()
+
+            // Panel v3.4.0+: onlinesByGuid returns {panelGuid → [emails]} where
+            // each email is attributed to exactly one server — no double-counting.
+            val byGuid = repo.onlinesByGuid().getOrNull()
+
+            val groups: List<OnlineGroup>
+            if (byGuid != null) {
+                // Collect all node guids (non-blank). Any guid key in the response
+                // that doesn't match a node belongs to the main panel.
+                val nodeGuids = nodes.map { it.guid }.filter { it.isNotBlank() }.toSet()
+                val nodeGroups = nodes.map { node ->
+                    val emails = if (node.guid.isNotBlank()) {
+                        byGuid[node.guid].orEmpty().sorted()
                     } else {
-                        online.filter { it in membersOf(node.id) }
+                        // Older node without a guid — query it directly.
+                        repo.listNodeOnlines(node).getOrNull().orEmpty().sorted()
                     }
-                    OnlineGroup(node.remark.ifBlank { node.name }, isMain = false, emails = emails.sorted())
+                    OnlineGroup(node.remark.ifBlank { node.name }, isMain = false, emails = emails)
                 }
-            }.awaitAll()
-            _state.update { it.copy(onlineGroups = listOf(main) + nodeGroups, onlineLoading = false) }
+                val mainEmails = byGuid.entries
+                    .filter { (guid, _) -> guid !in nodeGuids }
+                    .flatMap { (_, emails) -> emails }
+                    .sorted()
+                groups = listOf(OnlineGroup("", isMain = true, emails = mainEmails)) + nodeGroups
+            } else {
+                // Fall back to membership-based attribution (panel < 3.4.0).
+                val inbounds = repo.listInbounds().getOrNull().orEmpty()
+                fun membersOf(nodeId: Int): Set<String> =
+                    inbounds.filter { (it.nodeId ?: 0) == nodeId }
+                        .flatMap { ib -> ib.clientStats.map { cs -> cs.email } }
+                        .toSet()
+                val main = OnlineGroup(
+                    "", isMain = true,
+                    emails = online.filter { it in membersOf(0) }.sorted(),
+                )
+                val nodeGroups = nodes.map { node ->
+                    async {
+                        val direct = repo.listNodeOnlines(node)
+                        val emails = if (direct.isSuccess) {
+                            direct.getOrNull().orEmpty()
+                        } else {
+                            online.filter { it in membersOf(node.id) }
+                        }
+                        OnlineGroup(node.remark.ifBlank { node.name }, isMain = false, emails = emails.sorted())
+                    }
+                }.awaitAll()
+                groups = listOf(main) + nodeGroups
+            }
+            _state.update { it.copy(onlineGroups = groups, onlineLoading = false) }
         }
     }
 

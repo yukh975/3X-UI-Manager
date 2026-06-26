@@ -17,9 +17,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -193,8 +196,12 @@ private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             SectionTitle(tr("Routing rules"))
             Box(modifier = Modifier.weight(1f))
-            TextButton(onClick = { showExport = true }, enabled = rules.isNotEmpty()) { Text(tr("Export")) }
-            TextButton(onClick = { showImport = true }) { Text(tr("Import")) }
+            FilledTonalIconButton(onClick = { showImport = true }) {
+                Icon(Icons.Outlined.FileUpload, contentDescription = tr("Import"))
+            }
+            FilledTonalIconButton(onClick = { showExport = true }, enabled = rules.isNotEmpty()) {
+                Icon(Icons.Outlined.FileDownload, contentDescription = tr("Export"))
+            }
         }
         rules.forEachIndexed { i, el ->
             val r = el.asObject()

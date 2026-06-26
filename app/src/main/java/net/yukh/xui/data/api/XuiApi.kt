@@ -187,6 +187,11 @@ interface XuiApi {
     @POST("panel/api/clients/onlines")
     suspend fun listOnlines(): ApiResponse<List<String>>
 
+    /** Panel v3.4.0+: returns {panelGuid → [emails]} — each online email appears under
+     *  exactly one server's guid, so no email is double-counted across servers. */
+    @POST("panel/api/clients/onlinesByGuid")
+    suspend fun onlinesByGuid(): ApiResponse<Map<String, List<String>>>
+
     // ---- Nodes ------------------------------------------------------------
 
     @GET("panel/api/nodes/list")

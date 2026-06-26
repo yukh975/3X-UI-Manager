@@ -296,6 +296,10 @@ class PanelRepository @Inject constructor(
     suspend fun listOnlines(): Result<List<String>> =
         authedData { it.listOnlines() }
 
+    /** Panel v3.4.0+: {panelGuid → [emails]}, each email in exactly one server. */
+    suspend fun onlinesByGuid(): Result<Map<String, List<String>>> =
+        authedData { it.onlinesByGuid() }
+
     // ---- Nodes ------------------------------------------------------------
 
     suspend fun listNodes(): Result<List<Node>> =

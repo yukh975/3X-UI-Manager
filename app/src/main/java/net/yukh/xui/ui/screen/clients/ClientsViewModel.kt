@@ -404,6 +404,14 @@ class ClientsViewModel @Inject constructor(
     fun bulkSetEnabled(enable: Boolean) =
         runBulk(if (enable) "Enabled" else "Disabled") { repo.bulkSetClientsEnabled(it, enable) }
 
+    fun toggleClientEnabled(email: String, enable: Boolean) {
+        viewModelScope.launch {
+            repo.bulkSetClientsEnabled(listOf(email), enable)
+                .onSuccess { load(force = true) }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Failed: ${e.message}") } }
+        }
+    }
+
     fun bulkAdjust(addDays: Int, addBytes: Long, flow: String) =
         runBulk("Adjusted") { repo.bulkAdjustClients(it, addDays, addBytes, flow) }
 

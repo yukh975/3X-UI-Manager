@@ -24,6 +24,9 @@ data class Node(
     // Route the panel→node API connection through this Xray outbound tag
     // (empty = direct). Panel v3.4.0.
     val outboundTag: String = "",
+    // The node's stable panelGuid — used to attribute online clients to the
+    // server that physically hosts them (panel v3.4.0). Empty on older panels.
+    val guid: String = "",
     // ---- read-only heartbeat status ----
     val status: String = "",
     val latencyMs: Long = 0,

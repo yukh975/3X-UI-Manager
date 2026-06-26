@@ -83,7 +83,9 @@ Structured editors over the panel's Xray config — each round-trips the **whole
 
 ## Authentication
 
-The app authenticates with an **API token** (Bearer) only, and requires panel **v3.3.0 or newer**. There is no login/password mode.
+The app authenticates with an **API token** (Bearer) only, and is designed for panel **v3.4.x**. There is no login/password mode.
+
+> **Panel v3.3.x users:** the current app version is optimised for **v3.4.x**. For panels on **v3.3.x**, use the last compatible release — **v0.3.23**.
 
 On panel **v3.3.0** the whole management API moved under `/panel/api/*`, which a Bearer token authenticates (as the panel's first admin). So a token covers **everything the app does** — dashboard, inbounds, clients, nodes, the **Xray config editor**, **settings**, **subscription links** and **backup / restore**. A 3x-ui token is **full admin** (there are no read-only or scoped tokens), so guard it like the password.
 
