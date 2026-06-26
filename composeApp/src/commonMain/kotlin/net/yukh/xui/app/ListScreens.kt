@@ -70,7 +70,13 @@ private fun rowCard(onClick: (() -> Unit)? = null, content: @Composable () -> Un
 }
 
 @Composable
-fun InboundsListScreen(items: List<InboundSlim>, onAdd: () -> Unit, onEdit: (Int) -> Unit, onToggle: (Int, Boolean) -> Unit) {
+fun InboundsListScreen(
+    items: List<InboundSlim>,
+    onAdd: () -> Unit,
+    onEdit: (Int) -> Unit,
+    onToggle: (Int, Boolean) -> Unit,
+    speeds: Map<Int, Pair<Long, Long>> = emptyMap(),
+) {
     ListScaffold("Inbounds", items.size, tr("No inbounds yet."), onAdd = onAdd) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
             items(items, key = { it.id }) { ib ->
@@ -86,6 +92,13 @@ fun InboundsListScreen(items: List<InboundSlim>, onAdd: () -> Unit, onEdit: (Int
                     Text("${ib.protocol.uppercase().ifBlank { "?" }} · ${ib.listen.ifBlank { "*" }}:${ib.port}",
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("↑ ${ib.up.formatBytes()}  ↓ ${ib.down.formatBytes()}", style = MaterialTheme.typography.labelMedium)
+                    speeds[ib.id]?.let { (up, down) ->
+                        if (up > 0 || down > 0) Text(
+                            "↑ ${up.formatBytes()}/s  ↓ ${down.formatBytes()}/s",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
         }

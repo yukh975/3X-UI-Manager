@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,9 +40,14 @@ import net.yukh.xui.shared.dto.VMESS_SECURITY
 import net.yukh.xui.shared.dto.defaultOutbound
 import net.yukh.xui.shared.dto.isValidJson
 import net.yukh.xui.shared.dto.parseVlessLink
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.shared.json.jsonGetObjectList
 import net.yukh.xui.shared.json.jsonGetString
+import net.yukh.xui.shared.json.jsonGetStringMap
 import net.yukh.xui.shared.json.jsonPutString
+import net.yukh.xui.shared.json.jsonPutStringMap
 import net.yukh.xui.shared.json.jsonSetObjectList
 
 private val NETWORKS = listOf("tcp", "ws", "grpc", "httpupgrade", "xhttp", "kcp")
@@ -92,6 +98,17 @@ fun OutboundsXrayScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             val outs = list()
+            Row(Modifier.fillMaxWidth(), Arrangement.End, Alignment.CenterVertically) {
+                TextButton(onClick = {
+                    platformPickFile { _, bytes ->
+                        parseOutboundsImport(bytes.decodeToString())?.let { setList(list() + it) }
+                    }
+                }) { Text("⬆ " + tr("Import")) }
+                TextButton(
+                    onClick = { platformExportFile("outbounds.json", ("[" + outs.joinToString(",") + "]").encodeToByteArray()) },
+                    enabled = outs.isNotEmpty(),
+                ) { Text("⬇ " + tr("Export")) }
+            }
             outs.forEachIndexed { i, ob ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -200,9 +217,17 @@ private fun ProtocolForm(protocol: String, obj: String, onChange: (String) -> Un
             XrayLabel(tr("Method")); XrayChips(SS_METHODS, g("settings", "method").ifBlank { "aes-256-gcm" }) { p(it, "settings", "method") }
             XrayField(g("settings", "password"), { p(it, "settings", "password") }, tr("Password"))
         }
-        "socks", "http" -> {
+        "socks" -> {
             XrayField(g("settings", "address"), { p(it, "settings", "address") }, tr("Address"))
             XrayField(g("settings", "port"), { p(it.filter(Char::isDigit), "settings", "port") }, tr("Port"))
+        }
+        "http" -> {
+            XrayField(g("settings", "address"), { p(it, "settings", "address") }, tr("Address"))
+            XrayField(g("settings", "port"), { p(it.filter(Char::isDigit), "settings", "port") }, tr("Port"))
+            // CONNECT headers sent to the upstream proxy (settings.headers, key→value).
+            HttpHeadersEditor(jsonGetStringMap(obj, listOf("settings", "headers"))) { rows ->
+                onChange(jsonPutStringMap(obj, listOf("settings", "headers"), rows))
+            }
         }
         "freedom" -> {
             XrayLabel(tr("Domain strategy")); XrayChips(FREEDOM_DOMAIN_STRATEGY, g("settings", "domainStrategy").ifBlank { "AsIs" }) { p(it, "settings", "domainStrategy") }
@@ -211,6 +236,24 @@ private fun ProtocolForm(protocol: String, obj: String, onChange: (String) -> Un
             XrayLabel(tr("Response type")); XrayChips(BLACKHOLE_RESPONSE_TYPE, g("settings", "response", "type").ifBlank { "none" }) { p(it, "settings", "response", "type") }
         }
     }
+}
+
+/** key→value editor for an HTTP outbound's `settings.headers`. Keeps a local row
+ *  list (so blank/duplicate keys while typing don't fight the map) and emits the
+ *  rebuilt pairs on every edit; blank-key rows are dropped downstream. */
+@Composable
+private fun HttpHeadersEditor(initial: List<Pair<String, String>>, onChange: (List<Pair<String, String>>) -> Unit) {
+    val rows = remember { mutableStateListOf<Pair<String, String>>().also { it.addAll(initial) } }
+    fun emit() = onChange(rows.toList())
+    XraySection(tr("Headers"))
+    rows.forEachIndexed { i, (k, v) ->
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
+            OutlinedTextField(k, { rows[i] = it to v; emit() }, label = { Text(tr("Name")) }, singleLine = true, modifier = Modifier.weight(1f))
+            OutlinedTextField(v, { rows[i] = k to it; emit() }, label = { Text(tr("Value")) }, singleLine = true, modifier = Modifier.weight(1f))
+            TextButton(onClick = { rows.removeAt(i); emit() }) { Text("✕", color = MaterialTheme.colorScheme.error) }
+        }
+    }
+    OutlinedButton(onClick = { rows.add("" to "") }, modifier = Modifier.fillMaxWidth()) { Text("+ " + tr("Add header")) }
 }
 
 @Composable
@@ -234,6 +277,18 @@ private fun TransportForm(obj: String, onChange: (String) -> Unit) {
             XrayField(g("streamSettings", "realitySettings", "shortId"), { p(it, "streamSettings", "realitySettings", "shortId") }, tr("Short ID"))
         }
     }
+}
+
+/** Parse an outbounds import payload: a bare array, `{outbounds:[…]}`, or the
+ *  wrapped form; each element is returned as a JSON-element string to append. */
+private fun parseOutboundsImport(text: String): List<String>? {
+    val el = try { Json.parseToJsonElement(text.trim()) } catch (e: Exception) { return null }
+    val arr = when (el) {
+        is JsonArray -> el
+        is JsonObject -> el["outbounds"] as? JsonArray
+        else -> null
+    } ?: return null
+    return arr.map { it.toString() }
 }
 
 @Composable

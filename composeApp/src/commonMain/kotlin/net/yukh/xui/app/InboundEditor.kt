@@ -17,9 +17,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -38,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundTemplates
+import net.yukh.xui.shared.dto.VlessEncAuth
 import net.yukh.xui.shared.dto.buildInbound
 import net.yukh.xui.shared.dto.settingsText
 import net.yukh.xui.shared.dto.sniffingText
@@ -70,6 +74,10 @@ fun InboundEditorScreen(
     isNew: Boolean,
     saving: Boolean,
     error: String?,
+    vlessEncAuths: List<VlessEncAuth>? = null,
+    vlessEncLoading: Boolean = false,
+    onGenVlessEnc: () -> Unit = {},
+    onClearVlessEnc: () -> Unit = {},
     onSave: (InboundModel) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit,
@@ -134,6 +142,23 @@ fun InboundEditorScreen(
             EditToggle(tr("Enabled"), enable) { enable = it }
 
             JsonField(tr("Protocol settings (JSON)"), settingsJson) { settingsJson = it }
+
+            // VLESS encryption keygen (panel v3.4.1, xray-core v26.6.21+): fetch the
+            // panel's key options and insert the chosen decryption into settings.
+            if (protocol == "vless") {
+                var showVlessEnc by remember { mutableStateOf(false) }
+                TextButton(onClick = { showVlessEnc = true; onGenVlessEnc() }) {
+                    Text(tr("Generate VLESS encryption key"))
+                }
+                if (showVlessEnc) {
+                    VlessEncDialog(
+                        auths = vlessEncAuths,
+                        loading = vlessEncLoading,
+                        onInsert = { dec -> settingsJson = jsonPutString(settingsJson, listOf("decryption"), dec) },
+                        onDismiss = { showVlessEnc = false; onClearVlessEnc() },
+                    )
+                }
+            }
 
             // ---- Transport (structured, over streamJson) ----
             HorizontalDivider()
@@ -303,6 +328,61 @@ private fun JsonField(label: String, value: String, onChange: (String) -> Unit) 
 @Composable
 private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+}
+
+/** Pick one of the panel's generated VLESS-encryption key options and insert its
+ *  decryption into the inbound. Each option is X25519/ML-KEM-768 × a variant; the
+ *  decryption goes on this inbound, the encryption goes to the clients. */
+@Composable
+private fun VlessEncDialog(
+    auths: List<VlessEncAuth>?,
+    loading: Boolean,
+    onInsert: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selected by remember { mutableStateOf<VlessEncAuth?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(tr("VLESS encryption key")) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                when {
+                    loading -> Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { CircularProgressIndicator() }
+                    auths.isNullOrEmpty() -> Text(tr("No keys returned (needs panel v3.4.1, xray-core v26.6.21+)."),
+                        style = MaterialTheme.typography.bodyMedium)
+                    else -> auths.forEach { a ->
+                        val on = a == selected
+                        Card(
+                            modifier = Modifier.fillMaxWidth().clickable { selected = a },
+                            colors = androidx.compose.material3.CardDefaults.cardColors(
+                                containerColor = if (on) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                            ),
+                        ) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(a.label.ifBlank { a.id }, style = MaterialTheme.typography.titleSmall)
+                                KeyLine(tr("Decryption"), a.decryption)
+                                KeyLine(tr("Encryption"), a.encryption)
+                            }
+                        }
+                    }
+                }
+                if (!auths.isNullOrEmpty()) Text(tr("Decryption goes on this inbound; encryption goes to the clients."),
+                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { selected?.let { onInsert(it.decryption) }; onDismiss() }, enabled = selected != null) {
+                Text(tr("Insert decryption"))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
+    )
+}
+
+@Composable
+private fun KeyLine(label: String, value: String) {
+    Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(value.ifBlank { "—" }, style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable

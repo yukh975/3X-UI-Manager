@@ -125,3 +125,20 @@ fun jsonRemove(obj: String, path: List<String>): String =
 /** Parse a comma/space/newline-separated list into trimmed non-blank items. */
 fun parseCsvList(text: String): List<String> =
     text.split(',', '\n', ' ').map { it.trim() }.filter { it.isNotEmpty() }
+
+/** Entries of the string→string object at [path] (e.g. an HTTP outbound's
+ *  `settings.headers`), as ordered key/value pairs. Non-string values render via
+ *  their content. Pair with [jsonPutStringMap]. */
+fun jsonGetStringMap(obj: String, path: List<String>): List<Pair<String, String>> {
+    val child = parseObj(obj).descend(path)
+    return child.entries.map { (k, v) -> k to ((v as? JsonPrimitive)?.contentOrNull ?: "") }
+}
+
+/** Set the object at [path] from key/value pairs (blank keys dropped). An empty
+ *  result removes the key entirely. */
+fun jsonPutStringMap(obj: String, path: List<String>, entries: List<Pair<String, String>>): String {
+    val kept = entries.filter { it.first.isNotBlank() }
+    val value = if (kept.isEmpty()) null
+        else JsonObject(LinkedHashMap<String, JsonElement>().also { m -> kept.forEach { m[it.first] = JsonPrimitive(it.second) } })
+    return encode(parseObj(obj).withPut(path, value))
+}

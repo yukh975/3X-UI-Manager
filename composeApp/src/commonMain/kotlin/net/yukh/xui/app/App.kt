@@ -39,11 +39,20 @@ import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.ServerStatus
 import net.yukh.xui.shared.dto.TrafficSummary
+import net.yukh.xui.shared.dto.VlessEncAuth
 import net.yukh.xui.shared.dto.parseXrayObj
 import net.yukh.xui.shared.dto.trafficByNode
+import kotlin.time.TimeSource
 
 /** One server's currently-online clients, for the grouped online view. */
 data class OnlineGroup(val server: String, val isMain: Boolean, val emails: List<String>)
+
+/** Holds the previous inbound (up,down) totals + timestamp so live up/down speed
+ *  can be derived from the delta between polls (panel v3.4.0; mirrors Android). */
+private class SpeedTracker {
+    var prevTotals: Map<Int, Pair<Long, Long>> = emptyMap()
+    var prevMark: TimeSource.Monotonic.ValueTimeMark? = null
+}
 
 /** Panel geo-database allowlist (see ServerService.UpdateGeofile). */
 private val GEO_FILES = listOf(
@@ -72,6 +81,10 @@ fun App() {
             var lang by remember { mutableStateOf(LANG_EN) }
             var status by remember { mutableStateOf<ServerStatus?>(null) }
             var inbounds by remember { mutableStateOf<List<InboundSlim>>(emptyList()) }
+            var inboundSpeeds by remember { mutableStateOf<Map<Int, Pair<Long, Long>>>(emptyMap()) }
+            val speedTracker = remember { SpeedTracker() }
+            var vlessEncAuths by remember { mutableStateOf<List<VlessEncAuth>?>(null) }
+            var vlessEncLoading by remember { mutableStateOf(false) }
             var clients by remember { mutableStateOf<List<Client>>(emptyList()) }
             var nodes by remember { mutableStateOf<List<Node>>(emptyList()) }
             var onlines by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -163,7 +176,26 @@ fun App() {
                 val a = api ?: return
                 try {
                     a.serverStatus().let { if (it.success) status = it.obj }
-                    a.inbounds().let { if (it.success) inbounds = it.obj ?: emptyList() }
+                    a.inbounds().let {
+                        if (it.success) {
+                            val fresh = it.obj ?: emptyList()
+                            // Live up/down speed (bytes/s) from the delta between polls.
+                            val now = TimeSource.Monotonic.markNow()
+                            val prevMark = speedTracker.prevMark
+                            val dt = prevMark?.let { m -> (now - m).inWholeMilliseconds / 1000.0 } ?: 0.0
+                            if (prevMark != null && dt > 0.5) {
+                                inboundSpeeds = fresh.mapNotNull { ib ->
+                                    val p = speedTracker.prevTotals[ib.id] ?: return@mapNotNull null
+                                    val up = ((ib.up - p.first).coerceAtLeast(0) / dt).toLong()
+                                    val down = ((ib.down - p.second).coerceAtLeast(0) / dt).toLong()
+                                    ib.id to (up to down)
+                                }.toMap()
+                            }
+                            speedTracker.prevTotals = fresh.associate { ib -> ib.id to (ib.up to ib.down) }
+                            speedTracker.prevMark = now
+                            inbounds = fresh
+                        }
+                    }
                     a.clients().let { if (it.success) clients = it.obj ?: emptyList() }
                     a.nodes().let { if (it.success) nodes = it.obj ?: emptyList() }
                     a.onlines().let { if (it.success) onlines = it.obj ?: emptyList() }
@@ -432,6 +464,17 @@ fun App() {
                         isNew = editingInboundNew,
                         saving = editorSaving,
                         error = editorError,
+                        vlessEncAuths = vlessEncAuths,
+                        vlessEncLoading = vlessEncLoading,
+                        onGenVlessEnc = {
+                            scope.launch {
+                                vlessEncLoading = true; vlessEncAuths = null
+                                val r = try { api?.getNewVlessEnc() } catch (e: Throwable) { null }
+                                vlessEncAuths = r?.obj?.auths ?: emptyList()
+                                vlessEncLoading = false
+                            }
+                        },
+                        onClearVlessEnc = { vlessEncAuths = null },
                         onSave = { model ->
                             scope.launch {
                                 editorSaving = true; editorError = null
@@ -453,7 +496,7 @@ fun App() {
                                 else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
                             }
                         },
-                        onCancel = { editingInbound = null; editorError = null },
+                        onCancel = { editingInbound = null; editorError = null; vlessEncAuths = null },
                     )
                 } else if (editingNode != null) {
                     NodeEditorScreen(
@@ -615,6 +658,7 @@ fun App() {
                                 } }
                                 1 -> InboundsListScreen(
                                     inbounds,
+                                    speeds = inboundSpeeds,
                                     onAdd = { editingInboundNew = true; editorError = null; editingInbound = InboundModel() },
                                     onEdit = { id ->
                                         scope.launch {
