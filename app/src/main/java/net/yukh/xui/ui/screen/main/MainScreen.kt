@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.AllInbox
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Dashboard
@@ -58,6 +59,7 @@ import net.yukh.xui.ui.screen.inbounds.InboundEditorScreen
 import net.yukh.xui.ui.screen.inbounds.InboundsScreen
 import net.yukh.xui.ui.screen.inbounds.InboundsViewModel
 import net.yukh.xui.ui.screen.nodes.NodeEditorScreen
+import net.yukh.xui.ui.screen.nodes.NodeMtlsDialog
 import net.yukh.xui.ui.screen.nodes.NodesScreen
 import net.yukh.xui.ui.screen.nodes.NodesViewModel
 import net.yukh.xui.ui.screen.backup.BackupScreen
@@ -166,6 +168,11 @@ fun MainScreen(
                             onClick = { menuOpen = false; showPanelAdmin = true },
                         )
                         DropdownMenuItem(
+                            text = { Text(tr("Node mTLS")) },
+                            leadingIcon = { Icon(Icons.Outlined.Security, contentDescription = null) },
+                            onClick = { menuOpen = false; nodesVm.openMtls() },
+                        )
+                        DropdownMenuItem(
                             text = { Text(tr("Settings")) },
                             leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
                             onClick = { menuOpen = false; showSettings = true },
@@ -261,6 +268,15 @@ fun MainScreen(
             onSave = nodesVm::saveEditor,
             onDelete = { nodesVm.deleteNode(editor.id) },
             onClose = nodesVm::closeEditor,
+        )
+    }
+
+    if (nodesState.mtlsOpen) {
+        NodeMtlsDialog(
+            panelCa = nodesState.mtlsCa,
+            busy = nodesState.mtlsBusy,
+            onSaveTrustCa = nodesVm::saveMtlsTrustCa,
+            onDismiss = nodesVm::closeMtls,
         )
     }
 

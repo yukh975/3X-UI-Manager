@@ -54,6 +54,15 @@ data class Node(
     )
 }
 
+/** Response of POST /panel/api/nodes/mtls/ca — this panel's CA cert (PEM). */
+@Serializable
+data class MtlsCaResponse(val caCert: String = "")
+
+/** Body for POST /panel/api/nodes/mtls/trustCA — the CA whose client certs this
+ *  panel trusts (when it acts as a node); empty disables it. Applied on restart. */
+@Serializable
+data class MtlsTrustCaRequest(val caCert: String)
+
 /** Body for POST /panel/api/nodes/updatePanel — node ids to self-update.
  *  `dev=true` installs the rolling dev-latest build instead of the stable release. */
 @Serializable

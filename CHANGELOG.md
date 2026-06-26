@@ -9,6 +9,10 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.4.1] — Unreleased
 
 ### Added
+- **Node mutual TLS (mTLS).** The node editor adds an "mtls" TLS-verify mode (the
+  API token becomes optional), and a **Node mTLS** entry in the ⋮ menu lets you
+  copy this panel's CA (to register on a node) and set a trusted parent CA (so a
+  managing panel can manage this one as a node). Panel v3.4.0.
 - **Node: route the panel→node connection through an outbound.** The node editor
   gains a "Connection outbound" picker (Xray outbound tags, blackhole excluded;
   empty = direct). Panel v3.4.0.

@@ -16,6 +16,8 @@ import net.yukh.xui.data.api.dto.InboundIdsRequest
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.MetricPoint
+import net.yukh.xui.data.api.dto.MtlsCaResponse
+import net.yukh.xui.data.api.dto.MtlsTrustCaRequest
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.NodeModel
@@ -198,6 +200,14 @@ interface XuiApi {
     // it to each node. Body: {"ids":[...]}.
     @POST("panel/api/nodes/updatePanel")
     suspend fun updateNodePanel(@Body body: NodeIdsRequest): ApiAck
+
+    // Mutual-TLS between panels (panel v3.4.0): fetch this panel's CA to register
+    // on a node, and set the CA whose client certs this panel trusts as a node.
+    @POST("panel/api/nodes/mtls/ca")
+    suspend fun nodeMtlsCa(): ApiResponse<MtlsCaResponse>
+
+    @POST("panel/api/nodes/mtls/trustCA")
+    suspend fun setNodeMtlsTrustCA(@Body body: MtlsTrustCaRequest): ApiAck
 
     // ---- Settings & Xray config -------------------------------------------
     // Panel v3.3.0 (upstream c6f15cd5) moved these under /panel/api/* so they now

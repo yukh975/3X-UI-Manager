@@ -184,9 +184,16 @@ fun NodeEditorScreen(
                 value = state.tlsVerifyMode,
                 onSelect = onTlsVerifyMode,
                 label = tr("TLS verify"),
-                options = listOf("verify", "skip", "pin"),
+                options = listOf("verify", "skip", "pin", "mtls"),
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (state.tlsVerifyMode == "mtls") {
+                Text(
+                    tr("Mutual TLS: the API token is optional. Register this panel's CA on the node (menu → Node mTLS)."),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             // Route the panel→node connection through an Xray outbound (empty = direct).
             SchemeDropdown(

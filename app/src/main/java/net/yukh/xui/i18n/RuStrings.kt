@@ -427,6 +427,15 @@ val ruStrings: Map<String, String> = mapOf(
     "Update node?" to "Обновить узел?",
     "Connection outbound (empty = direct)" to "Outbound для подключения (пусто = напрямую)",
     "Detach its inbounds first" to "Сначала отвяжите его inbound'ы",
+    "Node mTLS" to "mTLS узлов",
+    "Mutual TLS: the API token is optional. Register this panel's CA on the node (menu → Node mTLS)." to
+        "Mutual TLS: API-токен необязателен. Зарегистрируйте CA этой панели на узле (меню → mTLS узлов).",
+    "This panel's CA — register it on a node that uses Mutual TLS." to
+        "CA этой панели — зарегистрируйте его на узле с Mutual TLS.",
+    "Copy this panel's CA" to "Скопировать CA этой панели",
+    "Trusted parent CA — paste a managing panel's CA so it can manage this panel as a node (applied on restart)." to
+        "Доверенный родительский CA — вставьте CA управляющей панели, чтобы она управляла этой панелью как узлом (применяется после перезапуска).",
+    "Trusted parent CA (PEM)" to "Доверенный родительский CA (PEM)",
     "Update to dev build (latest commit)" to "Обновить до dev-сборки (последний коммит)",
     "Dev builds are unstable." to "Dev-сборки нестабильны.",
     "online" to "онлайн",

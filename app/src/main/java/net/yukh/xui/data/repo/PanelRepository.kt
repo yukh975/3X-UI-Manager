@@ -23,6 +23,7 @@ import net.yukh.xui.data.api.dto.BulkAdjustRequest
 import net.yukh.xui.data.api.dto.BulkDelRequest
 import net.yukh.xui.data.api.dto.BulkEmailsRequest
 import net.yukh.xui.data.api.dto.ClientImportRequest
+import net.yukh.xui.data.api.dto.MtlsTrustCaRequest
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.VlessEncAuth
 import kotlinx.serialization.json.JsonElement
@@ -308,6 +309,14 @@ class PanelRepository @Inject constructor(
      *  [dev] = install the rolling dev-latest build instead of the stable release. */
     suspend fun updateNodes(ids: List<Int>, dev: Boolean = false): Result<Unit> =
         authedAck { it.updateNodePanel(NodeIdsRequest(ids, dev)) }
+
+    /** This panel's CA cert (PEM) to register on a node for mutual-TLS. */
+    suspend fun nodeMtlsCa(): Result<String> =
+        authedData { it.nodeMtlsCa() }.map { it.caCert }
+
+    /** Set the CA whose client certs this panel trusts as a node ("" disables). */
+    suspend fun setNodeMtlsTrustCA(caCert: String): Result<Unit> =
+        authedAck { it.setNodeMtlsTrustCA(MtlsTrustCaRequest(caCert)) }
 
     /**
      * Online clients on a specific node, queried directly against that node's own

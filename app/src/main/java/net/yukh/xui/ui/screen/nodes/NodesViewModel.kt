@@ -31,6 +31,10 @@ data class NodesUiState(
     val updatingIds: Set<Int> = emptySet(),
     // Proxied traffic this month per node id (Σ up+down of that node's inbounds).
     val trafficByNode: Map<Int, ServerTraffic> = emptyMap(),
+    // Node mTLS dialog
+    val mtlsOpen: Boolean = false,
+    val mtlsCa: String? = null,
+    val mtlsBusy: Boolean = false,
 )
 
 data class NodeEditorState(
@@ -55,7 +59,8 @@ data class NodeEditorState(
 ) {
     val canSave: Boolean
         get() = !saving && name.isNotBlank() && address.isNotBlank() &&
-            (port.toIntOrNull() ?: 0) in 1..65535 && apiToken.isNotBlank()
+            (port.toIntOrNull() ?: 0) in 1..65535 &&
+            (apiToken.isNotBlank() || tlsVerifyMode == "mtls")
 }
 
 @HiltViewModel
@@ -210,6 +215,28 @@ class NodesViewModel @Inject constructor(
                     _state.update { it.copy(editor = null, items = it.items.filterNot { n -> n.id == id }, transientMessage = "Node deleted") }
                 }
                 .onFailure { e -> _state.update { it.copy(transientMessage = "Delete failed: ${e.message}") } }
+        }
+    }
+
+    // ---- Node mTLS (panel v3.4.0) -----------------------------------------
+
+    fun openMtls() {
+        _state.update { it.copy(mtlsOpen = true, mtlsCa = null) }
+        viewModelScope.launch {
+            repo.nodeMtlsCa()
+                .onSuccess { ca -> _state.update { it.copy(mtlsCa = ca) } }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "mTLS CA failed: ${e.message}") } }
+        }
+    }
+
+    fun closeMtls() = _state.update { it.copy(mtlsOpen = false, mtlsCa = null) }
+
+    fun saveMtlsTrustCa(ca: String) {
+        _state.update { it.copy(mtlsBusy = true) }
+        viewModelScope.launch {
+            repo.setNodeMtlsTrustCA(ca.trim())
+                .onSuccess { _state.update { it.copy(mtlsBusy = false, mtlsOpen = false, transientMessage = "Trusted CA saved — restart the panel to apply") } }
+                .onFailure { e -> _state.update { it.copy(mtlsBusy = false, transientMessage = "Save failed: ${e.message}") } }
         }
     }
 
