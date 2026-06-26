@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ServerStatus
 import net.yukh.xui.shared.dto.TrafficSummary
 
@@ -33,6 +34,7 @@ import net.yukh.xui.shared.dto.TrafficSummary
 fun DashboardScreen(
     host: String,
     status: ServerStatus?,
+    clients: List<Client>,
     onlineCount: Int,
     onlineGroups: List<OnlineGroup>,
     onlineLoading: Boolean,
@@ -117,6 +119,7 @@ fun DashboardScreen(
             ValueCard(tr("Net ↑ / ↓ per s"),
                 "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}", onClick = { onMetric(MetricBlock.NET) })
             ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}", onClick = { onMetric(MetricBlock.CONN) })
+            if (clients.isNotEmpty()) ClientsCard(clients, onlineCount)
             OnlineCard(onlineCount, onlineGroups, onlineLoading, onExpandOnline)
             if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
             if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
@@ -230,6 +233,33 @@ private fun GeoCard(
                 }
             }
         }
+    }
+}
+
+/** Client totals at a glance: total / enabled / online / depleted (quota used up). */
+@Composable
+private fun ClientsCard(clients: List<Client>, onlineCount: Int) {
+    val total = clients.size
+    val enabled = clients.count { it.enable }
+    val depleted = clients.count { it.quota > 0 && (it.up + it.down) >= it.quota }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(tr("Clients"), style = MaterialTheme.typography.labelMedium)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                CountStat(tr("Total"), total.toString())
+                CountStat(tr("Enabled"), enabled.toString())
+                CountStat(tr("Online"), onlineCount.toString())
+                CountStat(tr("Depleted"), depleted.toString())
+            }
+        }
+    }
+}
+
+@Composable
+private fun CountStat(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = MaterialTheme.typography.titleMedium)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

@@ -22,20 +22,31 @@ import io.ktor.http.contentType
 import io.ktor.http.parameters
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.ApiResponse
 import net.yukh.xui.shared.dto.ApiToken
+import net.yukh.xui.shared.dto.BulkAdjustRequest
+import net.yukh.xui.shared.dto.BulkDelRequest
+import net.yukh.xui.shared.dto.BulkEmailsRequest
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientCreatePayload
+import net.yukh.xui.shared.dto.ClientImportRequest
+import net.yukh.xui.shared.dto.ClientIpInfo
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.EnableRequest
 import net.yukh.xui.shared.dto.InboundIdsRequest
 import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.MetricPoint
+import net.yukh.xui.shared.dto.MtlsCaResponse
+import net.yukh.xui.shared.dto.MtlsTrustCaRequest
 import net.yukh.xui.shared.dto.Node
+import net.yukh.xui.shared.dto.NodeIdsRequest
 import net.yukh.xui.shared.dto.NodeModel
+import net.yukh.xui.shared.dto.PanelUpdateInfo
 import net.yukh.xui.shared.dto.ServerStatus
+import net.yukh.xui.shared.dto.VlessEncResponse
 
 /** Platform HTTP engine (Darwin on iOS, OkHttp on JVM). When [allowInsecure] is
  *  true the engine trusts self-signed / otherwise-invalid TLS certificates —
@@ -155,6 +166,52 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
             auth(); contentType(ContentType.Application.Json); setBody(InboundIdsRequest(inboundIds))
         }.body()
 
+    /** Panel v3.4.0+: {panelGuid → [emails]} — each online email appears under
+     *  exactly one server's GUID, so no client is double-counted across servers. */
+    suspend fun onlinesByGuid(): ApiResponse<Map<String, List<String>>> =
+        client.post("$base/panel/api/clients/onlinesByGuid") { auth() }.body()
+
+    suspend fun bulkEnableClients(emails: List<String>): ApiAck =
+        client.post("$base/panel/api/clients/bulkEnable") {
+            auth(); contentType(ContentType.Application.Json); setBody(BulkEmailsRequest(emails))
+        }.body()
+
+    suspend fun bulkDisableClients(emails: List<String>): ApiAck =
+        client.post("$base/panel/api/clients/bulkDisable") {
+            auth(); contentType(ContentType.Application.Json); setBody(BulkEmailsRequest(emails))
+        }.body()
+
+    suspend fun bulkAdjustClients(req: BulkAdjustRequest): ApiAck =
+        client.post("$base/panel/api/clients/bulkAdjust") {
+            auth(); contentType(ContentType.Application.Json); setBody(req)
+        }.body()
+
+    suspend fun bulkDelClients(req: BulkDelRequest): ApiAck =
+        client.post("$base/panel/api/clients/bulkDel") {
+            auth(); contentType(ContentType.Application.Json); setBody(req)
+        }.body()
+
+    /** Remove clients not attached to any inbound. */
+    suspend fun delOrphanClients(): ApiAck =
+        client.post("$base/panel/api/clients/delOrphans") { auth() }.body()
+
+    /** JSON array of {client, inboundIds} for every client (for backup/transfer). */
+    suspend fun exportClients(): ApiResponse<JsonElement> =
+        client.get("$base/panel/api/clients/export") { auth() }.body()
+
+    /** Import a clients export payload ([data] = the stringified JSON array). */
+    suspend fun importClients(data: String): ApiAck =
+        client.post("$base/panel/api/clients/import") {
+            auth(); contentType(ContentType.Application.Json); setBody(ClientImportRequest(data))
+        }.body()
+
+    /** A client's recent connection IPs with time and node ("" = local panel). */
+    suspend fun clientIps(email: String): ApiResponse<List<ClientIpInfo>> =
+        client.post("$base/panel/api/clients/ips/$email") { auth() }.body()
+
+    suspend fun clearClientIps(email: String): ApiAck =
+        client.post("$base/panel/api/clients/clearIps/$email") { auth() }.body()
+
     suspend fun nodes(): ApiResponse<List<Node>> =
         client.get("$base/panel/api/nodes/list") { auth() }.body()
 
@@ -174,6 +231,23 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     suspend fun setNodeEnable(id: Int, enable: Boolean): ApiAck =
         client.post("$base/panel/api/nodes/setEnable/$id") {
             auth(); contentType(ContentType.Application.Json); setBody(EnableRequest(enable))
+        }.body()
+
+    /** This panel's CA cert (PEM) to register on a node for mutual-TLS. */
+    suspend fun nodeMtlsCa(): ApiResponse<MtlsCaResponse> =
+        client.post("$base/panel/api/nodes/mtls/ca") { auth() }.body()
+
+    /** Set the CA whose client certs this panel trusts as a node ("" disables). */
+    suspend fun setNodeMtlsTrustCA(caCert: String): ApiAck =
+        client.post("$base/panel/api/nodes/mtls/trustCA") {
+            auth(); contentType(ContentType.Application.Json); setBody(MtlsTrustCaRequest(caCert))
+        }.body()
+
+    /** Trigger a 3x-ui self-update on the given node(s). [dev]=true installs the
+     *  rolling dev-latest build instead of the stable release. */
+    suspend fun updateNodePanel(ids: List<Int>, dev: Boolean = false): ApiAck =
+        client.post("$base/panel/api/nodes/updatePanel") {
+            auth(); contentType(ContentType.Application.Json); setBody(NodeIdsRequest(ids, dev))
         }.body()
 
     /**
@@ -226,6 +300,19 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     /** Re-download ALL built-in geo databases at once and restart Xray. */
     suspend fun updateAllGeofiles(): ApiAck =
         client.post("$base/panel/api/server/updateGeofile") { auth() }.body()
+
+    /** Generated VLESS-encryption key options (X25519 / ML-KEM-768 variants).
+     *  panel v3.4.1, xray-core v26.6.21+. */
+    suspend fun getNewVlessEnc(): ApiResponse<VlessEncResponse> =
+        client.get("$base/panel/api/server/getNewVlessEnc") { auth() }.body()
+
+    /** Whether a newer 3x-ui panel release is available. */
+    suspend fun getPanelUpdateInfo(): ApiResponse<PanelUpdateInfo> =
+        client.get("$base/panel/api/server/getPanelUpdateInfo") { auth() }.body()
+
+    /** Trigger this panel's own 3x-ui self-update to the latest release. */
+    suspend fun updatePanel(): ApiAck =
+        client.post("$base/panel/api/server/updatePanel") { auth() }.body()
 
     // ---- Backup / restore -------------------------------------------------
 

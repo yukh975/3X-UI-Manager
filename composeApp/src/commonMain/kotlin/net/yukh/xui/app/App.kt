@@ -201,13 +201,37 @@ fun App() {
             }
 
             // Online clients grouped BY SERVER (main panel + each node), mirroring
-            // the Android "Online by server" dialog. The central /clients/onlines
-            // can't say which inbound a client is on, so: main = online ∩ clients
-            // of main-panel inbounds (nodeId 0); each node is queried directly for
-            // its own онлайн, falling back to inbound-membership if unreachable.
+            // the Android "Online by server" dialog. Preferred path (panel v3.4+):
+            // /clients/onlinesByGuid returns {panelGuid: [emails]} with each email
+            // under EXACTLY ONE server, so a client can never appear on several
+            // servers at once. Keys matching a node.guid are that node; everything
+            // else (incl. the master's own guid) is the main panel. Fallback for
+            // panels < 3.4 (no byGuid): main = online ∩ clients of main-panel
+            // inbounds (nodeId 0); each node is queried directly for its own
+            // онлайн, falling back to inbound-membership if unreachable.
             suspend fun loadOnlineGroups() {
                 val a = api ?: return
                 onlineLoading = true
+                val byGuid = try { a.onlinesByGuid() } catch (e: Throwable) { null }
+                if (byGuid?.success == true && byGuid.obj != null) {
+                    val map = byGuid.obj!!
+                    val nodeByGuid = nodes.filter { it.guid.isNotBlank() }.associateBy { it.guid }
+                    val mainEmails = mutableListOf<String>()
+                    val perNode = mutableMapOf<Int, MutableList<String>>()
+                    for ((guid, emails) in map) {
+                        val node = nodeByGuid[guid]
+                        if (node != null) perNode.getOrPut(node.id) { mutableListOf() }.addAll(emails)
+                        else mainEmails.addAll(emails)
+                    }
+                    val main = OnlineGroup("", isMain = true, mainEmails.distinct().sorted())
+                    val nodeGroups = nodes.filter { it.enable }.map { node ->
+                        OnlineGroup(node.remark.ifBlank { node.name }, isMain = false,
+                            (perNode[node.id] ?: emptyList()).distinct().sorted())
+                    }
+                    onlineGroups = listOf(main) + nodeGroups
+                    onlineLoading = false
+                    return
+                }
                 val onlineSet = onlines.toSet()
                 fun membersOf(nid: Int): Set<String> =
                     inbounds.filter { (it.nodeId ?: 0) == nid }
@@ -528,6 +552,7 @@ fun App() {
                                 0 -> { DashboardScreen(
                                     host = baseUrl,
                                     status = status,
+                                    clients = clients,
                                     onlineCount = onlines.size,
                                     onlineGroups = onlineGroups,
                                     onlineLoading = onlineLoading,

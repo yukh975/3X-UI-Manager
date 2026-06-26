@@ -230,6 +230,12 @@ data class Node(
     val allowPrivateAddress: Boolean = false,
     val tlsVerifyMode: String = "verify",
     val pinnedCertSha256: String = "",
+    // Route the panel→node API connection through this Xray outbound tag
+    // (empty = direct). Panel v3.4.0.
+    val outboundTag: String = "",
+    // The node's stable panelGuid — used to attribute online clients to the
+    // server that physically hosts them (panel v3.4.0). Empty on older panels.
+    val guid: String = "",
     val status: String = "",
     val latencyMs: Long = 0,
     val xrayVersion: String = "",
@@ -247,7 +253,7 @@ data class Node(
         id = id, name = name, remark = remark, scheme = scheme, address = address,
         port = port, basePath = basePath, apiToken = apiToken, enable = enable,
         allowPrivateAddress = allowPrivateAddress, tlsVerifyMode = tlsVerifyMode,
-        pinnedCertSha256 = pinnedCertSha256,
+        pinnedCertSha256 = pinnedCertSha256, outboundTag = outboundTag,
     )
 }
 
@@ -265,7 +271,72 @@ data class NodeModel(
     val allowPrivateAddress: Boolean = false,
     val tlsVerifyMode: String = "verify",
     val pinnedCertSha256: String = "",
+    val outboundTag: String = "",
 )
+
+/** Response of POST /panel/api/nodes/mtls/ca — this panel's CA cert (PEM). */
+@Serializable
+data class MtlsCaResponse(val caCert: String = "")
+
+/** Body for POST /panel/api/nodes/mtls/trustCA — the CA whose client certs this
+ *  panel trusts (when it acts as a node); empty disables it. Applied on restart. */
+@Serializable
+data class MtlsTrustCaRequest(val caCert: String)
+
+/** Body for POST /panel/api/nodes/updatePanel — node ids to self-update.
+ *  `dev=true` installs the rolling dev-latest build instead of the stable release. */
+@Serializable
+data class NodeIdsRequest(val ids: List<Int>, val dev: Boolean = false)
+
+// ---- Client bulk / IP-log / export-import (panel v3.4.x) -----------------
+
+/** Body for POST /panel/api/clients/bulkEnable | bulkDisable. */
+@Serializable
+data class BulkEmailsRequest(val emails: List<String>)
+
+/** Body for POST /panel/api/clients/bulkAdjust. Shifts each client's expiry by
+ *  [addDays] and traffic limit by [addBytes] (both may be negative); [flow] sets
+ *  the XTLS flow — "" leaves it, "none" clears it, vision values set it. */
+@Serializable
+data class BulkAdjustRequest(
+    val emails: List<String>,
+    val addDays: Int = 0,
+    val addBytes: Long = 0,
+    val flow: String = "",
+)
+
+/** Body for POST /panel/api/clients/bulkDel. */
+@Serializable
+data class BulkDelRequest(val emails: List<String>, val keepTraffic: Boolean = false)
+
+/** Body for POST /panel/api/clients/import — [data] is the stringified JSON array
+ *  of {client, inboundIds} entries (the same shape GET /clients/export returns). */
+@Serializable
+data class ClientImportRequest(val data: String)
+
+/** One entry of a client's IP log (POST /panel/api/clients/ips/:email).
+ *  [node] is the node the IP connects through, or "" on the local panel. */
+@Serializable
+data class ClientIpInfo(val ip: String = "", val time: String = "", val node: String = "")
+
+// ---- VLESS encryption keygen (GET /panel/api/server/getNewVlessEnc) ------
+
+/**
+ * One generated VLESS-encryption key option. The panel runs `xray vlessenc` and
+ * derives xorpub/random variants, so each [label] is e.g. "X25519, native" with
+ * a ready decryption/encryption pair. (panel v3.4.1, xray-core v26.6.21+)
+ */
+@Serializable
+data class VlessEncAuth(
+    val id: String = "",
+    val label: String = "",
+    val decryption: String = "",
+    val encryption: String = "",
+)
+
+/** Envelope `obj` of GET /panel/api/server/getNewVlessEnc. */
+@Serializable
+data class VlessEncResponse(val auths: List<VlessEncAuth> = emptyList())
 
 // ---- Panel update (GET /panel/api/server/getUpdateInfo) ------------------
 

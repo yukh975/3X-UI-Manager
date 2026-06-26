@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-actual fun appVersionName(): String = "0.3.23"
+actual fun appVersionName(): String = "0.4.2"
 
 private val dayMonth = SimpleDateFormat("dd.MM", Locale.getDefault())
 
