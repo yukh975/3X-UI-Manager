@@ -23,6 +23,7 @@ import net.yukh.xui.data.api.dto.BulkAdjustRequest
 import net.yukh.xui.data.api.dto.BulkDelRequest
 import net.yukh.xui.data.api.dto.BulkEmailsRequest
 import net.yukh.xui.data.api.dto.ClientImportRequest
+import net.yukh.xui.data.api.dto.ClientIpInfo
 import net.yukh.xui.data.api.dto.MtlsTrustCaRequest
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.VlessEncAuth
@@ -284,6 +285,13 @@ class PanelRepository @Inject constructor(
     /** Delete every client not attached to any inbound (cascades traffic/IP log/links). */
     suspend fun deleteOrphanClients(): Result<Unit> =
         authedAck { it.deleteOrphanClients() }
+
+    /** A client's IP log (IP, connection time, node). */
+    suspend fun clientIps(email: String): Result<List<ClientIpInfo>> =
+        authedData { it.getClientIps(email) }
+
+    suspend fun clearClientIps(email: String): Result<Unit> =
+        authedAck { it.clearClientIps(email) }
 
     suspend fun listOnlines(): Result<List<String>> =
         authedData { it.listOnlines() }

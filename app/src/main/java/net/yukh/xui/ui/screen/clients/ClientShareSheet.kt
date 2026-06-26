@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -68,6 +69,7 @@ fun ClientShareSheet(
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onIpLog: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -162,6 +164,10 @@ fun ClientShareSheet(
                     Icon(Icons.Outlined.Delete, contentDescription = null)
                     Text("  " + tr("Delete"))
                 }
+            }
+            OutlinedButton(onClick = onIpLog, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Outlined.History, contentDescription = null)
+                Text("  " + tr("IP log"))
             }
             OutlinedButton(
                 onClick = onDismiss,

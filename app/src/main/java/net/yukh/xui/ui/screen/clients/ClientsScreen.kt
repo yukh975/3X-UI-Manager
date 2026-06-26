@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -257,6 +260,39 @@ fun ClientsScreen(
             onDismiss = vm::closeShareSheet,
             onEdit = { vm.openEditEditor(selectedEmail) },
             onDelete = { vm.deleteClient(selectedEmail) },
+            onIpLog = { vm.openIpLog(selectedEmail); vm.closeShareSheet() },
+        )
+    }
+
+    state.ipLogEmail?.let { email ->
+        AlertDialog(
+            onDismissRequest = vm::closeIpLog,
+            title = { Text("${tr("IP log")} · $email") },
+            text = {
+                Column(
+                    modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    when {
+                        state.ipLogLoading -> CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        state.ipLog.isEmpty() -> Text(tr("No IPs logged."), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        else -> state.ipLog.forEach { e ->
+                            Column {
+                                Text(e.ip, style = MaterialTheme.typography.bodyMedium)
+                                val sub = listOfNotNull(
+                                    e.time.takeIf { it.isNotBlank() },
+                                    e.node.takeIf { it.isNotBlank() }?.let { "@ $it" },
+                                ).joinToString("  ")
+                                if (sub.isNotBlank()) Text(sub, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = vm::clearIpLog, enabled = state.ipLog.isNotEmpty()) { Text(tr("Clear")) }
+            },
+            dismissButton = { TextButton(onClick = vm::closeIpLog) { Text(tr("Close")) } },
         )
     }
 

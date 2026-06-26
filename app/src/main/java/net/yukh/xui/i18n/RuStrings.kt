@@ -365,6 +365,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Apply" to "Применить",
     "Export clients" to "Экспорт клиентов",
     "Import clients" to "Импорт клиентов",
+    "IP log" to "IP-лог",
+    "No IPs logged." to "IP не зафиксированы.",
     "Delete unbound clients" to "Удалить несвязанных клиентов",
     "Delete unbound clients?" to "Удалить несвязанных клиентов?",
     "Removes every client not attached to any inbound, with their traffic and links. This can't be undone." to

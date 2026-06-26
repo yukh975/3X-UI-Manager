@@ -9,6 +9,9 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.4.1] — Unreleased
 
 ### Added
+- **Client IP log.** The client sheet gains an *IP log* button that shows the
+  client's recent connection IPs with the time and the node (`@ node`) each came
+  through, plus a *Clear* action (panel v3.4.0).
 - **Inbound: advanced stream-settings (JSON) editor.** A collapsible "Advanced:
   stream settings (JSON)" section makes the whole `streamSettings` object editable,
   so the new 3.4.x TLS/REALITY/transport fields not exposed as structured inputs —

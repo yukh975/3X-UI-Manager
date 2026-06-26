@@ -5,6 +5,7 @@ import net.yukh.xui.data.api.dto.BulkAdjustRequest
 import net.yukh.xui.data.api.dto.BulkDelRequest
 import net.yukh.xui.data.api.dto.BulkEmailsRequest
 import net.yukh.xui.data.api.dto.ClientImportRequest
+import net.yukh.xui.data.api.dto.ClientIpInfo
 import net.yukh.xui.data.api.dto.VlessEncResponse
 import kotlinx.serialization.json.JsonElement
 import net.yukh.xui.data.api.dto.ApiToken
@@ -175,6 +176,13 @@ interface XuiApi {
 
     @POST("panel/api/clients/delOrphans")
     suspend fun deleteOrphanClients(): ApiAck
+
+    // A client's IP log (with connection time and node) + clear it (panel v3.4.0).
+    @POST("panel/api/clients/ips/{email}")
+    suspend fun getClientIps(@Path("email") email: String): ApiResponse<List<ClientIpInfo>>
+
+    @POST("panel/api/clients/clearIps/{email}")
+    suspend fun clearClientIps(@Path("email") email: String): ApiAck
 
     @POST("panel/api/clients/onlines")
     suspend fun listOnlines(): ApiResponse<List<String>>

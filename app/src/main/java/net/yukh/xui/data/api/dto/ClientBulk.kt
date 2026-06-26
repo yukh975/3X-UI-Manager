@@ -28,3 +28,8 @@ data class BulkDelRequest(val emails: List<String>, val keepTraffic: Boolean = f
  *  of {client, inboundIds} entries (the same shape GET /clients/export returns). */
 @Serializable
 data class ClientImportRequest(val data: String)
+
+/** One entry of a client's IP log (POST /panel/api/clients/ips/:email).
+ *  [node] is the node the IP connects through, or "" on the local panel. */
+@Serializable
+data class ClientIpInfo(val ip: String = "", val time: String = "", val node: String = "")

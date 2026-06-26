@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.Client
+import net.yukh.xui.data.api.dto.ClientIpInfo
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.repo.PanelRepository
@@ -41,6 +42,10 @@ data class ClientsUiState(
     val bulkInFlight: Boolean = false,
     // Export-all dialog payload (null = closed)
     val exportJson: String? = null,
+    // IP-log dialog (null email = closed)
+    val ipLogEmail: String? = null,
+    val ipLog: List<ClientIpInfo> = emptyList(),
+    val ipLogLoading: Boolean = false,
     val editor: ClientEditorState? = null,
 ) {
     /** Distinct non-empty client groups in use, sorted — for the editor picker
@@ -415,6 +420,26 @@ class ClientsViewModel @Inject constructor(
     }
 
     fun dismissExport() = _state.update { it.copy(exportJson = null) }
+
+    fun openIpLog(email: String) {
+        _state.update { it.copy(ipLogEmail = email, ipLog = emptyList(), ipLogLoading = true) }
+        viewModelScope.launch {
+            repo.clientIps(email)
+                .onSuccess { ips -> _state.update { it.copy(ipLog = ips, ipLogLoading = false) } }
+                .onFailure { e -> _state.update { it.copy(ipLogLoading = false, transientMessage = "IP log failed: ${e.message}") } }
+        }
+    }
+
+    fun clearIpLog() {
+        val email = _state.value.ipLogEmail ?: return
+        viewModelScope.launch {
+            repo.clearClientIps(email)
+                .onSuccess { _state.update { it.copy(ipLog = emptyList(), transientMessage = "IP log cleared") } }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Clear failed: ${e.message}") } }
+        }
+    }
+
+    fun closeIpLog() = _state.update { it.copy(ipLogEmail = null, ipLog = emptyList()) }
 
     fun importClients(jsonText: String) {
         viewModelScope.launch {
