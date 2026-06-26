@@ -45,8 +45,15 @@ its "Текущее состояние" section is the latest snapshot.
 ## Quick facts
 - GitLab: `yukh/3X-UI-Manager`, project id **19**, `git.home.yukh.net`. API token
   at `~/.gl-token` (local). The upstream mirror is `yukh/3x-ui`, project id **15**.
-  Latest **released**: **v0.3.23** ("первый стабильный" was
-  v0.3.11). Recent: v0.3.23 = no passcode prompt right after a manual sign-in;
+  Latest **released** = current **stable / latest**: **v0.4.2** (GitLab
+  `releases/permalink/latest` resolves here). ("первый стабильный" was v0.3.11.)
+  Recent: **v0.4.2** = client-list quick enable/disable toggle, online-by-server
+  fixed via `onlinesByGuid` (no more one client on multiple servers), search-field
+  height fix, Routing/DNS export-import as icon buttons; v0.4.1 = big 3.4.x batch
+  (inbound live speed, client IP log, mTLS nodes, node-via-outbound, client
+  export/import + delete-unbound, VLESS-enc key gen, bulk client actions, dashboard
+  client counts, enable/disable routing rules, client filters);
+  v0.3.23 = no passcode prompt right after a manual sign-in;
   v0.3.22 = app-lock only gates the signed-in UI (not the Connect screen);
   **v0.3.21 = token-only auth** (login/password/2FA removed; requires panel
   **v3.3.0+**; Connect screen has a where-to-get-the-token footnote); v0.3.20 =
