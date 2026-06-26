@@ -86,19 +86,20 @@ fun RoutingXrayScreen(
                 onConfigChange(jsonPutString(configJson, listOf("routing", "domainStrategy"), it))
             }
 
-            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                XraySection(tr("Routing rules"))
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(onClick = {
-                        platformPickFile { _, bytes ->
-                            parseRulesImport(bytes.decodeToString())?.let { setRules(it) }
-                        }
-                    }) { Text("⬆ " + tr("Import")) }
-                    TextButton(
-                        onClick = { platformExportFile("routing-rules.json", ("[" + rules().joinToString(",") + "]").encodeToByteArray()) },
-                        enabled = rules().isNotEmpty(),
-                    ) { Text("⬇ " + tr("Export")) }
-                }
+            // Compact icon buttons (⬆ import / ⬇ export) with the heading taking the
+            // flex space — full words overflowed the row and wrapped one letter per
+            // line on narrow screens.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { XraySection(tr("Routing rules")) }
+                TextButton(onClick = {
+                    platformPickFile { _, bytes ->
+                        parseRulesImport(bytes.decodeToString())?.let { setRules(it) }
+                    }
+                }) { Text("⬆", style = MaterialTheme.typography.titleMedium) }
+                TextButton(
+                    onClick = { platformExportFile("routing-rules.json", ("[" + rules().joinToString(",") + "]").encodeToByteArray()) },
+                    enabled = rules().isNotEmpty(),
+                ) { Text("⬇", style = MaterialTheme.typography.titleMedium) }
             }
             rules().forEachIndexed { i, rule ->
                 // The api stats rule is locked on (disabling it breaks traffic

@@ -98,19 +98,20 @@ fun DnsXrayScreen(
                 }
             }
 
-            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                XraySection(tr("DNS servers"))
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(onClick = {
-                        platformPickFile { _, bytes ->
-                            parseServersImport(bytes.decodeToString())?.let { setServers(it) }
-                        }
-                    }) { Text("⬆ " + tr("Import")) }
-                    TextButton(
-                        onClick = { platformExportFile("dns-servers.json", ("[" + servers().joinToString(",") + "]").encodeToByteArray()) },
-                        enabled = servers().isNotEmpty(),
-                    ) { Text("⬇ " + tr("Export")) }
-                }
+            // Compact icon buttons (⬆ import / ⬇ export) with the heading taking the
+            // flex space — full words overflowed the row and wrapped one letter per
+            // line on narrow screens.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { XraySection(tr("DNS servers")) }
+                TextButton(onClick = {
+                    platformPickFile { _, bytes ->
+                        parseServersImport(bytes.decodeToString())?.let { setServers(it) }
+                    }
+                }) { Text("⬆", style = MaterialTheme.typography.titleMedium) }
+                TextButton(
+                    onClick = { platformExportFile("dns-servers.json", ("[" + servers().joinToString(",") + "]").encodeToByteArray()) },
+                    enabled = servers().isNotEmpty(),
+                ) { Text("⬇", style = MaterialTheme.typography.titleMedium) }
             }
             servers().forEachIndexed { i, srv ->
                 Card(Modifier.fillMaxWidth()) {

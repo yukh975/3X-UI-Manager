@@ -103,11 +103,11 @@ fun OutboundsXrayScreen(
                     platformPickFile { _, bytes ->
                         parseOutboundsImport(bytes.decodeToString())?.let { setList(list() + it) }
                     }
-                }) { Text("⬆ " + tr("Import")) }
+                }) { Text("⬆", style = MaterialTheme.typography.titleMedium) }
                 TextButton(
                     onClick = { platformExportFile("outbounds.json", ("[" + outs.joinToString(",") + "]").encodeToByteArray()) },
                     enabled = outs.isNotEmpty(),
-                ) { Text("⬇ " + tr("Export")) }
+                ) { Text("⬇", style = MaterialTheme.typography.titleMedium) }
             }
             outs.forEachIndexed { i, ob ->
                 Card(Modifier.fillMaxWidth()) {
