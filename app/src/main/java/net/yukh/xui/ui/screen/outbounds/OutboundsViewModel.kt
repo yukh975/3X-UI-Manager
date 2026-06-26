@@ -126,6 +126,11 @@ class OutboundsViewModel @Inject constructor(
         } else it
     }
 
+    /** Append imported outbounds to the list (kept verbatim; saved on Save). */
+    fun appendOutbounds(items: List<JsonObject>) = _state.update {
+        it.copy(outbounds = it.outbounds + items, dirty = true)
+    }
+
     // ---- persistence -------------------------------------------------------
 
     fun save() {

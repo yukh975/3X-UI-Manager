@@ -16,11 +16,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -45,12 +48,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.outboundAddressSummary
 import net.yukh.xui.data.api.dto.outboundProtocol
 import net.yukh.xui.data.api.dto.outboundTag
+import net.yukh.xui.data.json.asObject
 import net.yukh.xui.data.parse.parseVlessLink
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
+import net.yukh.xui.ui.components.ExportJsonDialog
+import net.yukh.xui.ui.components.ImportJsonDialog
+
+private val outboundsJson = Json { prettyPrint = true; isLenient = true }
+
+/** Parse an outbounds-import payload: a bare array or `{outbounds:[…]}`. */
+private fun parseOutboundsImport(text: String): List<JsonObject>? {
+    val el = try { outboundsJson.parseToJsonElement(text.trim()) } catch (e: Exception) { return null }
+    val arr = when (el) {
+        is JsonArray -> el
+        is JsonObject -> el["outbounds"] as? JsonArray
+        else -> null
+    }
+    return arr?.map { it.asObject() }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +128,9 @@ fun OutboundsScreen(
     var linkText by remember { mutableStateOf("") }
     var linkError by remember { mutableStateOf<String?>(null) }
     val invalidLink = tr("Not a valid vless:// link")
+    var outboundsMenu by remember { mutableStateOf(false) }
+    var exportJson by remember { mutableStateOf<String?>(null) }
+    var showImportJson by remember { mutableStateOf(false) }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -119,6 +145,25 @@ fun OutboundsScreen(
                     if (state.available) {
                         IconButton(onClick = { showImport = true }) {
                             Icon(Icons.Outlined.Link, contentDescription = tr("Import from link"))
+                        }
+                        Box {
+                            IconButton(onClick = { outboundsMenu = true }) {
+                                Icon(Icons.Filled.MoreVert, contentDescription = tr("More"))
+                            }
+                            DropdownMenu(expanded = outboundsMenu, onDismissRequest = { outboundsMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(tr("Export")) },
+                                    enabled = state.outbounds.isNotEmpty(),
+                                    onClick = {
+                                        outboundsMenu = false
+                                        exportJson = outboundsJson.encodeToString(JsonElement.serializer(), JsonArray(state.outbounds))
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(tr("Import")) },
+                                    onClick = { outboundsMenu = false; showImportJson = true },
+                                )
+                            }
                         }
                         TextButton(onClick = vm::save, enabled = state.dirty && !state.saving) {
                             if (state.saving) {
@@ -192,6 +237,23 @@ fun OutboundsScreen(
             destructive = true,
             onConfirm = { pendingDelete = null; vm.deleteAt(idx) },
             onDismiss = { pendingDelete = null },
+        )
+    }
+
+    exportJson?.let { json ->
+        ExportJsonDialog(title = tr("Export outbounds"), json = json, onDismiss = { exportJson = null })
+    }
+
+    if (showImportJson) {
+        val invalidMsg = tr("Invalid JSON")
+        ImportJsonDialog(
+            title = tr("Import outbounds"),
+            onImport = { txt ->
+                val parsed = parseOutboundsImport(txt) ?: return@ImportJsonDialog invalidMsg
+                vm.appendOutbounds(parsed)
+                null
+            },
+            onDismiss = { showImportJson = false },
         )
     }
 

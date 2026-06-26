@@ -253,6 +253,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Export" to "Экспорт",
     "Export rules" to "Экспорт правил",
     "Import rules" to "Импорт правил",
+    "Export outbounds" to "Экспорт outbounds",
+    "Import outbounds" to "Импорт outbounds",
     "Export DNS servers" to "Экспорт DNS-серверов",
     "Import DNS servers" to "Импорт DNS-серверов",
     "Paste JSON" to "Вставьте JSON",

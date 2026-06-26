@@ -33,10 +33,10 @@ uses [Semantic Versioning](https://semver.org/).
   on/off switch (like panel 3.4.x) — a disabled rule is kept but greyed out and
   dropped from the running config by the panel on save (needs panel **v3.4.0+**;
   older panels ignore the flag). The internal stats (`api`) rule stays locked on.
-- **Export / import rules and DNS servers.** Routing rules and DNS servers can be
-  exported to JSON (copy or share) and imported back by pasting JSON — a bare
-  array, `{rules:[…]}` / `{servers:[…]}`, or the wrapped `{routing:…}` /
-  `{dns:…}` form; imported entries are appended.
+- **Export / import rules, outbounds and DNS servers.** Routing rules, outbounds
+  and DNS servers can be exported to JSON (copy or share) and imported back by
+  pasting JSON — a bare array, `{rules|outbounds|servers:[…]}`, or the wrapped
+  `{routing|dns:…}` form; imported entries are appended.
 - **Filter the client list by status and group.** A filter button next to the
   search box (with a badge for the active count) opens a sheet — mirroring the
   panel's filter drawer — that narrows the list by status (**Online**, Active,
