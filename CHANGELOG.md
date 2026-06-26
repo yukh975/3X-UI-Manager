@@ -9,6 +9,10 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.3.24] — Unreleased
 
 ### Added
+- **Export / import clients + delete unbound.** The Clients ⋮ menu gains Export
+  clients (JSON of every `{client, inboundIds}`, copy/share), Import clients
+  (paste that JSON — existing emails are skipped), and Delete unbound clients
+  (removes clients not attached to any inbound). Panel v3.4.0.
 - **VLESS encryption key generator.** In a VLESS inbound, *Generate VLESS
   encryption key* fetches the panel's key options (X25519 / ML-KEM-768 × native /
   xorpub / random), shows the decryption/encryption pair (copyable) and can insert
@@ -40,6 +44,12 @@ uses [Semantic Versioning](https://semver.org/).
   independently; *Clear all* resets them.
 
 ### Changed
+- **The client list auto-refreshes.** While the Clients tab is open it polls the
+  panel every few seconds, so new connections, traffic and online state update
+  without a manual pull (panel v3.4.0).
+- **WireGuard: the obsolete Workers field is gone.** xray-core v26.6.22 no longer
+  uses `workers`, so it was removed from the WireGuard outbound form (existing
+  configs are unaffected — the key is simply ignored).
 - **Metric-history ranges match the panel (v3.4.x).** The interval selector on
   the dashboard charts is now 2m / 1h / 3h / 6h / 12h / 24h / 2d / 7d (history is
   kept for up to 7 days), replacing the old 30m / 2h / 5h set.

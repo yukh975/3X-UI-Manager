@@ -48,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,10 +60,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.serialization.json.Json
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.i18n.LocalAppLanguage
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.ExportJsonDialog
+import net.yukh.xui.ui.components.ImportJsonDialog
 import net.yukh.xui.ui.components.LabeledDropdown
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatExpiryDays
@@ -80,8 +87,25 @@ fun ClientsScreen(
     var showFilters by remember { mutableStateOf(false) }
     var showAdjust by remember { mutableStateOf(false) }
     var confirmBulkDelete by remember { mutableStateOf(false) }
+    var clientsMenu by remember { mutableStateOf(false) }
+    var showImportClients by remember { mutableStateOf(false) }
+    var confirmDeleteOrphans by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { vm.load() }
+
+    // Auto-refresh the list while the screen is on-screen (start/stop with lifecycle).
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> vm.startPolling()
+                Lifecycle.Event.ON_STOP -> vm.stopPolling()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer); vm.stopPolling() }
+    }
 
     // Hardware back exits selection mode first.
     BackHandler(enabled = state.selectionMode) { vm.exitSelection() }
@@ -157,6 +181,16 @@ fun ClientsScreen(
                                 },
                             ) {
                                 Icon(Icons.Filled.FilterList, contentDescription = tr("Filters"))
+                            }
+                        }
+                        Box {
+                            IconButton(onClick = { clientsMenu = true }) {
+                                Icon(Icons.Filled.MoreVert, contentDescription = tr("More"))
+                            }
+                            DropdownMenu(expanded = clientsMenu, onDismissRequest = { clientsMenu = false }) {
+                                DropdownMenuItem(text = { Text(tr("Export clients")) }, onClick = { clientsMenu = false; vm.exportClients() })
+                                DropdownMenuItem(text = { Text(tr("Import clients")) }, onClick = { clientsMenu = false; showImportClients = true })
+                                DropdownMenuItem(text = { Text(tr("Delete unbound clients")) }, onClick = { clientsMenu = false; confirmDeleteOrphans = true })
                             }
                         }
                     }
@@ -260,6 +294,36 @@ fun ClientsScreen(
                 }
             },
             dismissButton = { TextButton(onClick = { confirmBulkDelete = false }) { Text(tr("Cancel")) } },
+        )
+    }
+
+    state.exportJson?.let { json ->
+        ExportJsonDialog(title = tr("Export clients"), json = json, onDismiss = vm::dismissExport)
+    }
+
+    if (showImportClients) {
+        val invalidMsg = tr("Invalid JSON")
+        ImportJsonDialog(
+            title = tr("Import clients"),
+            onImport = { txt ->
+                if (runCatching { Json.parseToJsonElement(txt.trim()) }.isFailure) invalidMsg
+                else { vm.importClients(txt.trim()); null }
+            },
+            onDismiss = { showImportClients = false },
+        )
+    }
+
+    if (confirmDeleteOrphans) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteOrphans = false },
+            title = { Text(tr("Delete unbound clients?")) },
+            text = { Text(tr("Removes every client not attached to any inbound, with their traffic and links. This can't be undone.")) },
+            confirmButton = {
+                TextButton(onClick = { vm.deleteOrphanClients(); confirmDeleteOrphans = false }) {
+                    Text(tr("Delete"), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDeleteOrphans = false }) { Text(tr("Cancel")) } },
         )
     }
 

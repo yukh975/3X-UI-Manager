@@ -361,6 +361,12 @@ val ruStrings: Map<String, String> = mapOf(
     "No change" to "Не менять",
     "Clear flow" to "Очистить flow",
     "Apply" to "Применить",
+    "Export clients" to "Экспорт клиентов",
+    "Import clients" to "Импорт клиентов",
+    "Delete unbound clients" to "Удалить несвязанных клиентов",
+    "Delete unbound clients?" to "Удалить несвязанных клиентов?",
+    "Removes every client not attached to any inbound, with their traffic and links. This can't be undone." to
+        "Удаляет всех клиентов без привязки к inbound — вместе с их трафиком и ссылками. Отменить нельзя.",
 
     // Client editor (additional)
     "Email / name" to "Email / имя",

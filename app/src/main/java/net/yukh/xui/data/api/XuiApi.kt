@@ -4,7 +4,9 @@ import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.BulkAdjustRequest
 import net.yukh.xui.data.api.dto.BulkDelRequest
 import net.yukh.xui.data.api.dto.BulkEmailsRequest
+import net.yukh.xui.data.api.dto.ClientImportRequest
 import net.yukh.xui.data.api.dto.VlessEncResponse
+import kotlinx.serialization.json.JsonElement
 import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
@@ -161,6 +163,16 @@ interface XuiApi {
 
     @POST("panel/api/clients/bulkDel")
     suspend fun bulkDeleteClients(@Body body: BulkDelRequest): ApiAck
+
+    // Export/import all clients + delete unbound (orphan) clients (panel v3.4.0).
+    @GET("panel/api/clients/export")
+    suspend fun exportClients(): ApiResponse<JsonElement>
+
+    @POST("panel/api/clients/import")
+    suspend fun importClients(@Body body: ClientImportRequest): ApiAck
+
+    @POST("panel/api/clients/delOrphans")
+    suspend fun deleteOrphanClients(): ApiAck
 
     @POST("panel/api/clients/onlines")
     suspend fun listOnlines(): ApiResponse<List<String>>

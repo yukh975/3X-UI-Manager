@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientModel
@@ -15,6 +18,7 @@ import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.repo.PanelRepository
 
 private const val BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0
+private const val POLL_INTERVAL_MS = 5_000L
 
 data class ClientsUiState(
     val items: List<Client> = emptyList(),
@@ -35,6 +39,8 @@ data class ClientsUiState(
     val selectionMode: Boolean = false,
     val selectedEmails: Set<String> = emptySet(),
     val bulkInFlight: Boolean = false,
+    // Export-all dialog payload (null = closed)
+    val exportJson: String? = null,
     val editor: ClientEditorState? = null,
 ) {
     /** Distinct non-empty client groups in use, sorted — for the editor picker
@@ -90,6 +96,25 @@ class ClientsViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(ClientsUiState())
     val state: StateFlow<ClientsUiState> = _state.asStateFlow()
+
+    private var pollJob: Job? = null
+
+    /** Background auto-refresh while the Clients screen is on-screen (panel 3.4.0). */
+    fun startPolling() {
+        if (pollJob?.isActive == true) return
+        pollJob = viewModelScope.launch {
+            while (isActive) {
+                delay(POLL_INTERVAL_MS)
+                // Skip while editing or already refreshing so we don't fight the user.
+                if (_state.value.editor == null && !_state.value.refreshing) load()
+            }
+        }
+    }
+
+    fun stopPolling() {
+        pollJob?.cancel()
+        pollJob = null
+    }
 
     fun load(force: Boolean = false) {
         val current = _state.value
@@ -378,6 +403,34 @@ class ClientsViewModel @Inject constructor(
         runBulk("Adjusted") { repo.bulkAdjustClients(it, addDays, addBytes, flow) }
 
     fun bulkDelete() = runBulk("Deleted") { repo.bulkDeleteClients(it) }
+
+    // ---- Export / import / delete-unbound (panel 3.4.0) -------------------
+
+    fun exportClients() {
+        viewModelScope.launch {
+            repo.exportClients()
+                .onSuccess { json -> _state.update { it.copy(exportJson = json) } }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Export failed: ${e.message}") } }
+        }
+    }
+
+    fun dismissExport() = _state.update { it.copy(exportJson = null) }
+
+    fun importClients(jsonText: String) {
+        viewModelScope.launch {
+            repo.importClients(jsonText)
+                .onSuccess { _state.update { it.copy(transientMessage = "Clients imported") }; load(force = true) }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Import failed: ${e.message}") } }
+        }
+    }
+
+    fun deleteOrphanClients() {
+        viewModelScope.launch {
+            repo.deleteOrphanClients()
+                .onSuccess { _state.update { it.copy(transientMessage = "Unbound clients deleted") }; load(force = true) }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Delete failed: ${e.message}") } }
+        }
+    }
 
     fun dismissMessage() = _state.update { it.copy(transientMessage = null) }
 }

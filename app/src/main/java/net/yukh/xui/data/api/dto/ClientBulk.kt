@@ -23,3 +23,8 @@ data class BulkAdjustRequest(
 /** Body for POST /panel/api/clients/bulkDel. */
 @Serializable
 data class BulkDelRequest(val emails: List<String>, val keepTraffic: Boolean = false)
+
+/** Body for POST /panel/api/clients/import — [data] is the stringified JSON array
+ *  of {client, inboundIds} entries (the same shape GET /clients/export returns). */
+@Serializable
+data class ClientImportRequest(val data: String)

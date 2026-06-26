@@ -22,8 +22,10 @@ import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.api.dto.BulkAdjustRequest
 import net.yukh.xui.data.api.dto.BulkDelRequest
 import net.yukh.xui.data.api.dto.BulkEmailsRequest
+import net.yukh.xui.data.api.dto.ClientImportRequest
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.VlessEncAuth
+import kotlinx.serialization.json.JsonElement
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
@@ -39,6 +41,8 @@ import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private val exportPrettyJson = Json { prettyPrint = true; isLenient = true }
 
 /**
  * Single point of truth for talking to the panel.
@@ -267,6 +271,18 @@ class PanelRepository @Inject constructor(
 
     suspend fun bulkDeleteClients(emails: List<String>): Result<Unit> =
         authedAck { it.bulkDeleteClients(BulkDelRequest(emails)) }
+
+    /** Export all clients as a pretty `[{client, inboundIds}]` JSON string. */
+    suspend fun exportClients(): Result<String> =
+        authedData { it.exportClients() }.map { exportPrettyJson.encodeToString(JsonElement.serializer(), it) }
+
+    /** Import clients from the export JSON; existing emails are skipped by the panel. */
+    suspend fun importClients(json: String): Result<Unit> =
+        authedAck { it.importClients(ClientImportRequest(json)) }
+
+    /** Delete every client not attached to any inbound (cascades traffic/IP log/links). */
+    suspend fun deleteOrphanClients(): Result<Unit> =
+        authedAck { it.deleteOrphanClients() }
 
     suspend fun listOnlines(): Result<List<String>> =
         authedData { it.listOnlines() }

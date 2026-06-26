@@ -309,9 +309,7 @@ private fun WireguardForm(draft: JsonObject, onChange: (JsonObject) -> Unit) {
     Field(tr("MTU"), s.int("mtu")?.toString() ?: "", numeric = true) {
         onChange(draft.putSettings(s.putInt("mtu", it.toIntOrNull() ?: 1420)))
     }
-    Field(tr("Workers"), s.int("workers")?.toString() ?: "", numeric = true) {
-        onChange(draft.putSettings(s.putInt("workers", it.toIntOrNull() ?: 2)))
-    }
+    // `workers` was dropped in xray-core v26.6.22 (panel 3.4.0) — field removed.
     SwitchRow(tr("No-kernel TUN"), s.bool("noKernelTun")) { onChange(draft.putSettings(s.putBool("noKernelTun", it))) }
     Field(tr("Reserved"), s.string("reserved")) { onChange(draft.putSettings(s.putString("reserved", it))) }
 
