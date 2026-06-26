@@ -14,6 +14,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,9 +25,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.shared.json.jsonGetObjectList
 import net.yukh.xui.shared.json.jsonGetString
 import net.yukh.xui.shared.json.jsonGetStrings
+import net.yukh.xui.shared.json.jsonPutBool
 import net.yukh.xui.shared.json.jsonPutString
 import net.yukh.xui.shared.json.jsonPutStrings
 import net.yukh.xui.shared.json.jsonRemove
@@ -81,13 +86,37 @@ fun RoutingXrayScreen(
                 onConfigChange(jsonPutString(configJson, listOf("routing", "domainStrategy"), it))
             }
 
-            XraySection(tr("Routing rules"))
+            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                XraySection(tr("Routing rules"))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = {
+                        platformPickFile { _, bytes ->
+                            parseRulesImport(bytes.decodeToString())?.let { setRules(it) }
+                        }
+                    }) { Text("⬆ " + tr("Import")) }
+                    TextButton(
+                        onClick = { platformExportFile("routing-rules.json", ("[" + rules().joinToString(",") + "]").encodeToByteArray()) },
+                        enabled = rules().isNotEmpty(),
+                    ) { Text("⬇ " + tr("Export")) }
+                }
+            }
             rules().forEachIndexed { i, rule ->
+                // The api stats rule is locked on (disabling it breaks traffic
+                // accounting); every other rule is enabled unless `enabled:false`.
+                val api = isApiRule(rule)
+                val on = api || ruleEnabled(rule)
                 Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                        Text("#${i + 1}  ${ruleSummary(rule)}", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                        TextButton(onClick = { editRule = i }) { Text(tr("Edit")) }
-                        TextButton(onClick = { setRules(rules().filterIndexed { j, _ -> j != i }) }) { Text(tr("Delete"), color = MaterialTheme.colorScheme.error) }
+                    Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)) {
+                        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                            Text("#${i + 1}  ${ruleSummary(rule)}", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                            Switch(checked = on, enabled = !api, onCheckedChange = { v ->
+                                val l = rules().toMutableList(); l[i] = jsonPutBool(l[i], listOf("enabled"), v); setRules(l)
+                            })
+                        }
+                        Row(Modifier.fillMaxWidth(), Arrangement.End, Alignment.CenterVertically) {
+                            TextButton(onClick = { editRule = i }) { Text(tr("Edit")) }
+                            TextButton(onClick = { setRules(rules().filterIndexed { j, _ -> j != i }) }) { Text(tr("Delete"), color = MaterialTheme.colorScheme.error) }
+                        }
                     }
                 }
             }
@@ -121,6 +150,26 @@ fun RoutingXrayScreen(
             onDismiss = { editBal = null },
         )
     }
+}
+
+/** A rule is enabled unless it carries `enabled:false` (panel v3.4.x strips
+ *  disabled rules from the running config; older panels ignore the flag). */
+private fun ruleEnabled(rule: String): Boolean = jsonGetString(rule, listOf("enabled")) != "false"
+
+/** The internal stats api rule — kept locked on, or traffic accounting breaks. */
+private fun isApiRule(rule: String): Boolean =
+    jsonGetString(rule, listOf("outboundTag")) == "api" && jsonGetStrings(rule, listOf("inboundTag")).contains("api")
+
+/** Parse a rules-import payload: a bare array, `{rules:[…]}`, or
+ *  `{routing:{rules:[…]}}` (matches the panel's flexible import). */
+private fun parseRulesImport(text: String): List<String>? {
+    val el = try { Json.parseToJsonElement(text.trim()) } catch (e: Exception) { return null }
+    val arr = when (el) {
+        is JsonArray -> el
+        is JsonObject -> (el["rules"] as? JsonArray) ?: ((el["routing"] as? JsonObject)?.get("rules") as? JsonArray)
+        else -> null
+    } ?: return null
+    return arr.map { it.toString() }
 }
 
 private fun ruleSummary(rule: String): String {

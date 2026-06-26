@@ -24,6 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.shared.json.jsonGetBool
 import net.yukh.xui.shared.json.jsonGetChild
 import net.yukh.xui.shared.json.jsonGetObjectList
@@ -95,7 +98,20 @@ fun DnsXrayScreen(
                 }
             }
 
-            XraySection(tr("DNS servers"))
+            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                XraySection(tr("DNS servers"))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = {
+                        platformPickFile { _, bytes ->
+                            parseServersImport(bytes.decodeToString())?.let { setServers(it) }
+                        }
+                    }) { Text("⬆ " + tr("Import")) }
+                    TextButton(
+                        onClick = { platformExportFile("dns-servers.json", ("[" + servers().joinToString(",") + "]").encodeToByteArray()) },
+                        enabled = servers().isNotEmpty(),
+                    ) { Text("⬇ " + tr("Export")) }
+                }
+            }
             servers().forEachIndexed { i, srv ->
                 Card(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
@@ -154,6 +170,18 @@ private fun DnsServerDialog(initial: String, onConfirm: (String) -> Unit, onDism
         confirmButton = { TextButton(onClick = { onConfirm(obj) }, enabled = g("address").isNotBlank()) { Text(tr("Save")) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
+}
+
+/** Parse a DNS-servers import payload: a bare array, `{servers:[…]}`, or
+ *  `{dns:{servers:[…]}}` (matches the panel's flexible import). */
+private fun parseServersImport(text: String): List<String>? {
+    val el = try { Json.parseToJsonElement(text.trim()) } catch (e: Exception) { return null }
+    val arr = when (el) {
+        is JsonArray -> el
+        is JsonObject -> (el["servers"] as? JsonArray) ?: ((el["dns"] as? JsonObject)?.get("servers") as? JsonArray)
+        else -> null
+    } ?: return null
+    return arr.map { it.toString() }
 }
 
 /** A DNS server's address — its `address` field if it's an object, else the bare

@@ -308,6 +308,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Add outbound" to "Добавить outbound",
     "Import from vless:// link" to "Импорт из vless://-ссылки",
     "Import" to "Импортировать",
+    "Export" to "Экспортировать",
     "Outbound" to "Outbound",
     "Protocol" to "Протокол",
     "Edit raw JSON" to "Править сырой JSON",
