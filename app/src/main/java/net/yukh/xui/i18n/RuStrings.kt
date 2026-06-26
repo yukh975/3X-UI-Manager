@@ -388,6 +388,9 @@ val ruStrings: Map<String, String> = mapOf(
     "No nodes. Tap + to add a remote panel." to
         "Нет узлов. Нажмите +, чтобы добавить удалённую панель.",
     "Add node?" to "Добавить узел?",
+    "Update node?" to "Обновить узел?",
+    "Update to dev build (latest commit)" to "Обновить до dev-сборки (последний коммит)",
+    "Dev builds are unstable." to "Dev-сборки нестабильны.",
     "online" to "онлайн",
     "total" to "всего",
     "offline" to "офлайн",

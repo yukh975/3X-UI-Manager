@@ -19,8 +19,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -33,7 +35,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +58,7 @@ fun NodesScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var pendingUpdate by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) { vm.load() }
     LaunchedEffect(state.transientMessage) {
@@ -103,7 +108,7 @@ fun NodesScreen(
                         latestVersion = state.latestVersion,
                         traffic = state.trafficByNode[node.id],
                         updating = node.id in state.updatingIds,
-                        onUpdate = { vm.updateNode(node.id) },
+                        onUpdate = { pendingUpdate = node.id },
                         onClick = { vm.openEditEditor(node.id) },
                     )
                 }
@@ -119,6 +124,39 @@ fun NodesScreen(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter),
         ) { Snackbar { Text(it.visuals.message) } }
+    }
+
+    pendingUpdate?.let { id ->
+        var dev by remember { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { pendingUpdate = null },
+            title = { Text(tr("Update node?")) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { dev = !dev },
+                    ) {
+                        Checkbox(checked = dev, onCheckedChange = { dev = it })
+                        Text(tr("Update to dev build (latest commit)"))
+                    }
+                    if (dev) {
+                        Text(
+                            tr("Dev builds are unstable."),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { vm.updateNode(id, dev); pendingUpdate = null }) { Text(tr("Update")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingUpdate = null }) { Text(tr("Cancel")) }
+            },
+        )
     }
 
     // The node editor is rendered as a full-screen overlay by MainScreen

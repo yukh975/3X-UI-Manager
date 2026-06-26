@@ -88,11 +88,11 @@ class NodesViewModel @Inject constructor(
     }
 
     /** Trigger a 3x-ui self-update on a single node via the central panel. */
-    fun updateNode(id: Int) {
+    fun updateNode(id: Int, dev: Boolean = false) {
         if (id in _state.value.updatingIds) return
         _state.update { it.copy(updatingIds = it.updatingIds + id) }
         viewModelScope.launch {
-            repo.updateNodes(listOf(id))
+            repo.updateNodes(listOf(id), dev)
                 .onSuccess { _state.update { it.copy(transientMessage = "Node update started") } }
                 .onFailure { e -> _state.update { it.copy(transientMessage = "Node update failed: ${e.message}") } }
             // The node restarts during the update; refresh a bit later, then clear the flag.

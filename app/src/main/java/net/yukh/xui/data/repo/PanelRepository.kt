@@ -266,9 +266,10 @@ class PanelRepository @Inject constructor(
     suspend fun setNodeEnable(id: Int, enable: Boolean): Result<Unit> =
         authedAck { it.setNodeEnable(id, EnableRequest(enable)) }
 
-    /** Trigger a 3x-ui self-update on the given node(s) via the central panel. */
-    suspend fun updateNodes(ids: List<Int>): Result<Unit> =
-        authedAck { it.updateNodePanel(NodeIdsRequest(ids)) }
+    /** Trigger a 3x-ui self-update on the given node(s) via the central panel.
+     *  [dev] = install the rolling dev-latest build instead of the stable release. */
+    suspend fun updateNodes(ids: List<Int>, dev: Boolean = false): Result<Unit> =
+        authedAck { it.updateNodePanel(NodeIdsRequest(ids, dev)) }
 
     /**
      * Online clients on a specific node, queried directly against that node's own

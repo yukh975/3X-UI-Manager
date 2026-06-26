@@ -9,6 +9,9 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.3.24] — Unreleased
 
 ### Added
+- **Update nodes to the dev channel.** The node-update confirmation now has a
+  "dev build (latest commit)" checkbox — checked, the node installs the rolling
+  dev-latest build instead of the stable release (panel v3.4.1).
 - **Dashboard client counts.** A card at the top of the dashboard (before CPU)
   shows how many clients there are in total and how many are online right now;
   tap it to open the online-by-server list.

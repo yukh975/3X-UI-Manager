@@ -51,9 +51,10 @@ data class Node(
     )
 }
 
-/** Body for POST /panel/api/nodes/updatePanel — node ids to self-update. */
+/** Body for POST /panel/api/nodes/updatePanel — node ids to self-update.
+ *  `dev=true` installs the rolling dev-latest build instead of the stable release. */
 @Serializable
-data class NodeIdsRequest(val ids: List<Int>)
+data class NodeIdsRequest(val ids: List<Int>, val dev: Boolean = false)
 
 /** Editable subset sent to POST /nodes/add and /nodes/update/:id. */
 @Serializable
