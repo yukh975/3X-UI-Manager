@@ -9,6 +9,9 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.3.24] — Unreleased
 
 ### Added
+- **Dashboard client counts.** A card at the top of the dashboard (before CPU)
+  shows how many clients there are in total and how many are online right now;
+  tap it to open the online-by-server list.
 - **Enable / disable routing rules.** Each rule in the Routing editor now has an
   on/off switch (like panel 3.4.x) — a disabled rule is kept but greyed out and
   dropped from the running config by the panel on save (needs panel **v3.4.0+**;
@@ -24,6 +27,11 @@ uses [Semantic Versioning](https://semver.org/).
   independently; *Clear all* resets them.
 
 ### Changed
+- **Metric-history ranges match the panel (v3.4.x).** The interval selector on
+  the dashboard charts is now 2m / 1h / 3h / 6h / 12h / 24h / 2d / 7d (history is
+  kept for up to 7 days), replacing the old 30m / 2h / 5h set.
+- **Cleaner empty Nodes screen.** "No nodes yet" is now centred with an icon and
+  readable margins instead of edge-to-edge left-aligned text.
 - **Client group is picked from existing groups.** In the client editor (both
   new and edit) the *Group* field became an autocomplete dropdown listing the
   groups already used by other clients, so you select one instead of retyping it

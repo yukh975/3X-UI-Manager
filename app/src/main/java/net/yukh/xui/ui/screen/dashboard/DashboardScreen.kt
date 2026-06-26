@@ -161,6 +161,11 @@ fun DashboardScreen(
                     else Text(tr("Waiting for first response…"))
                 }
             } else {
+                ClientsSummaryCard(
+                    total = state.clientsTotal,
+                    online = state.onlineCount,
+                    onClick = vm::openOnlineList,
+                )
                 MetricBarCard(
                     icon = Icons.Outlined.Speed,
                     title = tr("CPU") + if (status.cpuCores > 0) " · ${status.cpuCores} ${tr("cores")}" else "",
@@ -205,7 +210,7 @@ fun DashboardScreen(
                 }
 
                 // Each metric is its own full-width card, in this order:
-                // CPU, Memory, (Disk), Traffic, Load, Net, Connections, Online.
+                // Clients, CPU, Memory, (Disk), Traffic, Load, Net, Connections.
                 MetricTileCard(
                     modifier = Modifier.fillMaxWidth(),
                     icon = Icons.Outlined.Speed,
@@ -226,13 +231,6 @@ fun DashboardScreen(
                     title = tr("Connections"),
                     value = "TCP ${status.tcpCount} · UDP ${status.udpCount}",
                     onClick = { vm.openMetricChart(MetricBlock.CONN) },
-                )
-                MetricTileCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    icon = Icons.Outlined.People,
-                    title = tr("Online"),
-                    value = state.onlineCount.toString(),
-                    onClick = vm::openOnlineList,
                 )
 
                 if (status.uptime > 0 || status.publicIP.ipv4.isNotBlank()) {
@@ -721,6 +719,44 @@ private fun MetricBarCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ClientsSummaryCard(total: Int?, online: Int, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.People, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text("  ${tr("Clients")}", style = MaterialTheme.typography.labelMedium)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                ClientStat(value = total?.toString() ?: "—", label = tr("total"))
+                ClientStat(
+                    value = online.toString(),
+                    label = tr("online"),
+                    valueColor = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClientStat(value: String, label: String, valueColor: Color = Color.Unspecified) {
+    Column {
+        Text(value, style = MaterialTheme.typography.headlineSmall, color = valueColor)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

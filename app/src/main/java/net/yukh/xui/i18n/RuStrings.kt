@@ -389,6 +389,7 @@ val ruStrings: Map<String, String> = mapOf(
         "Нет узлов. Нажмите +, чтобы добавить удалённую панель.",
     "Add node?" to "Добавить узел?",
     "online" to "онлайн",
+    "total" to "всего",
     "offline" to "офлайн",
     "Ping" to "Пинг",
     "CPU " to "CPU ",

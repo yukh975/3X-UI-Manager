@@ -22,6 +22,7 @@ import net.yukh.xui.data.repo.ServerTraffic
 data class DashboardUiState(
     val status: ServerStatus? = null,
     val onlineEmails: List<String> = emptyList(),
+    val clientsTotal: Int? = null,
     val loading: Boolean = false,
     val refreshingNow: Boolean = false,
     val pullRefreshing: Boolean = false,
@@ -78,6 +79,7 @@ class DashboardViewModel @Inject constructor(
         _state.update { it.copy(loading = it.status == null) }
         if (_state.value.updateInfo == null) refreshUpdateInfo()
         if (_state.value.mainTraffic == null) refreshMonthlyTraffic()
+        if (_state.value.clientsTotal == null) refreshClientsTotal()
         pollJob = viewModelScope.launch {
             while (isActive) {
                 fetchOnce()
@@ -102,6 +104,7 @@ class DashboardViewModel @Inject constructor(
             fetchOnce()
             refreshUpdateInfo()
             refreshMonthlyTraffic()
+            refreshClientsTotal()
             _state.update { it.copy(pullRefreshing = false) }
         }
     }
@@ -239,6 +242,16 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             repo.monthlyTrafficByServer().onSuccess { byServer ->
                 _state.update { it.copy(mainTraffic = byServer[0]) }
+            }
+        }
+    }
+
+    // Total client count for the dashboard summary — fetched alongside monthly
+    // traffic (once on start + on pull-to-refresh), not every status poll.
+    private fun refreshClientsTotal() {
+        viewModelScope.launch {
+            repo.listClients().onSuccess { list ->
+                _state.update { it.copy(clientsTotal = list.size) }
             }
         }
     }
