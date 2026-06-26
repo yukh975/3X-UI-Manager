@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -38,6 +40,7 @@ fun NodeEditorScreen(
     isNew: Boolean,
     saving: Boolean,
     error: String?,
+    inboundCount: Int = 0,
     onSave: (NodeModel) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit,
@@ -51,17 +54,19 @@ fun NodeEditorScreen(
     var apiToken by remember { mutableStateOf(initial.apiToken) }
     var enable by remember { mutableStateOf(initial.enable) }
     var allowPrivate by remember { mutableStateOf(initial.allowPrivateAddress) }
-    var tlsVerify by remember { mutableStateOf(!initial.tlsVerifyMode.equals("skip", ignoreCase = true)) }
+    var tlsMode by remember { mutableStateOf(initial.tlsVerifyMode.ifBlank { "verify" }) }
     var outboundTag by remember { mutableStateOf(initial.outboundTag) }
 
+    // mTLS authenticates the panel→node link with a client cert, so the API
+    // token is optional in that mode (matches the Android editor).
     val canSave = !saving && name.isNotBlank() && address.isNotBlank() &&
-        (port.toIntOrNull() ?: 0) in 1..65535 && apiToken.isNotBlank()
+        (port.toIntOrNull() ?: 0) in 1..65535 && (apiToken.isNotBlank() || tlsMode == "mtls")
 
     fun build() = initial.copy(
         name = name.trim(), remark = remark.trim(), scheme = scheme, address = address.trim(),
         port = port.toIntOrNull() ?: 443, basePath = basePath.trim().ifBlank { "/" },
         apiToken = apiToken.trim(), enable = enable, allowPrivateAddress = allowPrivate,
-        tlsVerifyMode = if (tlsVerify) "verify" else "skip",
+        tlsVerifyMode = tlsMode,
         outboundTag = outboundTag.trim(),
     )
 
@@ -103,20 +108,46 @@ fun NodeEditorScreen(
             Field(outboundTag, { outboundTag = it }, tr("Route via outbound tag (optional)"))
 
             ToggleRow(tr("Enabled"), enable) { enable = it }
-            ToggleRow(tr("Verify TLS certificate"), tlsVerify) { tlsVerify = it }
+
+            Text(tr("TLS verify"), style = MaterialTheme.typography.labelMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf("verify", "skip", "pin", "mtls").forEach { mode ->
+                    FilterChip(selected = tlsMode == mode, onClick = { tlsMode = mode }, label = { Text(mode) })
+                }
+            }
+            if (tlsMode == "mtls") {
+                Text(
+                    tr("Mutual TLS: the API token is optional. Register this panel's CA on the node (menu → Node mTLS)."),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
             ToggleRow(tr("Allow private address"), allowPrivate) { allowPrivate = it }
 
             if (!isNew) {
                 Spacer(Modifier.height(8.dp))
+                // A node with bound inbounds can't be removed — the panel rejects
+                // it, so block the action and say how many must be detached first.
                 Button(
                     onClick = onDelete,
-                    enabled = !saving,
+                    enabled = !saving && inboundCount == 0,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
                     ),
                 ) { Text(tr("Delete node")) }
+                if (inboundCount > 0) {
+                    Text(
+                        "${tr("Detach its inbounds first")} ($inboundCount)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             Spacer(Modifier.height(24.dp))
         }

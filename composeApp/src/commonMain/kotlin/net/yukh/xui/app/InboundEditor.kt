@@ -134,6 +134,10 @@ fun InboundEditorScreen(
             EditField(remark, { remark = it }, tr("Remark"))
             EditField(listen, { listen = it }, tr("Listen IP (blank = all)"))
             EditField(port, { port = it.filter(Char::isDigit) }, tr("Port"), KeyboardType.Number)
+            if (port == "62789") Text(
+                tr("Port 62789 is the reserved internal Xray API port — the panel may reject it."),
+                color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium,
+            )
             EditField(totalGb, { totalGb = it }, tr("Traffic limit (GB, 0 = unlimited)"), KeyboardType.Decimal)
 
             Text(tr("Traffic reset"), style = MaterialTheme.typography.labelMedium)

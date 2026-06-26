@@ -390,6 +390,7 @@ fun App() {
                         source = editingClient!!,
                         isNew = editingClientNew,
                         availableInbounds = inbounds,
+                        availableGroups = clients.mapNotNull { it.group.ifBlank { null } }.distinct().sorted(),
                         saving = editorSaving,
                         error = editorError,
                         links = clientLinks,
@@ -507,6 +508,7 @@ fun App() {
                         isNew = editingNodeNew,
                         saving = editorSaving,
                         error = editorError,
+                        inboundCount = inbounds.count { it.nodeId == editingNode!!.id },
                         onSave = { model ->
                             scope.launch {
                                 editorSaving = true; editorError = null
@@ -722,10 +724,10 @@ fun App() {
                                     updatingNodeIds = updatingNodeIds,
                                     onAdd = { editingNodeNew = true; editorError = null; editingNode = NodeModel() },
                                     onEdit = { n -> editingNodeNew = false; editorError = null; editingNode = n.toModel() },
-                                    onUpdateNode = { n ->
+                                    onUpdateNode = { n, dev ->
                                         scope.launch {
                                             updatingNodeIds = updatingNodeIds + n.id
-                                            try { api?.updateNodePanel(listOf(n.id)) } catch (e: Throwable) {}
+                                            try { api?.updateNodePanel(listOf(n.id), dev) } catch (e: Throwable) {}
                                             updatingNodeIds = updatingNodeIds - n.id
                                             refreshAll()
                                         }

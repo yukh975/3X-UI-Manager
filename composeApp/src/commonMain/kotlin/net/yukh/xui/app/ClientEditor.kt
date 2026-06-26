@@ -17,8 +17,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -51,6 +53,7 @@ fun ClientEditorScreen(
     source: Client,
     isNew: Boolean,
     availableInbounds: List<InboundSlim>,
+    availableGroups: List<String> = emptyList(),
     saving: Boolean,
     error: String?,
     links: List<String>,
@@ -109,6 +112,15 @@ fun ClientEditorScreen(
             CField(reset, { reset = it.filter(Char::isDigit) }, tr("Traffic reset period (days, 0 = off)"), KeyboardType.Number)
             CField(tgId, { tgId = it.filter(Char::isDigit) }, tr("Telegram ID (optional)"), KeyboardType.Number)
             CField(group, { group = it }, tr("Group (optional)"))
+            // Pick from groups already in use (avoids typos that split a group in two).
+            val groupSuggestions = availableGroups.filter { it.isNotBlank() && it != group.trim() }
+            if (groupSuggestions.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    groupSuggestions.forEach { g ->
+                        FilterChip(selected = false, onClick = { group = g }, label = { Text(g) })
+                    }
+                }
+            }
             CField(comment, { comment = it }, tr("Comment (optional)"))
             CToggle(tr("Enabled"), enable) { enable = it }
 

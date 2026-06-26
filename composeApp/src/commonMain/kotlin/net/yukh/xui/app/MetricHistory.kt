@@ -55,9 +55,10 @@ data class MetricChartState(
     val loading: Boolean = false,
 )
 
-/** Interval options → API bucket seconds (~60 points each). Default: real-time. */
+/** Interval options → API bucket seconds. Matches the panel (v3.4.x): history is
+ *  kept for up to 7 days. Default (2m) is effectively real-time. */
 val BUCKET_OPTIONS: List<Pair<Int, String>> = listOf(
-    2 to "Real-time", 30 to "30 min", 60 to "1 hour", 120 to "2 hours", 180 to "3 hours", 300 to "5 hours",
+    2 to "2m", 60 to "1h", 180 to "3h", 360 to "6h", 720 to "12h", 1440 to "24h", 2880 to "2d", 10080 to "7d",
 )
 
 private fun MetricKind.format(v: Double): String = when (this) {

@@ -376,10 +376,11 @@ fun NodesListScreen(
     updatingNodeIds: Set<Int>,
     onAdd: () -> Unit,
     onEdit: (Node) -> Unit,
-    onUpdateNode: (Node) -> Unit,
+    onUpdateNode: (Node, Boolean) -> Unit,
     onCopyCa: () -> Unit,
     onSetTrustCa: () -> Unit,
 ) {
+    var pendingUpdate by remember { mutableStateOf<Node?>(null) }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -422,7 +423,7 @@ fun NodesListScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     when {
                                         n.id in updatingNodeIds -> Text("…", style = MaterialTheme.typography.labelMedium)
-                                        outdated -> TextButton(onClick = { onUpdateNode(n) }) {
+                                        outdated -> TextButton(onClick = { pendingUpdate = n }) {
                                             Text("${tr("Update to")} v$masterVersion")
                                         }
                                     }
@@ -437,6 +438,30 @@ fun NodesListScreen(
                 }
             }
         }
+    }
+
+    pendingUpdate?.let { node ->
+        var dev by remember { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { pendingUpdate = null },
+            title = { Text(tr("Update node?")) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { dev = !dev },
+                    ) {
+                        Checkbox(checked = dev, onCheckedChange = { dev = it })
+                        Text(tr("Update to dev build (latest commit)"))
+                    }
+                    if (dev) Text(tr("Dev builds are unstable."),
+                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 8.dp))
+                }
+            },
+            confirmButton = { TextButton(onClick = { onUpdateNode(node, dev); pendingUpdate = null }) { Text(tr("Update")) } },
+            dismissButton = { TextButton(onClick = { pendingUpdate = null }) { Text(tr("Cancel")) } },
+        )
     }
 }
 
