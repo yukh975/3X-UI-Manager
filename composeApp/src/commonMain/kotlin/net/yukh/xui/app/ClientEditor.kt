@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import net.yukh.xui.shared.dto.Client
+import net.yukh.xui.shared.dto.ClientIpInfo
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundSlim
 
@@ -55,6 +56,10 @@ fun ClientEditorScreen(
     links: List<String>,
     linksLoading: Boolean,
     onShowLinks: () -> Unit,
+    ips: List<ClientIpInfo>,
+    ipsLoading: Boolean,
+    onShowIps: () -> Unit,
+    onClearIps: () -> Unit,
     onSave: (ClientModel, List<Int>) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit,
@@ -142,6 +147,36 @@ fun ClientEditorScreen(
                                 modifier = Modifier.size(200.dp),
                             )
                             SelectionContainer { Text(link, style = MaterialTheme.typography.bodySmall) }
+                        }
+                    }
+                }
+                // Per-client IP log (panel v3.4): list the source IPs the panel
+                // recorded for this email, with a clear-log action.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(onClick = onShowIps, modifier = Modifier.weight(1f)) {
+                        Text(tr("IP log"))
+                    }
+                    if (ips.isNotEmpty()) {
+                        OutlinedButton(onClick = onClearIps) { Text(tr("Clear")) }
+                    }
+                }
+                if (ipsLoading) Text(tr("Loading…"), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (ips.isNotEmpty()) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            ips.forEach { rec ->
+                                val suffix = listOfNotNull(
+                                    rec.node.ifBlank { null },
+                                    rec.time.ifBlank { null },
+                                ).joinToString(" · ")
+                                Text(
+                                    if (suffix.isBlank()) rec.ip else "${rec.ip}  ·  $suffix",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
                         }
                     }
                 }

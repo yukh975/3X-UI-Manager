@@ -179,6 +179,15 @@ val ruStrings: Map<String, String> = mapOf(
     "Group (optional)" to "Группа (необязательно)",
     "Comment (optional)" to "Комментарий (необязательно)",
     "Show connection links" to "Показать ссылки-подключения",
+    "IP log" to "Журнал IP",
+    "Clear" to "Очистить",
+    "All" to "Все",
+    "Disabled" to "Выключены",
+    "All groups" to "Все группы",
+    "Export clients" to "Экспорт клиентов",
+    "Import clients" to "Импорт клиентов",
+    "Delete unbound clients" to "Удалить непривязанных",
+    "Search by email" to "Поиск по email",
 
     // Xray config
     "Xray config" to "Конфиг Xray",

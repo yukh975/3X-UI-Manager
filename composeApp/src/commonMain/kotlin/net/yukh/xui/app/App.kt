@@ -31,6 +31,7 @@ import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientCreatePayload
+import net.yukh.xui.shared.dto.ClientIpInfo
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
@@ -95,6 +96,8 @@ fun App() {
             var editingClientNew by remember { mutableStateOf(false) }
             var clientLinks by remember { mutableStateOf<List<String>>(emptyList()) }
             var clientLinksLoading by remember { mutableStateOf(false) }
+            var clientIps by remember { mutableStateOf<List<ClientIpInfo>>(emptyList()) }
+            var clientIpsLoading by remember { mutableStateOf(false) }
             var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
             var geoAllUpdating by remember { mutableStateOf(false) }
             var xrayBusy by remember { mutableStateOf(false) }
@@ -363,6 +366,24 @@ fun App() {
                                 clientLinksLoading = false
                             }
                         },
+                        ips = clientIps,
+                        ipsLoading = clientIpsLoading,
+                        onShowIps = {
+                            scope.launch {
+                                clientIpsLoading = true
+                                val r = try { api?.clientIps(editingClient!!.email) } catch (e: Throwable) { null }
+                                clientIps = r?.obj ?: emptyList()
+                                clientIpsLoading = false
+                            }
+                        },
+                        onClearIps = {
+                            scope.launch {
+                                clientIpsLoading = true
+                                try { api?.clearClientIps(editingClient!!.email) } catch (e: Throwable) {}
+                                clientIps = emptyList()
+                                clientIpsLoading = false
+                            }
+                        },
                         onSave = { model, inboundIds ->
                             scope.launch {
                                 editorSaving = true; editorError = null
@@ -388,7 +409,7 @@ fun App() {
                                     }
                                 } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
-                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); refreshAll() }
+                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientIps = emptyList(); refreshAll() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
                             }
                         },
@@ -398,11 +419,11 @@ fun App() {
                                 val r = try { api?.deleteClient(editingClient!!.email) }
                                     catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
-                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); refreshAll() }
+                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientIps = emptyList(); refreshAll() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
                             }
                         },
-                        onCancel = { editingClient = null; clientLinks = emptyList(); editorError = null },
+                        onCancel = { editingClient = null; clientLinks = emptyList(); clientIps = emptyList(); editorError = null },
                     )
                 } else if (editingInbound != null) {
                     InboundEditorScreen(
@@ -606,9 +627,32 @@ fun App() {
                                 )
                                 2 -> ClientsListScreen(
                                     clients,
-                                    onAdd = { editorError = null; clientLinks = emptyList(); editingClientNew = true; editingClient = Client() },
-                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); editingClientNew = false; editingClient = c },
+                                    onlineEmails = onlines.toSet(),
+                                    onAdd = { editorError = null; clientLinks = emptyList(); clientIps = emptyList(); editingClientNew = true; editingClient = Client() },
+                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); clientIps = emptyList(); editingClientNew = false; editingClient = c },
                                     onToggle = { c, en -> scope.launch { api?.updateClient(c.email, c.toModel().copy(enable = en)); refreshAll() } },
+                                    onExport = {
+                                        scope.launch {
+                                            val r = try { api?.exportClients() } catch (e: Throwable) { null }
+                                            if (r?.success == true && r.obj != null) {
+                                                platformExportFile("clients.json", r.obj.toString().encodeToByteArray())
+                                            }
+                                        }
+                                    },
+                                    onImport = {
+                                        platformPickFile { _, bytes ->
+                                            scope.launch {
+                                                try { api?.importClients(bytes.decodeToString()) } catch (e: Throwable) {}
+                                                refreshAll()
+                                            }
+                                        }
+                                    },
+                                    onDeleteOrphans = {
+                                        scope.launch {
+                                            try { api?.delOrphanClients() } catch (e: Throwable) {}
+                                            refreshAll()
+                                        }
+                                    },
                                 )
                                 3 -> NodesListScreen(
                                     nodes,
