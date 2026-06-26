@@ -23,6 +23,7 @@ import net.yukh.xui.data.api.dto.BulkAdjustRequest
 import net.yukh.xui.data.api.dto.BulkDelRequest
 import net.yukh.xui.data.api.dto.BulkEmailsRequest
 import net.yukh.xui.data.api.dto.NodeIdsRequest
+import net.yukh.xui.data.api.dto.VlessEncAuth
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
@@ -120,6 +121,10 @@ class PanelRepository @Inject constructor(
 
     suspend fun getPanelUpdateInfo(): Result<PanelUpdateInfo> =
         authedData { it.getPanelUpdateInfo() }
+
+    /** Generate VLESS-encryption key options (X25519 / ML-KEM-768 × native/xorpub/random). */
+    suspend fun getNewVlessEnc(): Result<List<VlessEncAuth>> =
+        authedData { it.getNewVlessEnc() }.map { it.auths }
 
     suspend fun updatePanel(): Result<Unit> =
         authedAck { it.updatePanel() }

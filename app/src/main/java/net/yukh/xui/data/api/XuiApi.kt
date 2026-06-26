@@ -4,6 +4,7 @@ import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.BulkAdjustRequest
 import net.yukh.xui.data.api.dto.BulkDelRequest
 import net.yukh.xui.data.api.dto.BulkEmailsRequest
+import net.yukh.xui.data.api.dto.VlessEncResponse
 import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
@@ -56,6 +57,11 @@ interface XuiApi {
 
     @GET("panel/api/server/getPanelUpdateInfo")
     suspend fun getPanelUpdateInfo(): ApiResponse<PanelUpdateInfo>
+
+    // Generate VLESS-encryption key options (X25519 / ML-KEM-768 × native /
+    // xorpub / random) via `xray vlessenc` (panel v3.4.1, xray-core v26.6.21+).
+    @GET("panel/api/server/getNewVlessEnc")
+    suspend fun getNewVlessEnc(): ApiResponse<VlessEncResponse>
 
     @POST("panel/api/server/updatePanel")
     suspend fun updatePanel(): ApiAck

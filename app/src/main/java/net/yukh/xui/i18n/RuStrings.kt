@@ -394,6 +394,16 @@ val ruStrings: Map<String, String> = mapOf(
     "Advanced: protocol settings (JSON)" to "Расширенно: настройки протокола (JSON)",
     "Hide" to "Скрыть",
     "Show" to "Показать",
+    // VLESS encryption key generator
+    "Generate VLESS encryption key" to "Сгенерировать ключ VLESS encryption",
+    "VLESS encryption key" to "Ключ VLESS encryption",
+    "Key generation" to "Генерация ключа",
+    "Decryption" to "Decryption",
+    "Encryption" to "Encryption",
+    "Insert decryption" to "Вставить decryption",
+    "No keys returned." to "Ключи не получены.",
+    "Decryption goes on this inbound; encryption goes to the clients." to
+        "Decryption — на этот inbound; encryption — клиентам.",
     "Clients are managed on the Clients tab and are kept as-is." to
         "Клиентами управляет вкладка Clients, здесь они не затрагиваются.",
     "Create inbound?" to "Создать inbound?",

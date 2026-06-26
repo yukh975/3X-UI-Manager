@@ -1,5 +1,8 @@
 package net.yukh.xui.ui.screen.inbounds
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,8 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -44,17 +49,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.InboundTemplates
+import net.yukh.xui.data.api.dto.VlessEncAuth
+import net.yukh.xui.data.json.asObject
 import net.yukh.xui.data.json.bool
 import net.yukh.xui.data.json.child
+import net.yukh.xui.data.json.putString
 import net.yukh.xui.data.json.string
 import net.yukh.xui.data.json.strings
 import net.yukh.xui.i18n.LocalAppLanguage
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.format.formatDate
+
+private val keygenJson = Json { prettyPrint = true; isLenient = true }
 
 private val NETWORKS = listOf("tcp", "ws", "grpc", "httpupgrade", "xhttp", "kcp")
 private val SECURITIES = listOf("none", "tls", "reality")
@@ -71,6 +86,7 @@ fun InboundEditorScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmSave by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
+    var showVlessKeygen by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding(),
@@ -242,6 +258,13 @@ fun InboundEditorScreen(
 
             HorizontalDivider()
 
+            if (state.protocol == "vless") {
+                OutlinedButton(
+                    onClick = { showVlessKeygen = true; vm.loadVlessKeys() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(tr("Generate VLESS encryption key")) }
+            }
+
             // ---- Advanced (protocol settings, clients excluded) ----
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { showAdvanced = !showAdvanced },
@@ -279,6 +302,22 @@ fun InboundEditorScreen(
             confirmLabel = if (state.isNew) tr("Create") else tr("Save"),
             onConfirm = vm::saveEditor,
             onDismiss = { confirmSave = false },
+        )
+    }
+
+    if (showVlessKeygen) {
+        VlessKeygenDialog(
+            keys = state.vlessKeys,
+            loading = state.vlessKeysLoading,
+            error = state.vlessKeysError,
+            onInsertDecryption = { dec ->
+                val parsed = runCatching { keygenJson.parseToJsonElement(state.settingsText).asObject() }
+                    .getOrNull() ?: JsonObject(emptyMap())
+                vm.setEditorSettings(keygenJson.encodeToString(JsonElement.serializer(), parsed.putString("decryption", dec)))
+                showVlessKeygen = false
+                vm.clearVlessKeys()
+            },
+            onDismiss = { showVlessKeygen = false; vm.clearVlessKeys() },
         )
     }
 
@@ -369,6 +408,70 @@ private fun LabeledDropdown(
             options.forEach { opt ->
                 DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
             }
+        }
+    }
+}
+
+@Composable
+private fun VlessKeygenDialog(
+    keys: List<VlessEncAuth>?,
+    loading: Boolean,
+    error: String?,
+    onInsertDecryption: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selected by remember(keys) { mutableStateOf(keys?.firstOrNull()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(tr("VLESS encryption key")) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                when {
+                    loading -> Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) {
+                        CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                    }
+                    error != null -> Text(error, color = MaterialTheme.colorScheme.error)
+                    keys.isNullOrEmpty() -> Text(tr("No keys returned."))
+                    else -> {
+                        LabeledDropdown(tr("Key generation"), selected?.label ?: "", keys.map { it.label }, true) { lbl ->
+                            selected = keys.firstOrNull { it.label == lbl }
+                        }
+                        selected?.let { a ->
+                            KeyField(tr("Decryption"), a.decryption)
+                            KeyField(tr("Encryption"), a.encryption)
+                            Text(
+                                tr("Decryption goes on this inbound; encryption goes to the clients."),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            val sel = selected
+            TextButton(onClick = { sel?.let { onInsertDecryption(it.decryption) } }, enabled = sel != null) {
+                Text(tr("Insert decryption"))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Close")) } },
+    )
+}
+
+@Composable
+private fun KeyField(label: String, value: String) {
+    val context = LocalContext.current
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
+            IconButton(onClick = {
+                val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText(label, value))
+            }) { Icon(Icons.Outlined.ContentCopy, contentDescription = tr("Copy"), modifier = Modifier.size(18.dp)) }
+        }
+        SelectionContainer {
+            Text(value, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
         }
     }
 }

@@ -9,6 +9,10 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.3.24] — Unreleased
 
 ### Added
+- **VLESS encryption key generator.** In a VLESS inbound, *Generate VLESS
+  encryption key* fetches the panel's key options (X25519 / ML-KEM-768 × native /
+  xorpub / random), shows the decryption/encryption pair (copyable) and can insert
+  the decryption into the inbound's settings (panel v3.4.1, xray-core v26.6.21+).
 - **Bulk client actions.** Long-press a client to enter selection mode, then
   enable, disable, adjust (add/subtract days and traffic, set or clear the XTLS
   flow), or delete the selected clients in one go (panel v3.4.1 bulk endpoints).

@@ -16,6 +16,7 @@ import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.InboundModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.InboundTemplates
+import net.yukh.xui.data.api.dto.VlessEncAuth
 import net.yukh.xui.data.json.asObject
 import net.yukh.xui.data.json.bool
 import net.yukh.xui.data.json.child
@@ -66,6 +67,10 @@ data class InboundEditorState(
     val originalClients: JsonElement? = null,
     val saving: Boolean = false,
     val error: String? = null,
+    // VLESS encryption key generator (lazy-loaded when the dialog opens)
+    val vlessKeys: List<VlessEncAuth>? = null,
+    val vlessKeysLoading: Boolean = false,
+    val vlessKeysError: String? = null,
 ) {
     val canSave: Boolean
         get() = !saving && !loading && (port.toIntOrNull() ?: 0) in 1..65535
@@ -201,6 +206,18 @@ class InboundsViewModel @Inject constructor(
     fun setEditorExpiry(ms: Long) = edit { it.copy(expiryTime = ms) }
     fun setEditorTrafficReset(v: String) = edit { it.copy(trafficReset = v) }
     fun setEditorSettings(v: String) = edit { it.copy(settingsText = v) }
+
+    /** Fetch VLESS-encryption key options for the generator dialog. */
+    fun loadVlessKeys() {
+        edit { it.copy(vlessKeysLoading = true, vlessKeysError = null) }
+        viewModelScope.launch {
+            repo.getNewVlessEnc()
+                .onSuccess { keys -> edit { it.copy(vlessKeys = keys, vlessKeysLoading = false) } }
+                .onFailure { e -> edit { it.copy(vlessKeysLoading = false, vlessKeysError = e.message ?: "Failed") } }
+        }
+    }
+
+    fun clearVlessKeys() = edit { it.copy(vlessKeys = null, vlessKeysError = null) }
 
     fun setEditorProtocol(v: String) = edit {
         if (it.isNew) it.copy(protocol = v, settingsText = settingsWithoutClients(parse(InboundTemplates.settings(v))))
