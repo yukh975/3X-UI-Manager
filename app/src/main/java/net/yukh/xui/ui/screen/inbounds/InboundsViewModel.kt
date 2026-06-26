@@ -2,6 +2,7 @@ package net.yukh.xui.ui.screen.inbounds
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.isActive
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +40,8 @@ data class InboundsUiState(
     val error: String? = null,
     val toggleInFlight: Set<Int> = emptySet(),
     val transientMessage: String? = null,
+    // Live up/down speed (bytes/s) per inbound id, from the delta between polls.
+    val speedByInbound: Map<Int, Pair<Long, Long>> = emptyMap(),
     val editor: InboundEditorState? = null,
 )
 
@@ -87,6 +90,26 @@ class InboundsViewModel @Inject constructor(
     private val _state = MutableStateFlow(InboundsUiState())
     val state: StateFlow<InboundsUiState> = _state.asStateFlow()
 
+    // Previous (up,down) totals + timestamp, to derive live speed between polls.
+    private var prevTotals: Map<Int, Pair<Long, Long>> = emptyMap()
+    private var prevTime: Long = 0L
+    private var pollJob: kotlinx.coroutines.Job? = null
+
+    /** Live up/down speed per inbound while the screen is on-screen (panel v3.4.0). */
+    fun startPolling() {
+        if (pollJob?.isActive == true) return
+        pollJob = viewModelScope.launch {
+            while (isActive) {
+                kotlinx.coroutines.delay(3_000L)
+                if (_state.value.editor == null && !_state.value.refreshing) load()
+            }
+        }
+    }
+
+    fun stopPolling() {
+        pollJob?.cancel(); pollJob = null
+    }
+
     fun load(force: Boolean = false) {
         val current = _state.value
         if (current.refreshing) return
@@ -97,8 +120,21 @@ class InboundsViewModel @Inject constructor(
         viewModelScope.launch {
             repo.listInbounds()
                 .onSuccess { list ->
+                    val sorted = list.sortedBy { ib -> ib.id }
+                    val now = System.currentTimeMillis()
+                    val dt = (now - prevTime) / 1000.0
+                    val speeds = if (prevTime > 0 && dt > 0.5) {
+                        sorted.mapNotNull { ib ->
+                            val prev = prevTotals[ib.id] ?: return@mapNotNull null
+                            val up = (((ib.up - prev.first).coerceAtLeast(0)) / dt).toLong()
+                            val down = (((ib.down - prev.second).coerceAtLeast(0)) / dt).toLong()
+                            ib.id to (up to down)
+                        }.toMap()
+                    } else emptyMap()
+                    prevTotals = sorted.associate { it.id to (it.up to it.down) }
+                    prevTime = now
                     _state.update {
-                        it.copy(items = list.sortedBy { ib -> ib.id }, loading = false, refreshing = false, error = null)
+                        it.copy(items = sorted, speedByInbound = speeds, loading = false, refreshing = false, error = null)
                     }
                 }
                 .onFailure { e ->

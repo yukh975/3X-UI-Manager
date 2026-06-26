@@ -9,6 +9,8 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.4.1] — Unreleased
 
 ### Added
+- **Inbounds: live speed.** The inbounds list now shows each inbound's current
+  up/down speed (↑/↓ B/s), polled while the tab is open (panel v3.4.0).
 - **Client IP log.** The client sheet gains an *IP log* button that shows the
   client's recent connection IPs with the time and the node (`@ node`) each came
   through, plus a *Clear* action (panel v3.4.0).

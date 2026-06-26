@@ -51,6 +51,20 @@ fun InboundsScreen(
 
     LaunchedEffect(Unit) { vm.load() }
 
+    // Live-speed auto-refresh while the Inbounds tab is on-screen.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_START -> vm.startPolling()
+                androidx.lifecycle.Lifecycle.Event.ON_STOP -> vm.stopPolling()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer); vm.stopPolling() }
+    }
+
     LaunchedEffect(state.transientMessage) {
         state.transientMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -92,6 +106,7 @@ fun InboundsScreen(
                 items(state.items, key = { it.id }) { inbound ->
                     InboundRow(
                         inbound = inbound,
+                        speed = state.speedByInbound[inbound.id],
                         toggling = inbound.id in state.toggleInFlight,
                         onToggle = { vm.toggle(inbound.id, !inbound.enable) },
                         onClick = { vm.openEditEditor(inbound.id) },
@@ -122,6 +137,7 @@ fun InboundsScreen(
 @Composable
 private fun InboundRow(
     inbound: InboundSlim,
+    speed: Pair<Long, Long>?,
     toggling: Boolean,
     onToggle: () -> Unit,
     onClick: () -> Unit,
@@ -185,6 +201,14 @@ private fun InboundRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+
+            if (speed != null && (speed.first > 0 || speed.second > 0)) {
+                Text(
+                    "↑ ${speed.first.formatBytes()}/s   ↓ ${speed.second.formatBytes()}/s",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
 
             if (inbound.total > 0) {
