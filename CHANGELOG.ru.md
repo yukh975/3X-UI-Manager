@@ -9,6 +9,12 @@
 ## [0.4.1] — Unreleased
 
 ### Добавлено
+- **Inbound: редактор stream settings (JSON).** Сворачиваемая секция «Расширенно:
+  stream settings (JSON)» делает редактируемым весь объект `streamSettings`, так
+  что новые поля 3.4.x, не вынесенные в структурную форму — Verify Peer Cert By
+  Name, Curve Preferences, REALITY Limit Fallback, XHTTP Session ID Table/Length,
+  пресет Real client IP в sockopt, FinalMask и пр. — можно задать вручную (как уже
+  работает продвинутое у outbound).
 - **Mutual TLS для узлов (mTLS).** В редакторе узла появился режим проверки TLS
   «mtls» (API-токен становится необязательным), а пункт **mTLS узлов** в меню ⋮
   позволяет скопировать CA этой панели (зарегистрировать на узле) и задать

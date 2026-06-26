@@ -86,7 +86,9 @@ fun InboundEditorScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmSave by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
+    var showStreamAdvanced by remember { mutableStateOf(false) }
     var showVlessKeygen by remember { mutableStateOf(false) }
+    val invalidJsonMsg = tr("Invalid JSON")
 
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding(),
@@ -238,6 +240,36 @@ fun InboundEditorScreen(
                     Field(tr("Public key"), rs.string("publicKey"), vm::setRealityPublicKey)
                     Field(tr("Private key"), r.string("privateKey"), vm::setRealityPrivateKey)
                 }
+            }
+
+            // Raw streamSettings escape hatch for advanced TLS/REALITY/sockopt/XHTTP
+            // fields not exposed above (Verify Peer Cert By Name, Limit Fallback,
+            // Session ID Table/Length, Real client IP, FinalMask, …).
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { showStreamAdvanced = !showStreamAdvanced },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(tr("Advanced: stream settings (JSON)"), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(if (showStreamAdvanced) tr("Hide") else tr("Show"), color = MaterialTheme.colorScheme.primary)
+            }
+            if (showStreamAdvanced) {
+                var streamText by remember(showStreamAdvanced) {
+                    mutableStateOf(keygenJson.encodeToString(JsonElement.serializer(), state.stream))
+                }
+                var streamErr by remember(showStreamAdvanced) { mutableStateOf<String?>(null) }
+                OutlinedTextField(
+                    value = streamText,
+                    onValueChange = { txt ->
+                        streamText = txt
+                        runCatching { keygenJson.parseToJsonElement(txt).asObject() }
+                            .onSuccess { streamErr = null; vm.setEditorStreamRaw(it) }
+                            .onFailure { streamErr = invalidJsonMsg }
+                    },
+                    label = { Text("streamSettings") },
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
+                )
+                streamErr?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             }
 
             HorizontalDivider()

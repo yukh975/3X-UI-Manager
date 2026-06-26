@@ -207,6 +207,10 @@ class InboundsViewModel @Inject constructor(
     fun setEditorTrafficReset(v: String) = edit { it.copy(trafficReset = v) }
     fun setEditorSettings(v: String) = edit { it.copy(settingsText = v) }
 
+    /** Replace the whole streamSettings object (raw-JSON advanced editor) — covers
+     *  TLS/REALITY/sockopt/XHTTP/FinalMask fields not exposed as structured fields. */
+    fun setEditorStreamRaw(stream: JsonObject) = edit { it.copy(stream = stream) }
+
     /** Fetch VLESS-encryption key options for the generator dialog. */
     fun loadVlessKeys() {
         edit { it.copy(vlessKeysLoading = true, vlessKeysError = null) }

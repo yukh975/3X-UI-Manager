@@ -9,6 +9,12 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.4.1] — Unreleased
 
 ### Added
+- **Inbound: advanced stream-settings (JSON) editor.** A collapsible "Advanced:
+  stream settings (JSON)" section makes the whole `streamSettings` object editable,
+  so the new 3.4.x TLS/REALITY/transport fields not exposed as structured inputs —
+  Verify Peer Cert By Name, Curve Preferences, REALITY Limit Fallback, XHTTP
+  Session ID Table/Length, the Real-client-IP sockopt preset, FinalMask, etc. —
+  can all be set by hand (matching how outbound advanced settings already work).
 - **Node mutual TLS (mTLS).** The node editor adds an "mtls" TLS-verify mode (the
   API token becomes optional), and a **Node mTLS** entry in the ⋮ menu lets you
   copy this panel's CA (to register on a node) and set a trusted parent CA (so a

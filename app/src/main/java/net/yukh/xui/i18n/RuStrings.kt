@@ -400,6 +400,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Public key" to "Публичный ключ",
     "Private key" to "Приватный ключ",
     "Advanced: protocol settings (JSON)" to "Расширенно: настройки протокола (JSON)",
+    "Advanced: stream settings (JSON)" to "Расширенно: stream settings (JSON)",
     "Hide" to "Скрыть",
     "Show" to "Показать",
     // VLESS encryption key generator
