@@ -100,6 +100,7 @@ fun App() {
             var clientIpsLoading by remember { mutableStateOf(false) }
             var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
             var geoAllUpdating by remember { mutableStateOf(false) }
+            var updatingNodeIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
             var xrayBusy by remember { mutableStateOf(false) }
             // Optimistic Xray running-state, pinned ~6 s after a control action so a
             // lagging 5 s poll doesn't flicker the state back.
@@ -657,8 +658,32 @@ fun App() {
                                 3 -> NodesListScreen(
                                     nodes,
                                     traffic = traffic,
+                                    masterVersion = status?.panelVersion ?: "",
+                                    updatingNodeIds = updatingNodeIds,
                                     onAdd = { editingNodeNew = true; editorError = null; editingNode = NodeModel() },
                                     onEdit = { n -> editingNodeNew = false; editorError = null; editingNode = n.toModel() },
+                                    onUpdateNode = { n ->
+                                        scope.launch {
+                                            updatingNodeIds = updatingNodeIds + n.id
+                                            try { api?.updateNodePanel(listOf(n.id)) } catch (e: Throwable) {}
+                                            updatingNodeIds = updatingNodeIds - n.id
+                                            refreshAll()
+                                        }
+                                    },
+                                    onCopyCa = {
+                                        scope.launch {
+                                            val r = try { api?.nodeMtlsCa() } catch (e: Throwable) { null }
+                                            val ca = r?.obj?.caCert ?: ""
+                                            if (ca.isNotBlank()) platformExportFile("panel-ca.pem", ca.encodeToByteArray())
+                                        }
+                                    },
+                                    onSetTrustCa = {
+                                        platformPickFile { _, bytes ->
+                                            scope.launch {
+                                                try { api?.setNodeMtlsTrustCA(bytes.decodeToString()) } catch (e: Throwable) {}
+                                            }
+                                        }
+                                    },
                                 )
                                 else -> MoreScreen(
                                     host = baseUrl,

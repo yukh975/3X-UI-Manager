@@ -188,6 +188,11 @@ val ruStrings: Map<String, String> = mapOf(
     "Import clients" to "Импорт клиентов",
     "Delete unbound clients" to "Удалить непривязанных",
     "Search by email" to "Поиск по email",
+    "Route via outbound tag (optional)" to "Через outbound-тег (необязательно)",
+    "Update to" to "Обновить до",
+    "mTLS (node certificates)" to "mTLS (сертификаты узлов)",
+    "Export this panel's CA" to "Экспорт CA этой панели",
+    "Set trusted parent CA" to "Доверять CA родителя",
 
     // Xray config
     "Xray config" to "Конфиг Xray",

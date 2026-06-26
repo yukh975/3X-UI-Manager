@@ -52,6 +52,7 @@ fun NodeEditorScreen(
     var enable by remember { mutableStateOf(initial.enable) }
     var allowPrivate by remember { mutableStateOf(initial.allowPrivateAddress) }
     var tlsVerify by remember { mutableStateOf(!initial.tlsVerifyMode.equals("skip", ignoreCase = true)) }
+    var outboundTag by remember { mutableStateOf(initial.outboundTag) }
 
     val canSave = !saving && name.isNotBlank() && address.isNotBlank() &&
         (port.toIntOrNull() ?: 0) in 1..65535 && apiToken.isNotBlank()
@@ -61,6 +62,7 @@ fun NodeEditorScreen(
         port = port.toIntOrNull() ?: 443, basePath = basePath.trim().ifBlank { "/" },
         apiToken = apiToken.trim(), enable = enable, allowPrivateAddress = allowPrivate,
         tlsVerifyMode = if (tlsVerify) "verify" else "skip",
+        outboundTag = outboundTag.trim(),
     )
 
     Column(Modifier.fillMaxSize()) {
@@ -96,6 +98,9 @@ fun NodeEditorScreen(
             Field(port, { port = it.filter(Char::isDigit) }, tr("Port"), KeyboardType.Number)
             Field(basePath, { basePath = it }, tr("Base path"))
             Field(apiToken, { apiToken = it }, tr("API token"))
+            // Route the panel→node API link through this Xray outbound tag
+            // (empty = direct). Panel v3.4.0.
+            Field(outboundTag, { outboundTag = it }, tr("Route via outbound tag (optional)"))
 
             ToggleRow(tr("Enabled"), enable) { enable = it }
             ToggleRow(tr("Verify TLS certificate"), tlsVerify) { tlsVerify = it }

@@ -213,32 +213,96 @@ private fun filterLabel(f: ClientFilter): String = when (f) {
 }
 
 @Composable
-fun NodesListScreen(items: List<Node>, traffic: Map<Int, TrafficSummary>, onAdd: () -> Unit, onEdit: (Node) -> Unit) {
-    ListScaffold(tr("Nodes"), items.size, tr("No nodes yet."), onAdd = onAdd) {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
-            items(items, key = { it.id }) { n ->
-                rowCard(onClick = { onEdit(n) }) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(n.remark.ifBlank { n.name }.ifBlank { "#${n.id}" }, style = MaterialTheme.typography.titleMedium)
-                        Text(if (n.online) "online" else "offline",
-                            color = if (n.online) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.labelMedium)
-                    }
-                    Text("${n.scheme}://${n.address}:${n.port}", style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (n.online) {
-                        Text("CPU: ${n.cpuPct.formatPercent()} · RAM: ${n.memPct.formatPercent()}", style = MaterialTheme.typography.labelMedium)
-                        Text("${n.inboundCount} inbounds · ${n.clientCount} clients", style = MaterialTheme.typography.labelMedium,
+fun NodesListScreen(
+    items: List<Node>,
+    traffic: Map<Int, TrafficSummary>,
+    masterVersion: String,
+    updatingNodeIds: Set<Int>,
+    onAdd: () -> Unit,
+    onEdit: (Node) -> Unit,
+    onUpdateNode: (Node) -> Unit,
+    onCopyCa: () -> Unit,
+    onSetTrustCa: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("${tr("Nodes")} (${items.size})", style = MaterialTheme.typography.headlineSmall)
+            TextButton(onClick = onAdd) { Text("+ " + tr("Add")) }
+        }
+
+        MtlsCard(onCopyCa = onCopyCa, onSetTrustCa = onSetTrustCa)
+
+        if (items.isEmpty()) {
+            Text(tr("No nodes yet."), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
+                items(items, key = { it.id }) { n ->
+                    rowCard(onClick = { onEdit(n) }) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(n.remark.ifBlank { n.name }.ifBlank { "#${n.id}" }, style = MaterialTheme.typography.titleMedium)
+                            Text(if (n.online) "online" else "offline",
+                                color = if (n.online) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelMedium)
+                        }
+                        Text("${n.scheme}://${n.address}:${n.port}", style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        if (n.panelVersion.isNotBlank()) {
-                            Text("3x-ui: v${n.panelVersion}", style = MaterialTheme.typography.labelMedium,
+                        if (n.online) {
+                            Text("CPU: ${n.cpuPct.formatPercent()} · RAM: ${n.memPct.formatPercent()}", style = MaterialTheme.typography.labelMedium)
+                            Text("${n.inboundCount} inbounds · ${n.clientCount} clients", style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (n.panelVersion.isNotBlank()) {
+                                // Offer self-update when the node runs an older 3x-ui than the master panel.
+                                val outdated = masterVersion.isNotBlank() && n.panelVersion != masterVersion
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text("3x-ui: v${n.panelVersion}", style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    when {
+                                        n.id in updatingNodeIds -> Text("…", style = MaterialTheme.typography.labelMedium)
+                                        outdated -> TextButton(onClick = { onUpdateNode(n) }) {
+                                            Text("${tr("Update to")} v$masterVersion")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        traffic[n.id]?.let {
+                            Text("${tr("Traffic this month")}: ${it.bytes.formatBytes()}",
+                                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    traffic[n.id]?.let {
-                        Text("${tr("Traffic this month")}: ${it.bytes.formatBytes()}",
-                            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                }
+            }
+        }
+    }
+}
+
+/** Panel-wide mTLS controls: share this panel's CA (so a parent can trust it),
+ *  and set the parent CA this panel trusts when it acts as a node. Panel v3.4. */
+@Composable
+private fun MtlsCard(onCopyCa: () -> Unit, onSetTrustCa: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(tr("mTLS (node certificates)"), style = MaterialTheme.typography.labelMedium)
+                Text(if (expanded) "▾" else "▸", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (expanded) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onCopyCa) { Text(tr("Export this panel's CA")) }
+                    TextButton(onClick = onSetTrustCa) { Text(tr("Set trusted parent CA")) }
                 }
             }
         }
