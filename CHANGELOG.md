@@ -62,6 +62,9 @@ uses [Semantic Versioning](https://semver.org/).
   independently; *Clear all* resets them.
 
 ### Changed
+- **Clearer online dot in the client list.** Online clients are now marked with a
+  bright green dot (offline stays gray), so it's obvious at a glance who's
+  connected — the old blue dot blended into the card.
 - **Inbound editor warns about the reserved API port.** Entering port 62789 (the
   default internal Xray API port) now shows a warning, since the panel rejects a
   loopback inbound on it (v3.4.0).

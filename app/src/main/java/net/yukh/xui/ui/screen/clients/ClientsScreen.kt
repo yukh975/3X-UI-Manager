@@ -59,6 +59,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -400,9 +401,10 @@ private fun ClientRow(
                 }
                 Box(
                     modifier = Modifier
-                        .size(10.dp)
+                        .size(12.dp)
                         .background(
-                            color = if (online) MaterialTheme.colorScheme.primary
+                            // Online = clear green; offline = muted gray.
+                            color = if (online) Color(0xFF34C759)
                             else MaterialTheme.colorScheme.outline,
                             shape = CircleShape,
                         ),
