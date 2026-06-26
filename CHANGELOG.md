@@ -62,6 +62,9 @@ uses [Semantic Versioning](https://semver.org/).
   independently; *Clear all* resets them.
 
 ### Changed
+- **Inbound editor warns about the reserved API port.** Entering port 62789 (the
+  default internal Xray API port) now shows a warning, since the panel rejects a
+  loopback inbound on it (v3.4.0).
 - **Node deletion is blocked while inbounds are bound.** The Delete button in the
   node editor is disabled (with a hint) until the node's inbounds are detached —
   matching the panel, which rejects the deletion otherwise (v3.4.0).

@@ -169,6 +169,13 @@ fun InboundEditorScreen(
                     modifier = Modifier.weight(1.4f),
                 )
             }
+            if (state.port == "62789") {
+                Text(
+                    tr("Port 62789 is the reserved internal Xray API port — the panel may reject it."),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             LabeledDropdown(tr("Protocol"), state.protocol, InboundTemplates.PROTOCOLS, state.isNew, vm::setEditorProtocol)
 
             HorizontalDivider()

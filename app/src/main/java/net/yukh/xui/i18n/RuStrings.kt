@@ -403,6 +403,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Private key" to "Приватный ключ",
     "Advanced: protocol settings (JSON)" to "Расширенно: настройки протокола (JSON)",
     "Advanced: stream settings (JSON)" to "Расширенно: stream settings (JSON)",
+    "Port 62789 is the reserved internal Xray API port — the panel may reject it." to
+        "Порт 62789 зарезервирован под внутренний Xray API — панель может его отклонить.",
     "Hide" to "Скрыть",
     "Show" to "Показать",
     // VLESS encryption key generator
