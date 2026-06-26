@@ -29,6 +29,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
+import net.yukh.xui.shared.dto.BulkAdjustRequest
+import net.yukh.xui.shared.dto.BulkDelRequest
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientCreatePayload
 import net.yukh.xui.shared.dto.ClientIpInfo
@@ -114,6 +116,7 @@ fun App() {
             var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
             var geoAllUpdating by remember { mutableStateOf(false) }
             var updatingNodeIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+            var bulkBusy by remember { mutableStateOf(false) }
             var xrayBusy by remember { mutableStateOf(false) }
             // Optimistic Xray running-state, pinned ~6 s after a control action so a
             // lagging 5 s poll doesn't flicker the state back.
@@ -697,6 +700,19 @@ fun App() {
                                             try { api?.delOrphanClients() } catch (e: Throwable) {}
                                             refreshAll()
                                         }
+                                    },
+                                    bulkBusy = bulkBusy,
+                                    onBulkEnable = { emails ->
+                                        scope.launch { bulkBusy = true; try { api?.bulkEnableClients(emails) } catch (e: Throwable) {}; bulkBusy = false; refreshAll() }
+                                    },
+                                    onBulkDisable = { emails ->
+                                        scope.launch { bulkBusy = true; try { api?.bulkDisableClients(emails) } catch (e: Throwable) {}; bulkBusy = false; refreshAll() }
+                                    },
+                                    onBulkAdjust = { emails, days, bytes, flow ->
+                                        scope.launch { bulkBusy = true; try { api?.bulkAdjustClients(BulkAdjustRequest(emails, days, bytes, flow)) } catch (e: Throwable) {}; bulkBusy = false; refreshAll() }
+                                    },
+                                    onBulkDelete = { emails ->
+                                        scope.launch { bulkBusy = true; try { api?.bulkDelClients(BulkDelRequest(emails)) } catch (e: Throwable) {}; bulkBusy = false; refreshAll() }
                                     },
                                 )
                                 3 -> NodesListScreen(
