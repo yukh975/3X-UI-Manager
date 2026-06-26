@@ -8,6 +8,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -89,6 +90,54 @@ fun LabeledDropdown(
         ExposedDropdownMenu(expanded = expanded && enabled, onDismissRequest = { expanded = false }) {
             options.forEach { opt ->
                 DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
+            }
+        }
+    }
+}
+
+/**
+ * Free-text field with an autocomplete dropdown of existing [options]: the user
+ * can pick an existing value or type a brand-new one (so a new group can still be
+ * created). When the field is empty or already holds a known option (e.g. editing
+ * an existing client) the menu offers the full list — so the user can switch to
+ * another value. While typing a value that isn't (yet) a known option, the list
+ * filters by case-insensitive substring; a brand-new value simply shows nothing.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditableDropdownField(
+    label: String,
+    value: String,
+    options: List<String>,
+    onChange: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val q = value.trim()
+    val suggestions = when {
+        q.isEmpty() -> options
+        options.any { it.equals(q, ignoreCase = true) } -> options
+        else -> options.filter { it.contains(q, ignoreCase = true) }
+    }
+    val menuOpen = expanded && suggestions.isNotEmpty()
+    ExposedDropdownMenuBox(
+        expanded = menuOpen,
+        onExpandedChange = { expanded = it },
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = { onChange(it); expanded = true },
+            label = { Text(label) },
+            singleLine = true,
+            trailingIcon = {
+                if (options.isNotEmpty()) ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuOpen)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true),
+        )
+        ExposedDropdownMenu(expanded = menuOpen, onDismissRequest = { expanded = false }) {
+            suggestions.forEach { opt ->
+                DropdownMenuItem(text = { Text(opt) }, onClick = { onChange(opt); expanded = false })
             }
         }
     }

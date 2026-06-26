@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import net.yukh.xui.i18n.LocalAppLanguage
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
+import net.yukh.xui.ui.components.EditableDropdownField
 import net.yukh.xui.ui.format.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -186,12 +187,11 @@ fun ClientEditorScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            OutlinedTextField(
+            EditableDropdownField(
+                label = tr("Group (optional)"),
                 value = state.group,
-                onValueChange = onGroup,
-                label = { Text(tr("Group (optional)")) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                options = state.availableGroups,
+                onChange = onGroup,
             )
 
             OutlinedTextField(

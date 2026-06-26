@@ -54,6 +54,7 @@ data class ClientEditorState(
     val comment: String = "",
     val selectedInboundIds: Set<Int> = emptySet(),
     val availableInbounds: List<InboundSlim> = emptyList(),
+    val availableGroups: List<String> = emptyList(),
     val inboundsLoading: Boolean = false,
     val saving: Boolean = false,
     val error: String? = null,
@@ -170,8 +171,17 @@ class ClientsViewModel @Inject constructor(
 
     // ---- Editor -----------------------------------------------------------
 
+    /** Distinct non-empty client groups already in use, for the editor's picker. */
+    private fun existingGroups(): List<String> =
+        _state.value.items.map { it.group.trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .sortedBy { it.lowercase() }
+
     fun openCreateEditor() {
-        _state.update { it.copy(editor = ClientEditorState(isNew = true, inboundsLoading = true)) }
+        _state.update {
+            it.copy(editor = ClientEditorState(isNew = true, inboundsLoading = true, availableGroups = existingGroups()))
+        }
         loadInboundsForEditor()
     }
 
@@ -196,6 +206,7 @@ class ClientsViewModel @Inject constructor(
                     group = client.group,
                     comment = client.comment,
                     selectedInboundIds = client.inboundIds.toSet(),
+                    availableGroups = existingGroups(),
                     inboundsLoading = true,
                 ),
             )

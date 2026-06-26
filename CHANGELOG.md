@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.3.24] — Unreleased
+
+### Changed
+- **Client group is picked from existing groups.** In the client editor (both
+  new and edit) the *Group* field became an autocomplete dropdown listing the
+  groups already used by other clients, so you select one instead of retyping it
+  by hand — no more typos that silently split a group in two. Typing a brand-new
+  name still works, so a new group can be created right there.
+
 ## [0.3.23] — 2026-06-11
 
 ### Fixed
