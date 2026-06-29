@@ -18,7 +18,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -143,14 +143,28 @@ fun OutboundsScreen(
                 },
                 actions = {
                     if (state.available) {
-                        IconButton(onClick = { showImport = true }) {
-                            Icon(Icons.Outlined.Link, contentDescription = tr("Import from link"))
+                        // Save as a compact diskette icon (the text button made the
+                        // title wrap); everything else moves into the ⋮ menu.
+                        IconButton(onClick = vm::save, enabled = state.dirty && !state.saving) {
+                            if (state.saving) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Outlined.Save, contentDescription = tr("Save"))
+                            }
                         }
                         Box {
                             IconButton(onClick = { outboundsMenu = true }) {
                                 Icon(Icons.Filled.MoreVert, contentDescription = tr("More"))
                             }
                             DropdownMenu(expanded = outboundsMenu, onDismissRequest = { outboundsMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(tr("Import from vless:// link")) },
+                                    onClick = { outboundsMenu = false; showImport = true },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(tr("Import")) },
+                                    onClick = { outboundsMenu = false; showImportJson = true },
+                                )
                                 DropdownMenuItem(
                                     text = { Text(tr("Export")) },
                                     enabled = state.outbounds.isNotEmpty(),
@@ -159,17 +173,6 @@ fun OutboundsScreen(
                                         exportJson = outboundsJson.encodeToString(JsonElement.serializer(), JsonArray(state.outbounds))
                                     },
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(tr("Import")) },
-                                    onClick = { outboundsMenu = false; showImportJson = true },
-                                )
-                            }
-                        }
-                        TextButton(onClick = vm::save, enabled = state.dirty && !state.saving) {
-                            if (state.saving) {
-                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            } else {
-                                Text(tr("Save"))
                             }
                         }
                     }
