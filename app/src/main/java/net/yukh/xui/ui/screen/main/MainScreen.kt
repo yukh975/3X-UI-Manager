@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,6 +56,7 @@ import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.navigation.MainTabs
 import net.yukh.xui.ui.screen.connect.ConnectScreen
+import net.yukh.xui.ui.screen.connect.ConnectViewModel
 import net.yukh.xui.ui.screen.profiles.ProfileSwitcherSheet
 import net.yukh.xui.ui.screen.clients.ClientEditorScreen
 import net.yukh.xui.ui.screen.clients.ClientsScreen
@@ -111,16 +113,23 @@ fun MainScreen(
     val currentRoute = backEntry?.destination?.route ?: MainTabs.Dashboard
     val currentTab = tabs.firstOrNull { it.route == currentRoute } ?: tabs.first()
     var menuOpen by remember { mutableStateOf(false) }
-    var showXrayConfig by remember { mutableStateOf(false) }
-    var showOutbounds by remember { mutableStateOf(false) }
-    var showRouting by remember { mutableStateOf(false) }
-    var showDns by remember { mutableStateOf(false) }
-    var showGeneral by remember { mutableStateOf(false) }
-    var showBackup by remember { mutableStateOf(false) }
-    var showPanelAdmin by remember { mutableStateOf(false) }
-    var showSettings by remember { mutableStateOf(false) }
-    var showProfiles by remember { mutableStateOf(false) }
-    var showAddPanel by remember { mutableStateOf(false) }
+    // Overlay visibility uses rememberSaveable so it survives activity recreation
+    // (e.g. backgrounding the app to copy a panel URL) — you return to the same
+    // overlay instead of being dropped back to the Dashboard.
+    var showXrayConfig by rememberSaveable { mutableStateOf(false) }
+    var showOutbounds by rememberSaveable { mutableStateOf(false) }
+    var showRouting by rememberSaveable { mutableStateOf(false) }
+    var showDns by rememberSaveable { mutableStateOf(false) }
+    var showGeneral by rememberSaveable { mutableStateOf(false) }
+    var showBackup by rememberSaveable { mutableStateOf(false) }
+    var showPanelAdmin by rememberSaveable { mutableStateOf(false) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showProfiles by rememberSaveable { mutableStateOf(false) }
+    var showAddPanel by rememberSaveable { mutableStateOf(false) }
+
+    // Shared Connect VM for the "add panel" overlay; cleared when opening so the
+    // form starts blank (vs. the default which pre-fills the active profile).
+    val connectVm: ConnectViewModel = hiltViewModel()
 
     // The editor-bearing VMs are created here and shared with the tab screens, so
     // their full-screen editors can be rendered as overlays in THIS (activity)
@@ -341,7 +350,7 @@ fun MainScreen(
             profiles = profiles,
             activeId = activeProfileId,
             onSwitch = vm::switchProfile,
-            onAdd = { showProfiles = false; showAddPanel = true },
+            onAdd = { showProfiles = false; connectVm.clearForm(); showAddPanel = true },
             onDelete = vm::deleteProfile,
             onDismiss = { showProfiles = false },
         )
@@ -353,6 +362,7 @@ fun MainScreen(
             onConnected = { showAddPanel = false },
             addMode = true,
             onClose = { showAddPanel = false },
+            vm = connectVm,
         )
     }
     }

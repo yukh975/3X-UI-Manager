@@ -27,7 +27,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,10 +51,6 @@ fun ConnectScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var tokenVisible by remember { mutableStateOf(false) }
-
-    // When adding another panel, start from a blank form (the default state
-    // pre-fills the active profile, which is only wanted for a reconnect).
-    LaunchedEffect(addMode) { if (addMode) vm.clearForm() }
 
     Scaffold(
         topBar = {
