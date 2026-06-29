@@ -6,6 +6,29 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.5.1] — 2026-06-29
+
+### Added
+- **Multiple panels (profiles).** Connect to several 3x-ui panels and switch
+  between them: the ⇄ button in the top bar opens a panel switcher where you can
+  switch the active panel, add another (a blank Connect form), or remove one. The
+  panel you were already signed into is migrated into the list automatically.
+  *Disconnect* now forgets the active panel and falls back to another saved one
+  (or the Connect screen when none remain).
+- **Pull-to-refresh on the Nodes screen.** Swipe down to refresh node statuses,
+  the same as on the Dashboard.
+
+### Fixed
+- **Node version now refreshes after an update.** A node self-update downloads a
+  new build and restarts, which takes far longer than one refresh, so the node's
+  version used to stay stale until you left to the Dashboard and came back. The
+  app now keeps polling the node until its reported version actually changes.
+
+### Changed
+- **Update dialogs warn about losing the connection.** Updating a node, updating
+  the panel, or restarting the panel now warns that if the app reaches the panel
+  *through* it, the connection will drop and you'll need to reconnect manually.
+
 ## [0.4.2] — 2026-06-26
 
 ### Added

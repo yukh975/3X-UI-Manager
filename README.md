@@ -28,6 +28,7 @@ The upstream project lives at [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui
 - **Self-signed TLS** toggle for panels with a self-signed certificate.
 - **Subscription base URL** field (see [Subscriptions](#subscriptions)).
 - The token is stored encrypted (`EncryptedSharedPreferences`, AES-256, key in the Android Keystore).
+- **Multiple panels (profiles).** Save several panels and switch between them from the **⇄** button in the top bar — switch the active panel, add another, or remove one.
 
 ### Dashboard
 - Live server status, polled every 3 s: **Xray** running/stopped + version, one-tap **Restart Xray** (confirmed).
