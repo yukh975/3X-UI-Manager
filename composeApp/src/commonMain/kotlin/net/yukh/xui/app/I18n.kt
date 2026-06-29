@@ -199,9 +199,15 @@ val ruStrings: Map<String, String> = mapOf(
     "Search by email" to "Поиск по email",
     "Route via outbound tag (optional)" to "Через outbound-тег (необязательно)",
     "Update to" to "Обновить до",
-    "mTLS (node certificates)" to "mTLS (сертификаты узлов)",
+    "Node mTLS" to "mTLS узлов",
+    "Share this panel's CA so a parent panel can trust it, or set the parent CA this panel trusts when it runs as a node." to
+        "Поделитесь CA этой панели, чтобы родительская панель могла ей доверять, либо задайте CA родителя, которому доверяет эта панель в роли узла.",
     "Export this panel's CA" to "Экспорт CA этой панели",
     "Set trusted parent CA" to "Доверять CA родителя",
+    "Exported this panel's CA." to "CA этой панели экспортирован.",
+    "Couldn't read the panel CA." to "Не удалось получить CA панели.",
+    "Trusted parent CA set." to "Доверенный CA родителя установлен.",
+    "Couldn't set the trusted CA." to "Не удалось установить доверенный CA.",
 
     // Xray config
     "Xray config" to "Конфиг Xray",

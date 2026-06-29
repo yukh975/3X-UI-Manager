@@ -104,6 +104,7 @@ fun App() {
             var metricChart by remember { mutableStateOf<MetricChartState?>(null) }
             var showBackup by remember { mutableStateOf(false) }
             var showPanelAdmin by remember { mutableStateOf(false) }
+            var showMtls by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
             var xrayLoading by remember { mutableStateOf(false) }
@@ -682,6 +683,8 @@ fun App() {
                     )
                 } else if (showPanelAdmin && api != null) {
                     PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })
+                } else if (showMtls && api != null) {
+                    MtlsScreen(api = api!!, lang = lang, onClose = { showMtls = false })
                 } else if (showBackup && api != null) {
                     BackupScreen(api = api!!, lang = lang, onClose = { showBackup = false })
                 } else if (addingPanel) {
@@ -832,20 +835,6 @@ fun App() {
                                             refreshAll()
                                         }
                                     },
-                                    onCopyCa = {
-                                        scope.launch {
-                                            val r = try { api?.nodeMtlsCa() } catch (e: Throwable) { null }
-                                            val ca = r?.obj?.caCert ?: ""
-                                            if (ca.isNotBlank()) platformExportFile("panel-ca.pem", ca.encodeToByteArray())
-                                        }
-                                    },
-                                    onSetTrustCa = {
-                                        platformPickFile { _, bytes ->
-                                            scope.launch {
-                                                try { api?.setNodeMtlsTrustCA(bytes.decodeToString()) } catch (e: Throwable) {}
-                                            }
-                                        }
-                                    },
                                 )
                                 else -> MoreScreen(
                                     host = baseUrl,
@@ -863,6 +852,7 @@ fun App() {
                                     onRoutingX = { showRoutingX = true; editorError = null; scope.launch { loadXray() } },
                                     onOutboundsX = { showOutboundsX = true; editorError = null; scope.launch { loadXray() } },
                                     onPanelAdmin = { showPanelAdmin = true },
+                                    onNodeMtls = { showMtls = true },
                                     onBackup = { showBackup = true },
                                 )
                             }

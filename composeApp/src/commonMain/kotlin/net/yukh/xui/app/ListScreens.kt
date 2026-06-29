@@ -377,8 +377,6 @@ fun NodesListScreen(
     onAdd: () -> Unit,
     onEdit: (Node) -> Unit,
     onUpdateNode: (Node, Boolean) -> Unit,
-    onCopyCa: () -> Unit,
-    onSetTrustCa: () -> Unit,
 ) {
     var pendingUpdate by remember { mutableStateOf<Node?>(null) }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -390,8 +388,6 @@ fun NodesListScreen(
             Text("${tr("Nodes")} (${items.size})", style = MaterialTheme.typography.headlineSmall)
             TextButton(onClick = onAdd) { Text("+ " + tr("Add")) }
         }
-
-        MtlsCard(onCopyCa = onCopyCa, onSetTrustCa = onSetTrustCa)
 
         if (items.isEmpty()) {
             Text(tr("No nodes yet."), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
@@ -469,27 +465,3 @@ fun NodesListScreen(
     }
 }
 
-/** Panel-wide mTLS controls: share this panel's CA (so a parent can trust it),
- *  and set the parent CA this panel trusts when it acts as a node. Panel v3.4. */
-@Composable
-private fun MtlsCard(onCopyCa: () -> Unit, onSetTrustCa: () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(tr("mTLS (node certificates)"), style = MaterialTheme.typography.labelMedium)
-                Text(if (expanded) "▾" else "▸", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (expanded) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = onCopyCa) { Text(tr("Export this panel's CA")) }
-                    TextButton(onClick = onSetTrustCa) { Text(tr("Set trusted parent CA")) }
-                }
-            }
-        }
-    }
-}
