@@ -416,17 +416,9 @@ fun App() {
                 activeId = null
             }
 
-            // "Disconnect" forgets the active panel; fall back to another saved one or
-            // drop to the Connect screen if none remain.
-            val doDisconnect: () -> Unit = {
-                val active = activeId
-                val left = if (active != null) store.removeProfile(active) else { store.clearAll(); emptyList() }
-                profiles = left
-                val next = left.firstOrNull()
-                if (next != null) switchProfile(next) else clearBinding()
-            }
-
-            // Remove a saved panel from the switcher; if it was active, fall back.
+            // Sign out of a panel: forget it; if it was active, fall back to another
+            // saved one or drop to the Connect screen when none remain. This is the
+            // single "leave a panel" path (the old global Disconnect was removed).
             fun deleteProfile(p: SavedSession) {
                 val left = store.removeProfile(p.id)
                 profiles = left
@@ -761,7 +753,6 @@ fun App() {
                                         metricChart = MetricChartState(block = block, bucket = 2, loading = true)
                                         scope.launch { loadMetricSeries() }
                                     },
-                                    onDisconnect = doDisconnect,
                                 )
                                 metricChart?.let { mc ->
                                     MetricHistoryDialog(
@@ -873,7 +864,6 @@ fun App() {
                                     onOutboundsX = { showOutboundsX = true; editorError = null; scope.launch { loadXray() } },
                                     onPanelAdmin = { showPanelAdmin = true },
                                     onBackup = { showBackup = true },
-                                    onDisconnect = doDisconnect,
                                 )
                             }
                         }

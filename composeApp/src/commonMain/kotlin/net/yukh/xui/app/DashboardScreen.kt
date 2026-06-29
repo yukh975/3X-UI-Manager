@@ -54,7 +54,6 @@ fun DashboardScreen(
     error: String?,
     onRefresh: () -> Unit,
     onMetric: (MetricBlock) -> Unit,
-    onDisconnect: () -> Unit,
 ) {
     var pendingGeo by remember { mutableStateOf<String?>(null) }
     var pendingGeoAll by remember { mutableStateOf(false) }
@@ -76,7 +75,6 @@ fun DashboardScreen(
             TextButton(onClick = onRefresh, enabled = !refreshing) {
                 Text(if (refreshing) "…" else tr("Refresh"))
             }
-            TextButton(onClick = onDisconnect) { Text(tr("Disconnect")) }
         }
 
         Spacer(Modifier.height(8.dp))
@@ -104,6 +102,9 @@ fun DashboardScreen(
                 onStop = { pendingXray = XrayAct.Stop },
                 onRestart = { pendingXray = XrayAct.Restart },
             )
+            // Clients first (mirrors the Android dashboard), then the server metrics.
+            if (clients.isNotEmpty()) ClientsCard(clients, onlineCount)
+            OnlineCard(onlineCount, onlineGroups, onlineLoading, onExpandOnline)
             BarCard(tr("CPU") + if (status.cpuCores > 0) " · ${status.cpuCores} ${tr("cores")}" else "",
                 status.cpu.formatPercent(), (status.cpu / 100.0).toFloat(), onClick = { onMetric(MetricBlock.CPU) })
             BarCard(tr("Memory"), status.memPercent.formatPercent(),
@@ -119,8 +120,6 @@ fun DashboardScreen(
             ValueCard(tr("Net ↑ / ↓ per s"),
                 "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}", onClick = { onMetric(MetricBlock.NET) })
             ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}", onClick = { onMetric(MetricBlock.CONN) })
-            if (clients.isNotEmpty()) ClientsCard(clients, onlineCount)
-            OnlineCard(onlineCount, onlineGroups, onlineLoading, onExpandOnline)
             if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
             if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
             mainTraffic?.let { TrafficCard(it) }

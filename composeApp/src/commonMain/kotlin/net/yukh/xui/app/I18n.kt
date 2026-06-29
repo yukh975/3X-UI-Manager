@@ -38,9 +38,9 @@ val ruStrings: Map<String, String> = mapOf(
     "Connect to another panel" to "Подключение к другой панели",
     "Add panel" to "Добавить панель",
     "Panels" to "Панели",
-    "Remove" to "Удалить",
-    "Remove panel?" to "Удалить панель?",
-    "Remove this panel from the app?" to "Удалить эту панель из приложения?",
+    "Sign out" to "Выйти",
+    "Sign out of this panel?" to "Выйти из этой панели?",
+    "The app will forget its saved URL and token." to "Приложение забудет сохранённые URL и токен.",
     "Panel URL" to "URL панели",
     "API token" to "API-токен",
     "Connect" to "Подключиться",
@@ -52,7 +52,6 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Dashboard
     "Refresh" to "Обновить",
-    "Disconnect" to "Отключиться",
     "Running" to "Работает",
     "Stopped" to "Остановлен",
     "Status unknown" to "Статус неизвестен",

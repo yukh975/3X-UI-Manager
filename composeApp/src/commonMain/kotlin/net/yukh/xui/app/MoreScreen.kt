@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -35,8 +33,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
 /**
- * "More" tab: Settings (language) + About (version/copyright) + Disconnect.
- * First step toward feature parity with the native Android app's menu.
+ * "More" tab: Panels (multi-instance switch / add / sign out) + Settings
+ * (language) + App lock + Xray config + About. Mirrors the Android menu.
  */
 @Composable
 fun MoreScreen(
@@ -56,7 +54,6 @@ fun MoreScreen(
     onOutboundsX: () -> Unit,
     onPanelAdmin: () -> Unit,
     onBackup: () -> Unit,
-    onDisconnect: () -> Unit,
 ) {
     var hasCode by remember { mutableStateOf(lock.hasPasscode()) }
     var bioOn by remember { mutableStateOf(lock.biometryEnabled()) }
@@ -87,10 +84,10 @@ fun MoreScreen(
                                 maxLines = 1,
                             )
                         }
-                        if (profiles.size > 1) {
-                            TextButton(onClick = { confirmDelete = p }) {
-                                Text(tr("Remove"), color = MaterialTheme.colorScheme.error)
-                            }
+                        // Always available — signing out of the last panel returns
+                        // to the Connect screen (this replaces the old Disconnect).
+                        TextButton(onClick = { confirmDelete = p }) {
+                            Text(tr("Sign out"), color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -184,15 +181,6 @@ fun MoreScreen(
             }
         }
 
-        Spacer(Modifier.height(8.dp))
-        Button(
-            onClick = onDisconnect,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-            ),
-        ) { Text(tr("Disconnect")) }
     }
 
     if (showSetDialog) {
@@ -222,11 +210,11 @@ fun MoreScreen(
     confirmDelete?.let { p ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(tr("Remove panel?")) },
-            text = { Text("${tr("Remove this panel from the app?")}\n\n${p.label}\n${p.baseUrl}") },
+            title = { Text(tr("Sign out of this panel?")) },
+            text = { Text("${tr("The app will forget its saved URL and token.")}\n\n${p.label}\n${p.baseUrl}") },
             confirmButton = {
                 TextButton(onClick = { onDeleteProfile(p); confirmDelete = null }) {
-                    Text(tr("Remove"), color = MaterialTheme.colorScheme.error)
+                    Text(tr("Sign out"), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(tr("Cancel")) } },
