@@ -69,7 +69,7 @@ import net.yukh.xui.ui.screen.inbounds.InboundEditorScreen
 import net.yukh.xui.ui.screen.inbounds.InboundsScreen
 import net.yukh.xui.ui.screen.inbounds.InboundsViewModel
 import net.yukh.xui.ui.screen.nodes.NodeEditorScreen
-import net.yukh.xui.ui.screen.nodes.NodeMtlsDialog
+import net.yukh.xui.ui.screen.nodes.NodeMtlsScreen
 import net.yukh.xui.ui.screen.nodes.NodesScreen
 import net.yukh.xui.ui.screen.nodes.NodesViewModel
 import net.yukh.xui.ui.screen.backup.BackupScreen
@@ -316,11 +316,12 @@ fun MainScreen(
     }
 
     if (nodesState.mtlsOpen) {
-        NodeMtlsDialog(
+        BackHandler(onBack = nodesVm::closeMtls)
+        NodeMtlsScreen(
             panelCa = nodesState.mtlsCa,
             busy = nodesState.mtlsBusy,
             onSaveTrustCa = nodesVm::saveMtlsTrustCa,
-            onDismiss = nodesVm::closeMtls,
+            onClose = nodesVm::closeMtls,
         )
     }
 
