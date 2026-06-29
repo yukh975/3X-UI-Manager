@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,16 +36,21 @@ fun ConnectScreen(
     onToken: (String) -> Unit,
     onAllowInsecure: (Boolean) -> Unit,
     onConnect: () -> Unit,
+    addMode: Boolean = false,
+    onClose: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("3X-UI Manager", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            if (addMode) tr("Add panel") else "3X-UI Manager",
+            style = MaterialTheme.typography.headlineMedium,
+        )
         Spacer(Modifier.height(4.dp))
         Text(
-            tr("Connect to your panel"),
+            if (addMode) tr("Connect to another panel") else tr("Connect to your panel"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -98,8 +104,12 @@ fun ConnectScreen(
             if (busy) {
                 CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
             } else {
-                Text(tr("Connect"))
+                Text(if (addMode) tr("Add") else tr("Connect"))
             }
+        }
+        if (addMode && onClose != null) {
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = onClose, enabled = !busy) { Text(tr("Cancel")) }
         }
     }
 }

@@ -35,6 +35,12 @@ val ruStrings: Map<String, String> = mapOf(
     // Connect screen
     "3X-UI Manager" to "3X-UI Manager",
     "Connect to your panel" to "Подключение к панели",
+    "Connect to another panel" to "Подключение к другой панели",
+    "Add panel" to "Добавить панель",
+    "Panels" to "Панели",
+    "Remove" to "Удалить",
+    "Remove panel?" to "Удалить панель?",
+    "Remove this panel from the app?" to "Удалить эту панель из приложения?",
     "Panel URL" to "URL панели",
     "API token" to "API-токен",
     "Connect" to "Подключиться",

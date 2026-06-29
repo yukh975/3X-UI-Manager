@@ -44,6 +44,11 @@ fun MoreScreen(
     lang: String,
     onLang: (String) -> Unit,
     lock: AppLock,
+    profiles: List<SavedSession>,
+    activeId: String?,
+    onSwitch: (SavedSession) -> Unit,
+    onAddPanel: () -> Unit,
+    onDeleteProfile: (SavedSession) -> Unit,
     onXrayConfig: () -> Unit,
     onGeneralX: () -> Unit,
     onDnsX: () -> Unit,
@@ -56,11 +61,44 @@ fun MoreScreen(
     var hasCode by remember { mutableStateOf(lock.hasPasscode()) }
     var bioOn by remember { mutableStateOf(lock.biometryEnabled()) }
     var showSetDialog by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf<SavedSession?>(null) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(tr("More"), style = MaterialTheme.typography.headlineSmall)
+
+        // ---- Panels (multi-instance): switch / add / remove ----
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(tr("Panels"), style = MaterialTheme.typography.titleMedium)
+                profiles.forEach { p ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = p.id == activeId, onClick = { onSwitch(p) })
+                        Column(modifier = Modifier.weight(1f).clickable { onSwitch(p) }) {
+                            Text(p.label, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+                            Text(
+                                p.baseUrl,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                        }
+                        if (profiles.size > 1) {
+                            TextButton(onClick = { confirmDelete = p }) {
+                                Text(tr("Remove"), color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                }
+                OutlinedButton(onClick = onAddPanel, modifier = Modifier.fillMaxWidth()) {
+                    Text(tr("Add panel"))
+                }
+            }
+        }
 
         // ---- Settings: language ----
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -178,6 +216,20 @@ fun MoreScreen(
                 ) { Text(tr("Save")) }
             },
             dismissButton = { TextButton(onClick = { showSetDialog = false }) { Text(tr("Cancel")) } },
+        )
+    }
+
+    confirmDelete?.let { p ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text(tr("Remove panel?")) },
+            text = { Text("${tr("Remove this panel from the app?")}\n\n${p.label}\n${p.baseUrl}") },
+            confirmButton = {
+                TextButton(onClick = { onDeleteProfile(p); confirmDelete = null }) {
+                    Text(tr("Remove"), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(tr("Cancel")) } },
         )
     }
 }

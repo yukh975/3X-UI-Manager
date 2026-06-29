@@ -124,6 +124,16 @@ fun App() {
             var editorSaving by remember { mutableStateOf(false) }
             var editorError by remember { mutableStateOf<String?>(null) }
             var api by remember { mutableStateOf<PanelApi?>(null) }
+            // Multi-profile (multi-instance): saved panels + the active one's id.
+            var profiles by remember { mutableStateOf<List<SavedSession>>(emptyList()) }
+            var activeId by remember { mutableStateOf<String?>(null) }
+            // "Add another panel" overlay form (separate from the active connection).
+            var addingPanel by remember { mutableStateOf(false) }
+            var addUrl by remember { mutableStateOf("") }
+            var addToken by remember { mutableStateOf("") }
+            var addInsecure by remember { mutableStateOf(false) }
+            var addBusy by remember { mutableStateOf(false) }
+            var addError by remember { mutableStateOf<String?>(null) }
             val store = remember { SessionStore() }
             val lock = remember { AppLock() }
             // Start unlocked; the lock is armed only when a saved session is
@@ -160,7 +170,7 @@ fun App() {
 
             // Validate URL+token by fetching status; on success keep the client,
             // mark connected and persist the session. Returns success.
-            suspend fun connect(url: String, tok: String, insecure: Boolean): Boolean {
+            suspend fun connect(url: String, tok: String, insecure: Boolean, save: Boolean = true): Boolean {
                 busy = true
                 error = null
                 val a = PanelApi(url.trim(), tok.trim(), insecure)
@@ -182,7 +192,13 @@ fun App() {
                     false
                 }
                 busy = false
-                if (ok) store.save(url.trim(), tok.trim(), insecure)
+                if (ok && save) {
+                    val s = SavedSession(url.trim(), tok.trim(), insecure)
+                    store.upsertActive(s)
+                    profiles = store.loadProfiles()
+                    activeId = s.id
+                    baseUrl = s.baseUrl; token = s.token; allowInsecure = s.allowInsecure
+                }
                 return ok
             }
 
@@ -352,27 +368,93 @@ fun App() {
             LaunchedEffect(Unit) {
                 lang = store.loadLang() ?: LANG_EN
                 if (!connected) {
-                    store.load()?.let { saved ->
+                    profiles = store.loadProfiles()
+                    store.activeProfile()?.let { saved ->
                         baseUrl = saved.baseUrl
                         token = saved.token
                         allowInsecure = saved.allowInsecure
+                        activeId = saved.id
                         // Returning user with a saved session: arm the lock before
                         // the panel can render. A fresh manual sign-in (onConnect)
                         // never sets this, so it won't prompt right after login.
                         if (lock.hasPasscode()) locked = true
-                        connect(saved.baseUrl, saved.token, saved.allowInsecure)
+                        connect(saved.baseUrl, saved.token, saved.allowInsecure, save = false)
                     }
                 }
             }
 
-            val doDisconnect: () -> Unit = {
-                api?.close()
-                api = null
+            // Wipe the previous panel's data so every screen reloads from scratch.
+            fun clearPanelData() {
                 status = null
-                inbounds = emptyList(); clients = emptyList(); nodes = emptyList(); onlines = emptyList()
+                inbounds = emptyList(); clients = emptyList(); nodes = emptyList()
+                onlines = emptyList(); onlineGroups = emptyList()
+                inboundSpeeds = emptyMap()
+                speedTracker.prevMark = null
+                speedTracker.prevTotals = emptyMap()
+                error = null
+            }
+
+            // Switch the active connection to another saved panel and refresh all screens.
+            fun switchProfile(p: SavedSession) {
+                scope.launch {
+                    api?.close()
+                    api = PanelApi(p.baseUrl, p.token, p.allowInsecure)
+                    baseUrl = p.baseUrl; token = p.token; allowInsecure = p.allowInsecure
+                    activeId = p.id; store.setActiveId(p.id)
+                    connected = true
+                    clearPanelData()
+                    refreshAll()
+                }
+            }
+
+            // Tear down the connection entirely (no profile selected → Connect screen).
+            fun clearBinding() {
+                api?.close(); api = null
+                clearPanelData()
                 tab = 0
                 connected = false
-                store.clear()
+                activeId = null
+            }
+
+            // "Disconnect" forgets the active panel; fall back to another saved one or
+            // drop to the Connect screen if none remain.
+            val doDisconnect: () -> Unit = {
+                val active = activeId
+                val left = if (active != null) store.removeProfile(active) else { store.clearAll(); emptyList() }
+                profiles = left
+                val next = left.firstOrNull()
+                if (next != null) switchProfile(next) else clearBinding()
+            }
+
+            // Remove a saved panel from the switcher; if it was active, fall back.
+            fun deleteProfile(p: SavedSession) {
+                val left = store.removeProfile(p.id)
+                profiles = left
+                if (p.id == activeId) {
+                    val next = left.firstOrNull()
+                    if (next != null) switchProfile(next) else clearBinding()
+                }
+            }
+
+            // Validate + save a second/Nth panel from the "Add panel" form, then switch to it.
+            fun connectAdd() {
+                if (addUrl.isBlank() || addToken.isBlank()) return
+                scope.launch {
+                    addBusy = true; addError = null
+                    val a = PanelApi(addUrl.trim(), addToken.trim(), addInsecure)
+                    val ok = try { a.serverStatus().success }
+                        catch (e: Throwable) { addError = e.message ?: "Network error"; false }
+                    a.close()
+                    if (ok) {
+                        val s = SavedSession(addUrl.trim(), addToken.trim(), addInsecure)
+                        store.upsertActive(s); profiles = store.loadProfiles()
+                        addingPanel = false; addUrl = ""; addToken = ""; addInsecure = false; addError = null
+                        switchProfile(s)
+                    } else if (addError == null) {
+                        addError = "Login failed — check URL / token"
+                    }
+                    addBusy = false
+                }
             }
 
             CompositionLocalProvider(LocalAppLanguage provides lang) {
@@ -610,6 +692,22 @@ fun App() {
                     PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })
                 } else if (showBackup && api != null) {
                     BackupScreen(api = api!!, lang = lang, onClose = { showBackup = false })
+                } else if (addingPanel) {
+                    // "Add another panel" — same form as Connect, but saves a new
+                    // profile and switches to it instead of replacing the session.
+                    ConnectScreen(
+                        baseUrl = addUrl,
+                        token = addToken,
+                        allowInsecure = addInsecure,
+                        busy = addBusy,
+                        error = addError,
+                        onBaseUrl = { addUrl = it; addError = null },
+                        onToken = { addToken = it; addError = null },
+                        onAllowInsecure = { addInsecure = it },
+                        onConnect = { connectAdd() },
+                        addMode = true,
+                        onClose = { addingPanel = false; addError = null },
+                    )
                 } else {
                     val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes", "More")
                     val icons = listOf("📊", "🔌", "👥", "🌐", "⚙️")
@@ -763,6 +861,11 @@ fun App() {
                                     lang = lang,
                                     onLang = { lang = it; store.saveLang(it) },
                                     lock = lock,
+                                    profiles = profiles,
+                                    activeId = activeId,
+                                    onSwitch = { p -> if (p.id != activeId) switchProfile(p) },
+                                    onAddPanel = { addUrl = ""; addToken = ""; addInsecure = false; addError = null; addingPanel = true },
+                                    onDeleteProfile = { p -> deleteProfile(p) },
                                     onXrayConfig = { showXray = true; editorError = null; scope.launch { loadXray() } },
                                     onGeneralX = { showGeneralX = true; editorError = null; scope.launch { loadXray() } },
                                     onDnsX = { showDnsX = true; editorError = null; scope.launch { loadXray() } },
