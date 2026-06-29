@@ -16,6 +16,12 @@ uses [Semantic Versioning](https://semver.org/).
   screen — so it does everything *Disconnect* did, without the inconsistency of
   two different controls.
 
+### iOS
+- **Node mTLS is now its own page.** It moved from a card on the Nodes screen to
+  a separate "Node mTLS" entry in the More menu — matching the Android app, where
+  it has been a standalone page since 0.5.3.
+- **The Clients card is first on the dashboard,** matching the Android layout.
+
 ## [0.5.3] — 2026-06-29
 
 ### Changed
