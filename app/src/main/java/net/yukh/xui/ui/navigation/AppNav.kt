@@ -28,5 +28,5 @@ class AppNavViewModel @Inject constructor(
 @Composable
 fun AppNav(vm: AppNavViewModel = hiltViewModel()) {
     val connected by vm.connected.collectAsStateWithLifecycle()
-    if (connected) MainScreen(onDisconnect = {}) else ConnectScreen(onConnected = {})
+    if (connected) MainScreen() else ConnectScreen(onConnected = {})
 }

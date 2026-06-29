@@ -12,7 +12,6 @@ val ruStrings: Map<String, String> = mapOf(
     "Nodes" to "Узлы",
     "Menu" to "Меню",
     "Xray config" to "Конфиг Xray",
-    "Disconnect" to "Отключиться",
     "Settings" to "Настройки",
 
     // Common actions
@@ -23,10 +22,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Panels" to "Панели",
     "Add panel" to "Добавить панель",
     "Switch panel" to "Переключить панель",
-    "Remove panel?" to "Убрать панель?",
-    "Remove" to "Убрать",
-    "This forgets the saved URL and token for this panel." to
-        "Сохранённые URL и токен этой панели будут забыты.",
+    "Sign out" to "Выйти",
+    "Sign out of this panel?" to "Выйти из этой панели?",
+    "The app will forget its saved URL and token." to
+        "Приложение забудет сохранённые URL и токен.",
     "Create" to "Создать",
     "Edit" to "Изменить",
     "Add" to "Добавить",

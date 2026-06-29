@@ -139,13 +139,6 @@ class PanelRepository @Inject constructor(
         }
     }
 
-    /** "Disconnect" — leave (forget) the active panel, switching to another saved
-     *  profile if one exists, otherwise back to Connect. */
-    fun unbind() {
-        val active = _activeProfileId.value
-        if (active != null) deleteProfile(active) else clearActiveBinding()
-    }
-
     private fun clearActiveBinding() {
         api = null
         currentBaseUrl = null

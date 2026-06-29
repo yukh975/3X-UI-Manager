@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.5.4] — 2026-06-29
+
+### Changed
+- **One consistent way to leave a panel — "Sign out".** The standalone
+  *Disconnect* menu item is gone. Instead, every panel in the ⇄ switcher (even
+  when only one is saved) has a *Sign out* action that forgets that panel's
+  saved URL and token. Signing out of the last one returns to the Connect
+  screen — so it does everything *Disconnect* did, without the inconsistency of
+  two different controls.
+
 ## [0.5.3] — 2026-06-29
 
 ### Changed

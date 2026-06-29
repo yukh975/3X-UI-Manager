@@ -7,13 +7,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +32,7 @@ import net.yukh.xui.i18n.tr
 
 /**
  * Bottom sheet listing the saved panel profiles. Tap one to make it active
- * (switches the connection), add another, or remove one.
+ * (switches the connection), add another, or sign out of one.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,9 +80,10 @@ fun ProfileSwitcherSheet(
                             style = MaterialTheme.typography.labelMedium)
                     },
                     trailingContent = {
-                        IconButton(onClick = { confirmDelete = p }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = tr("Delete"),
-                                tint = MaterialTheme.colorScheme.error)
+                        // Always available — signing out of the last panel returns to
+                        // the Connect screen (this replaces the old Disconnect item).
+                        TextButton(onClick = { confirmDelete = p }) {
+                            Text(tr("Sign out"), color = MaterialTheme.colorScheme.error)
                         }
                     },
                 )
@@ -103,11 +102,11 @@ fun ProfileSwitcherSheet(
     confirmDelete?.let { p ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(tr("Remove panel?")) },
-            text = { Text(p.label + "\n\n" + tr("This forgets the saved URL and token for this panel.")) },
+            title = { Text(tr("Sign out of this panel?")) },
+            text = { Text(p.label + "\n\n" + tr("The app will forget its saved URL and token.")) },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = null; onDelete(p.id) }) {
-                    Text(tr("Remove"), color = MaterialTheme.colorScheme.error)
+                    Text(tr("Sign out"), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(tr("Cancel")) } },

@@ -3,7 +3,6 @@ package net.yukh.xui.ui.screen.main
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.AllInbox
@@ -89,7 +88,6 @@ class MainViewModel @Inject constructor(
     val activeProfileId = repo.activeProfileId
     fun switchProfile(id: String) { viewModelScope.launch { repo.switchProfile(id) } }
     fun deleteProfile(id: String) = repo.deleteProfile(id)
-    fun disconnect() = repo.unbind()
 }
 
 private data class BottomTabSpec(
@@ -108,7 +106,6 @@ private val tabs = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    onDisconnect: () -> Unit,
     vm: MainViewModel = hiltViewModel(),
 ) {
     val innerNav = rememberNavController()
@@ -220,15 +217,6 @@ fun MainScreen(
                             text = { Text(tr("Settings")) },
                             leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
                             onClick = { menuOpen = false; showSettings = true },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(tr("Disconnect")) },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null) },
-                            onClick = {
-                                menuOpen = false
-                                vm.disconnect()
-                                onDisconnect()
-                            },
                         )
                     }
                 },
