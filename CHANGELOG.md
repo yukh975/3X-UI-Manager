@@ -23,7 +23,7 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.5.1] — 2026-06-29
 
 ### Added
-- **Multiple panels (profiles).** Connect to several 3x-ui panels and switch
+- **Multiple panels — multi-instance.** Connect to several 3x-ui panels and switch
   between them: the ⇄ button in the top bar opens a panel switcher where you can
   switch the active panel, add another (a blank Connect form), or remove one. The
   panel you were already signed into is migrated into the list automatically.

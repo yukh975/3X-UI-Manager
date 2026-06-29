@@ -1,6 +1,6 @@
 # 3X-UI Manager
 
-Native mobile clients for managing a [3x-ui](https://github.com/MHSanaei/3x-ui) panel over its REST API — dashboard, inbounds, clients (with QR sharing), nodes, and the Xray config, on the go.
+Native mobile clients for managing [3x-ui](https://github.com/MHSanaei/3x-ui) panels over the REST API — dashboard, inbounds, clients (with QR sharing), nodes, and the Xray config, on the go. **Multi-instance: connect to several panels and switch between them from one app.**
 
 This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built straight from the repository root.
 
