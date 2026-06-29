@@ -132,15 +132,26 @@ fun App() {
             var locked by remember { mutableStateOf(false) }
             val scope = rememberCoroutineScope()
 
-            // Re-lock whenever the app leaves the foreground, so returning to it
-            // requires the passcode / biometrics again (not just at cold launch).
-            // Only while signed in: the passcode guards the panel UI, not the
-            // token-entry screen, so a logged-out app never arms the lock.
+            // Re-lock on returning from the background — but only while signed in
+            // and only after a 30 s grace period, so a quick switch (e.g. to another
+            // app to copy a panel URL) and back doesn't prompt for the passcode. The
+            // returning-user lock at cold launch is handled separately (below).
+            var backgroundedAt by remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
-                    if (event == Lifecycle.Event.ON_STOP && lock.hasPasscode() && connected) {
-                        locked = true
+                    when (event) {
+                        Lifecycle.Event.ON_STOP -> if (connected) backgroundedAt = TimeSource.Monotonic.markNow()
+                        Lifecycle.Event.ON_START -> {
+                            val at = backgroundedAt
+                            backgroundedAt = null
+                            if (connected && lock.hasPasscode() && at != null &&
+                                (TimeSource.Monotonic.markNow() - at).inWholeSeconds >= 30
+                            ) {
+                                locked = true
+                            }
+                        }
+                        else -> {}
                     }
                 }
                 lifecycleOwner.lifecycle.addObserver(observer)

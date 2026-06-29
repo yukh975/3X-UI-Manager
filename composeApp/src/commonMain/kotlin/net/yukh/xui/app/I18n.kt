@@ -337,6 +337,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Update node?" to "Обновить узел?",
     "Update to dev build (latest commit)" to "Обновить до dev-сборки (последний коммит)",
     "Dev builds are unstable." to "Dev-сборки нестабильны.",
+    "The node restarts during the update. If the app reaches the panel through this node, the connection will drop — reconnect manually." to
+        "Узел перезапускается во время обновления. Если приложение подключено к панели через этот узел, соединение прервётся — переподключитесь вручную.",
+    "If the app reaches the panel through it, the connection will drop — reconnect manually." to
+        "Если приложение подключено к панели через неё, соединение прервётся — переподключитесь вручную.",
     "Port 62789 is the reserved internal Xray API port — the panel may reject it." to "Порт 62789 — зарезервированный внутренний порт Xray API, панель может его отклонить.",
     "Outbound" to "Outbound",
     "Protocol" to "Протокол",

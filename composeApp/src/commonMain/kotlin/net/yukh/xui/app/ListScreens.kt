@@ -457,6 +457,10 @@ fun NodesListScreen(
                     if (dev) Text(tr("Dev builds are unstable."),
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(start = 8.dp))
+                    Text(
+                        tr("The node restarts during the update. If the app reaches the panel through this node, the connection will drop — reconnect manually."),
+                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error,
+                    )
                 }
             },
             confirmButton = { TextButton(onClick = { onUpdateNode(node, dev); pendingUpdate = null }) { Text(tr("Update")) } },

@@ -207,7 +207,8 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
     if (showRestart) {
         ConfirmDialog(
             title = tr("Restart panel?"),
-            body = tr("The panel restarts and the app reconnects in a few seconds."),
+            body = tr("The panel restarts and the app reconnects in a few seconds.") + "\n\n" +
+                tr("If the app reaches the panel through it, the connection will drop — reconnect manually."),
             confirm = tr("Restart"),
             onConfirm = {
                 showRestart = false
