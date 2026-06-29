@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.5.2] — 2026-06-29
+
+### Fixed
+- **Compact Outbounds toolbar.** The toolbar no longer wraps the "Outbounds"
+  title — *Save* is now a diskette icon, and *Import from vless:// link* moved
+  into the ⋮ menu (next to Import / Export).
+
 ## [0.5.1] — 2026-06-29
 
 ### Added
