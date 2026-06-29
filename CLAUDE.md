@@ -62,9 +62,13 @@ its "Текущее состояние" section is the latest snapshot.
   getDb/importDB); v0.3.17 = structured Xray-config editor + `vless://` import.
 - **App-lock rule (both apps):** the passcode/biometric lock guards the
   signed-in panel UI only — armed when a saved session is auto-restored at
-  launch or on ON_STOP while connected. Never shown signed-out or right after a
-  fresh manual sign-in. Android: `security/LockState.kt` + `MainActivity`;
-  KMP: `App.kt` (locked && connected gate).
+  launch, or on returning from the background **after a 30 s grace period** (so a
+  quick switch — e.g. to copy a panel URL — doesn't prompt; grace timer lives in
+  the `LockState` singleton so it survives activity recreation). Never shown
+  signed-out or right after a fresh manual sign-in. On Android the lock is an
+  **opaque overlay over `AppNav`** (not a replacement), so unlocking returns to
+  exactly where you were instead of rebuilding back to the Dashboard. Android:
+  `security/LockState.kt` + `MainActivity`; KMP: `App.kt` (locked && connected gate).
 - **Desktop (macOS) build exists** on the `apple` branch: `kmp/composeApp` has
   a `jvm("desktop")` target (window 1290×880). Package with
   `kmp/scripts/package-macos.sh "<Apple Silicon|Intel>"` — it builds the

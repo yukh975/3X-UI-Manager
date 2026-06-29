@@ -1,5 +1,6 @@
 package net.yukh.xui.security
 
+import android.os.SystemClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +36,26 @@ class LockState @Inject constructor(
 
     fun lockIfEnabled() {
         if (isLockEnabled()) _locked.value = true
+    }
+
+    // ---- Background grace period ------------------------------------------
+    // Held in this @Singleton (not the Activity) so it survives activity
+    // recreation: a quick switch away and back does not re-arm the lock.
+
+    private var backgroundedAtMs = 0L
+
+    /** Mark that the app went to the background (while signed in). */
+    fun onBackgrounded() {
+        backgroundedAtMs = SystemClock.elapsedRealtime()
+    }
+
+    /** On returning to the foreground, re-lock only if the app was backgrounded
+     *  for at least [graceMs] — so a brief switch (e.g. to copy a panel URL)
+     *  doesn't prompt for the passcode. */
+    fun lockIfBackgroundedFor(graceMs: Long) {
+        val at = backgroundedAtMs
+        backgroundedAtMs = 0L
+        if (at != 0L && SystemClock.elapsedRealtime() - at >= graceMs) lockIfEnabled()
     }
 
     fun verify(pin: String): Boolean {
