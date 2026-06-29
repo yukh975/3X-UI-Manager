@@ -7,6 +7,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.Node
@@ -71,6 +72,14 @@ class NodesViewModel @Inject constructor(
     private val _state = MutableStateFlow(NodesUiState())
     val state: StateFlow<NodesUiState> = _state.asStateFlow()
 
+    init {
+        // The Nodes screen doesn't poll, so reload it when the active panel
+        // profile changes (the user switched panels).
+        viewModelScope.launch {
+            repo.activeProfileId.drop(1).collect { load(force = true) }
+        }
+    }
+
     fun load(force: Boolean = false) {
         if (_state.value.refreshing) return
         val firstLoad = _state.value.items.isEmpty() && _state.value.error == null
@@ -100,18 +109,43 @@ class NodesViewModel @Inject constructor(
         }
     }
 
-    /** Trigger a 3x-ui self-update on a single node via the central panel. */
+    /** Trigger a 3x-ui self-update on a single node via the central panel, then
+     *  keep polling the node list until its reported version actually changes.
+     *  The node downloads the new build and restarts — that takes far longer than
+     *  one refresh, so a single reload used to fetch the still-old version (the
+     *  status only updated after leaving to the Dashboard and back). */
     fun updateNode(id: Int, dev: Boolean = false) {
         if (id in _state.value.updatingIds) return
+        val before = _state.value.items.firstOrNull { it.id == id }?.panelVersion
         _state.update { it.copy(updatingIds = it.updatingIds + id) }
         viewModelScope.launch {
-            repo.updateNodes(listOf(id), dev)
+            val started = repo.updateNodes(listOf(id), dev)
                 .onSuccess { _state.update { it.copy(transientMessage = "Node update started") } }
                 .onFailure { e -> _state.update { it.copy(transientMessage = "Node update failed: ${e.message}") } }
-            // The node restarts during the update; refresh a bit later, then clear the flag.
-            kotlinx.coroutines.delay(4000)
-            _state.update { it.copy(updatingIds = it.updatingIds - id) }
-            load(force = true)
+                .isSuccess
+            if (!started) {
+                _state.update { it.copy(updatingIds = it.updatingIds - id) }
+                return@launch
+            }
+            // Re-poll until the node reports a new version (up to ~60 s). The card
+            // stays in the "Updating…" state and the version refreshes in place.
+            var changed = false
+            var attempt = 0
+            while (attempt < 15 && !changed) {
+                kotlinx.coroutines.delay(4000)
+                repo.listNodes().onSuccess { list ->
+                    _state.update { it.copy(items = list.sortedBy { n -> n.id }) }
+                    val now = list.firstOrNull { it.id == id }?.panelVersion
+                    if (!now.isNullOrBlank() && now != before) changed = true
+                }
+                attempt++
+            }
+            _state.update {
+                it.copy(
+                    updatingIds = it.updatingIds - id,
+                    transientMessage = if (changed) "Node updated" else "Update is taking a while — pull down to refresh",
+                )
+            }
         }
     }
 

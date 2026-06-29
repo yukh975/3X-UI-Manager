@@ -35,21 +35,49 @@ class ConnectionStore @Inject constructor(
         )
     }
 
-    fun getProfile(): ConnectionProfile? {
-        val raw = prefs.getString(KEY_PROFILE, null) ?: return null
-        return runCatching { json.decodeFromString<ConnectionProfile>(raw) }.getOrNull()
+    /** All saved profiles. Migrates a pre-multi-profile single blob on first read. */
+    fun getProfiles(): List<ConnectionProfile> {
+        prefs.getString(KEY_PROFILES, null)?.let { raw ->
+            return runCatching { json.decodeFromString<List<ConnectionProfile>>(raw) }.getOrDefault(emptyList())
+        }
+        val legacy = prefs.getString(KEY_PROFILE, null) ?: return emptyList()
+        val profile = runCatching { json.decodeFromString<ConnectionProfile>(legacy) }.getOrNull()
+            ?: return emptyList()
+        val migrated = listOf(profile.ensureId())
+        saveProfiles(migrated)
+        setActiveId(migrated.first().id)
+        prefs.edit().remove(KEY_PROFILE).apply()
+        return migrated
     }
 
-    fun saveProfile(profile: ConnectionProfile) {
-        prefs.edit().putString(KEY_PROFILE, json.encodeToString(profile)).apply()
+    fun saveProfiles(profiles: List<ConnectionProfile>) {
+        prefs.edit().putString(KEY_PROFILES, json.encodeToString(profiles)).apply()
+    }
+
+    fun getActiveId(): String? = prefs.getString(KEY_ACTIVE_ID, null)
+
+    fun setActiveId(id: String) {
+        prefs.edit().putString(KEY_ACTIVE_ID, id).apply()
+    }
+
+    /** The active profile (or the first saved, or null). Kept for callers that
+     *  only care about the current connection (repo init, lock state). */
+    fun getProfile(): ConnectionProfile? {
+        val all = getProfiles()
+        return all.firstOrNull { it.id == getActiveId() } ?: all.firstOrNull()
     }
 
     fun clear() {
         prefs.edit().clear().apply()
     }
 
+    private fun ConnectionProfile.ensureId(): ConnectionProfile =
+        if (id.isNotBlank()) this else copy(id = java.util.UUID.randomUUID().toString())
+
     private companion object {
         const val FILE = "xui_connection"
         const val KEY_PROFILE = "profile"
+        const val KEY_PROFILES = "profiles"
+        const val KEY_ACTIVE_ID = "active_id"
     }
 }

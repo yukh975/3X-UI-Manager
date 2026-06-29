@@ -20,6 +20,13 @@ val ruStrings: Map<String, String> = mapOf(
     "Cancel" to "Отмена",
     "Delete" to "Удалить",
     "Close" to "Закрыть",
+    "Panels" to "Панели",
+    "Add panel" to "Добавить панель",
+    "Switch panel" to "Переключить панель",
+    "Remove panel?" to "Убрать панель?",
+    "Remove" to "Убрать",
+    "This forgets the saved URL and token for this panel." to
+        "Сохранённые URL и токен этой панели будут забыты.",
     "Create" to "Создать",
     "Edit" to "Изменить",
     "Add" to "Добавить",
@@ -430,6 +437,10 @@ val ruStrings: Map<String, String> = mapOf(
         "Нет узлов. Нажмите +, чтобы добавить удалённую панель.",
     "Add node?" to "Добавить узел?",
     "Update node?" to "Обновить узел?",
+    "The node restarts during the update. If the app reaches the panel through this node, the connection will drop — reconnect manually." to
+        "Узел перезапускается во время обновления. Если приложение подключено к панели через этот узел, соединение прервётся — переподключитесь вручную.",
+    "If the app reaches the panel through it, the connection will drop — reconnect manually." to
+        "Если приложение подключено к панели через неё, соединение прервётся — переподключитесь вручную.",
     "Connection outbound (empty = direct)" to "Outbound для подключения (пусто = напрямую)",
     "Detach its inbounds first" to "Сначала отвяжите его inbound'ы",
     "Node mTLS" to "mTLS узлов",

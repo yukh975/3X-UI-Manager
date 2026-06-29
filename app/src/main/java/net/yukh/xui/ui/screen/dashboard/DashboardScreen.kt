@@ -327,10 +327,17 @@ fun DashboardScreen(
             onDismissRequest = { showUpdateDialog = false },
             title = { Text(tr("Update 3x-ui?")) },
             text = {
-                Text(
-                    "Update the panel from ${info?.currentVersion.orEmpty()} to " +
-                        "${info?.latestVersion.orEmpty()}? The panel restarts during the update.",
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Update the panel from ${info?.currentVersion.orEmpty()} to " +
+                            "${info?.latestVersion.orEmpty()}? The panel restarts during the update.",
+                    )
+                    Text(
+                        tr("If the app reaches the panel through it, the connection will drop — reconnect manually."),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {

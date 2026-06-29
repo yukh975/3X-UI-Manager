@@ -4,7 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Persisted panel connection. Multi-profile support is out of scope for v1.
+ * Persisted panel connection. The app stores several of these (multi-profile)
+ * and switches the active one at runtime; [id] identifies a profile and [name]
+ * is its display label in the switcher (defaults to the host).
  *
  * `baseUrl` is normalized to end with `/` so Retrofit treats it as a
  * directory and appends paths cleanly. Include the panel's `webBasePath`
@@ -23,7 +25,15 @@ data class ConnectionProfile(
      * differs from what the panel stores. When blank, the base is auto-read.
      */
     val subBaseUrl: String = "",
+    // Stable identifier for the profile (assigned when saved). Defaulted so older
+    // single-profile blobs deserialize cleanly and get an id on migration.
+    val id: String = "",
+    // Optional display name; falls back to the host in [label].
+    val name: String = "",
 ) {
+    /** Label shown in the profile switcher — the saved name, else the host. */
+    val label: String get() = name.ifBlank { hostLabel(baseUrl) }
+
     companion object {
         fun normalizeUrl(input: String): String {
             val trimmed = input.trim()
@@ -31,6 +41,10 @@ data class ConnectionProfile(
             val withScheme = if ("://" in trimmed) trimmed else "https://$trimmed"
             return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
         }
+
+        /** host[:port] from a base URL, for a default profile label. */
+        fun hostLabel(url: String): String =
+            url.substringAfter("://", url).substringBefore("/").ifBlank { url }
     }
 }
 

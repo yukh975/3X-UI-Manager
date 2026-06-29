@@ -54,6 +54,10 @@ class ConnectViewModel @Inject constructor(
         )
     }
 
+    /** Blank the form — used when adding another panel (vs. the initial state,
+     *  which pre-fills the active profile for a quick reconnect). */
+    fun clearForm() = _state.update { ConnectUiState() }
+
     fun setUrl(value: String) = _state.update { it.copy(url = value, error = null) }
     fun setToken(value: String) = _state.update { it.copy(token = value, error = null) }
     fun setAllowInsecureTls(value: Boolean) = _state.update { it.copy(allowInsecureTls = value, error = null) }

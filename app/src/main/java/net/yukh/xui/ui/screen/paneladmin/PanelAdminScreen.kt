@@ -152,7 +152,8 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
     if (showRestart) {
         ConfirmDialog(
             title = tr("Restart panel?"),
-            body = tr("The panel service restarts and the app reconnects in a few seconds."),
+            body = tr("The panel service restarts and the app reconnects in a few seconds.") + "\n\n" +
+                tr("If the app reaches the panel through it, the connection will drop — reconnect manually."),
             confirmLabel = tr("Restart"),
             onConfirm = { showRestart = false; vm.restartPanel() },
             onDismiss = { showRestart = false },

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.AltRoute
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Dns
@@ -41,6 +42,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -51,6 +54,8 @@ import javax.inject.Inject
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.navigation.MainTabs
+import net.yukh.xui.ui.screen.connect.ConnectScreen
+import net.yukh.xui.ui.screen.profiles.ProfileSwitcherSheet
 import net.yukh.xui.ui.screen.clients.ClientEditorScreen
 import net.yukh.xui.ui.screen.clients.ClientsScreen
 import net.yukh.xui.ui.screen.clients.ClientsViewModel
@@ -75,6 +80,10 @@ import net.yukh.xui.ui.screen.xrayedit.RoutingScreen
 class MainViewModel @Inject constructor(
     private val repo: PanelRepository,
 ) : ViewModel() {
+    val profiles = repo.profiles
+    val activeProfileId = repo.activeProfileId
+    fun switchProfile(id: String) { viewModelScope.launch { repo.switchProfile(id) } }
+    fun deleteProfile(id: String) = repo.deleteProfile(id)
     fun disconnect() = repo.unbind()
 }
 
@@ -110,6 +119,8 @@ fun MainScreen(
     var showBackup by remember { mutableStateOf(false) }
     var showPanelAdmin by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showProfiles by remember { mutableStateOf(false) }
+    var showAddPanel by remember { mutableStateOf(false) }
 
     // The editor-bearing VMs are created here and shared with the tab screens, so
     // their full-screen editors can be rendered as overlays in THIS (activity)
@@ -121,6 +132,8 @@ fun MainScreen(
     val inboundsState by inboundsVm.state.collectAsStateWithLifecycle()
     val clientsState by clientsVm.state.collectAsStateWithLifecycle()
     val nodesState by nodesVm.state.collectAsStateWithLifecycle()
+    val profiles by vm.profiles.collectAsStateWithLifecycle()
+    val activeProfileId by vm.activeProfileId.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
@@ -128,6 +141,9 @@ fun MainScreen(
             TopAppBar(
                 title = { Text(tr(currentTab.label)) },
                 actions = {
+                    IconButton(onClick = { showProfiles = true }) {
+                        Icon(Icons.Outlined.SwapHoriz, contentDescription = tr("Switch panel"))
+                    }
                     IconButton(onClick = { menuOpen = true }) {
                         Icon(Icons.Outlined.MoreVert, contentDescription = tr("Menu"))
                     }
@@ -318,6 +334,26 @@ fun MainScreen(
     if (showSettings) {
         BackHandler(onBack = { showSettings = false })
         SettingsScreen(onClose = { showSettings = false })
+    }
+
+    if (showProfiles) {
+        ProfileSwitcherSheet(
+            profiles = profiles,
+            activeId = activeProfileId,
+            onSwitch = vm::switchProfile,
+            onAdd = { showProfiles = false; showAddPanel = true },
+            onDelete = vm::deleteProfile,
+            onDismiss = { showProfiles = false },
+        )
+    }
+
+    if (showAddPanel) {
+        BackHandler(onBack = { showAddPanel = false })
+        ConnectScreen(
+            onConnected = { showAddPanel = false },
+            addMode = true,
+            onClose = { showAddPanel = false },
+        )
     }
     }
 }

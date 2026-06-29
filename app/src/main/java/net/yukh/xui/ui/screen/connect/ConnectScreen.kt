@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -26,6 +27,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,13 +46,30 @@ import net.yukh.xui.i18n.tr
 @Composable
 fun ConnectScreen(
     onConnected: () -> Unit,
+    addMode: Boolean = false,
+    onClose: (() -> Unit)? = null,
     vm: ConnectViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var tokenVisible by remember { mutableStateOf(false) }
 
+    // When adding another panel, start from a blank form (the default state
+    // pre-fills the active profile, which is only wanted for a reconnect).
+    LaunchedEffect(addMode) { if (addMode) vm.clearForm() }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text(tr("Connect to panel")) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(tr(if (addMode) "Add panel" else "Connect to panel")) },
+                navigationIcon = {
+                    if (onClose != null) {
+                        IconButton(onClick = onClose) {
+                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = tr("Close"))
+                        }
+                    }
+                },
+            )
+        },
     ) { padding ->
         Column(
             modifier = Modifier

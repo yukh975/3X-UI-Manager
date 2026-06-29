@@ -62,6 +62,14 @@ class PanelRepository @Inject constructor(
     private val _authError = MutableStateFlow<String?>(null)
     val authError: StateFlow<String?> = _authError.asStateFlow()
 
+    /** All saved panel profiles and the active one's id. The UI lists and switches
+     *  between panels with these; screens reload when [activeProfileId] changes. */
+    private val _profiles = MutableStateFlow<List<ConnectionProfile>>(emptyList())
+    val profiles: StateFlow<List<ConnectionProfile>> = _profiles.asStateFlow()
+
+    private val _activeProfileId = MutableStateFlow<String?>(null)
+    val activeProfileId: StateFlow<String?> = _activeProfileId.asStateFlow()
+
     private var api: XuiApi? = null
     private var currentBaseUrl: String? = null
 
@@ -72,15 +80,17 @@ class PanelRepository @Inject constructor(
     private var cachedSettings: PanelSettings? = null
 
     init {
-        val stored = store.getProfile()
-        if (stored != null && stored.auth is ConnectionAuth.Token) {
-            bindTokenInternal(stored.baseUrl, stored.allowInsecureTls, stored.auth.token)
-            currentSubBase = stored.subBaseUrl
-        }
+        val all = store.getProfiles()
+        _profiles.value = all
+        val active = all.firstOrNull { it.id == store.getActiveId() } ?: all.firstOrNull()
+        if (active != null && active.auth is ConnectionAuth.Token) bindProfile(active)
     }
 
     // ---- Connection lifecycle ---------------------------------------------
 
+    /** Validate a token against the panel, then add it as a new profile (or update
+     *  the one with the same URL) and switch to it. Used by the Connect screen both
+     *  for the first sign-in and for adding another panel. */
     suspend fun connectWithToken(
         baseUrl: String,
         allowInsecureTls: Boolean,
@@ -89,25 +99,60 @@ class PanelRepository @Inject constructor(
     ): Result<ServerStatus> {
         val candidate = XuiApiFactory.tokenAuthed(baseUrl, allowInsecureTls, token, json)
         return safeData { candidate.getServerStatus() }.onSuccess {
-            store.saveProfile(
-                ConnectionProfile(baseUrl, allowInsecureTls, ConnectionAuth.Token(token), subBaseUrl),
+            val existing = _profiles.value.firstOrNull { it.baseUrl == baseUrl }
+            val profile = ConnectionProfile(
+                baseUrl = baseUrl,
+                allowInsecureTls = allowInsecureTls,
+                auth = ConnectionAuth.Token(token),
+                subBaseUrl = subBaseUrl,
+                id = existing?.id ?: java.util.UUID.randomUUID().toString(),
+                name = existing?.name ?: ConnectionProfile.hostLabel(baseUrl),
             )
-            api = candidate
-            currentBaseUrl = baseUrl
-            currentSubBase = subBaseUrl
-            cachedSettings = null
-            _connected.value = true
-            _authError.value = null
+            val updated = if (existing != null) _profiles.value.map { if (it.id == profile.id) profile else it }
+            else _profiles.value + profile
+            _profiles.value = updated
+            store.saveProfiles(updated)
+            bindProfile(profile)
         }
     }
 
+    /** Switch the active connection to a saved profile, rebuilding the API client.
+     *  Returns the panel status so the caller can report an unreachable panel. */
+    suspend fun switchProfile(id: String): Result<ServerStatus> {
+        val p = _profiles.value.firstOrNull { it.id == id }
+            ?: return Result.failure(PanelError.NotConnected)
+        if (p.auth !is ConnectionAuth.Token) return Result.failure(PanelError.NotConnected)
+        bindProfile(p)
+        val current = api ?: return Result.failure(PanelError.NotConnected)
+        return safeData { current.getServerStatus() }
+    }
+
+    /** Remove a saved profile. If it was the active one, fall back to another
+     *  profile, or drop to the Connect screen when none remain. */
+    fun deleteProfile(id: String) {
+        val remaining = _profiles.value.filterNot { it.id == id }
+        _profiles.value = remaining
+        store.saveProfiles(remaining)
+        if (_activeProfileId.value == id) {
+            val next = remaining.firstOrNull { it.auth is ConnectionAuth.Token }
+            if (next != null) bindProfile(next) else clearActiveBinding()
+        }
+    }
+
+    /** "Disconnect" — leave (forget) the active panel, switching to another saved
+     *  profile if one exists, otherwise back to Connect. */
     fun unbind() {
+        val active = _activeProfileId.value
+        if (active != null) deleteProfile(active) else clearActiveBinding()
+    }
+
+    private fun clearActiveBinding() {
         api = null
         currentBaseUrl = null
         currentSubBase = null
         cachedSettings = null
+        _activeProfileId.value = null
         _connected.value = false
-        store.clear()
     }
 
     // ---- Server -----------------------------------------------------------
@@ -390,10 +435,16 @@ class PanelRepository @Inject constructor(
 
     // ---- Internals --------------------------------------------------------
 
-    private fun bindTokenInternal(baseUrl: String, allowInsecureTls: Boolean, token: String) {
-        api = XuiApiFactory.tokenAuthed(baseUrl, allowInsecureTls, token, json)
-        currentBaseUrl = baseUrl
+    /** Bind the active API client to a profile (rebuilds the Retrofit client and
+     *  persists it as the active profile). */
+    private fun bindProfile(p: ConnectionProfile) {
+        val token = (p.auth as ConnectionAuth.Token).token
+        api = XuiApiFactory.tokenAuthed(p.baseUrl, p.allowInsecureTls, token, json)
+        currentBaseUrl = p.baseUrl
+        currentSubBase = p.subBaseUrl
         cachedSettings = null
+        _activeProfileId.value = p.id
+        store.setActiveId(p.id)
         _connected.value = true
         _authError.value = null
     }

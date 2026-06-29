@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -28,6 +30,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -69,48 +72,59 @@ fun NodesScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
-
-            state.error != null && state.items.isEmpty() -> Box(
-                Modifier.fillMaxSize().padding(16.dp),
-                Alignment.Center,
-            ) { Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error) }
-
-            state.items.isEmpty() -> Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(
-                    Icons.Outlined.Hub,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    tr("No nodes. Tap + to add a remote panel."),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            else -> LazyColumn(
+        if (state.loading) {
+            Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+        } else {
+            // Swipe down anywhere on the list to refresh node statuses, mirroring
+            // the Dashboard's pull-to-refresh.
+            PullToRefreshBox(
+                isRefreshing = state.refreshing,
+                onRefresh = { vm.load(force = true) },
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(state.items, key = { it.id }) { node ->
-                    NodeRow(
-                        node = node,
-                        latestVersion = state.latestVersion,
-                        traffic = state.trafficByNode[node.id],
-                        updating = node.id in state.updatingIds,
-                        onUpdate = { pendingUpdate = node.id },
-                        onClick = { vm.openEditEditor(node.id) },
-                    )
+                when {
+                    state.error != null && state.items.isEmpty() -> Column(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) { Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center) }
+
+                    state.items.isEmpty() -> Column(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 40.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(
+                            Icons.Outlined.Hub,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            tr("No nodes. Tap + to add a remote panel."),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    else -> LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(state.items, key = { it.id }) { node ->
+                            NodeRow(
+                                node = node,
+                                latestVersion = state.latestVersion,
+                                traffic = state.trafficByNode[node.id],
+                                updating = node.id in state.updatingIds,
+                                onUpdate = { pendingUpdate = node.id },
+                                onClick = { vm.openEditEditor(node.id) },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -148,6 +162,11 @@ fun NodesScreen(
                             modifier = Modifier.padding(start = 8.dp),
                         )
                     }
+                    Text(
+                        tr("The node restarts during the update. If the app reaches the panel through this node, the connection will drop — reconnect manually."),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             },
             confirmButton = {
