@@ -14,7 +14,8 @@ uses [Semantic Versioning](https://semver.org/).
   switch the active panel, add another (a blank Connect form), or remove one. The
   panel you were already signed into is migrated into the list automatically.
   *Disconnect* now forgets the active panel and falls back to another saved one
-  (or the Connect screen when none remain).
+  (or the Connect screen when none remain). The active panel is shown in the top
+  bar, and switching panels refreshes every data screen.
 - **Pull-to-refresh on the Nodes screen.** Swipe down to refresh node statuses,
   the same as on the Dashboard.
 
@@ -23,6 +24,10 @@ uses [Semantic Versioning](https://semver.org/).
   new build and restarts, which takes far longer than one refresh, so the node's
   version used to stay stale until you left to the Dashboard and came back. The
   app now keeps polling the node until its reported version actually changes.
+- **App-lock no longer interrupts a quick switch.** The passcode/biometric lock
+  now waits a short grace period before re-locking, so switching to another app
+  (e.g. to copy a panel URL) and back doesn't prompt; on unlock it returns you to
+  the screen you were on instead of resetting to the Dashboard.
 
 ### Changed
 - **Update dialogs warn about losing the connection.** Updating a node, updating
