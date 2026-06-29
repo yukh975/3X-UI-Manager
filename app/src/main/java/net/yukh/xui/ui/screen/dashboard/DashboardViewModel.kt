@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -65,6 +66,26 @@ class DashboardViewModel @Inject constructor(
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
 
     private var pollJob: Job? = null
+
+    init {
+        // When the user switches to another panel, drop the previous panel's data
+        // and reload everything (status + the one-shot cards) for the new one.
+        viewModelScope.launch {
+            repo.activeProfileId.drop(1).collect {
+                _state.update {
+                    it.copy(
+                        status = null, onlineEmails = emptyList(), clientsTotal = null,
+                        updateInfo = null, mainTraffic = null, onlineGroups = emptyList(),
+                        error = null, loading = true,
+                    )
+                }
+                refreshUpdateInfo()
+                refreshMonthlyTraffic()
+                refreshClientsTotal()
+                fetchOnce()
+            }
+        }
+    }
 
     // After a start/stop/restart, the panel keeps reporting the OLD Xray state
     // for a beat (Xray hasn't settled yet). Without this, the immediate refresh

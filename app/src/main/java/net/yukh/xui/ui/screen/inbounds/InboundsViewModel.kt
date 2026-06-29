@@ -8,6 +8,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -89,6 +90,13 @@ class InboundsViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(InboundsUiState())
     val state: StateFlow<InboundsUiState> = _state.asStateFlow()
+
+    init {
+        // Reload when the user switches to another panel.
+        viewModelScope.launch {
+            repo.activeProfileId.drop(1).collect { load(force = true) }
+        }
+    }
 
     // Previous (up,down) totals + timestamp, to derive live speed between polls.
     private var prevTotals: Map<Int, Pair<Long, Long>> = emptyMap()

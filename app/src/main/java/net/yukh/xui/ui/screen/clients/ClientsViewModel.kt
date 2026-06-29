@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -103,6 +104,13 @@ class ClientsViewModel @Inject constructor(
     val state: StateFlow<ClientsUiState> = _state.asStateFlow()
 
     private var pollJob: Job? = null
+
+    init {
+        // Reload when the user switches to another panel.
+        viewModelScope.launch {
+            repo.activeProfileId.drop(1).collect { load(force = true) }
+        }
+    }
 
     /** Background auto-refresh while the Clients screen is on-screen (panel 3.4.0). */
     fun startPolling() {
