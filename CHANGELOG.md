@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.5.3] — 2026-06-29
+
+### Changed
+- **Node mTLS is now a full-screen page.** It was the only ⋮-menu entry that
+  opened as a dialog; it now matches the other screens (DNS, Outbounds, Routing,
+  …) in layout and colours.
+
 ## [0.5.2] — 2026-06-29
 
 ### Fixed
