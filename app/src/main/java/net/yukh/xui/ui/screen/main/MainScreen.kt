@@ -24,6 +24,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -39,7 +40,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -143,12 +146,28 @@ fun MainScreen(
     val nodesState by nodesVm.state.collectAsStateWithLifecycle()
     val profiles by vm.profiles.collectAsStateWithLifecycle()
     val activeProfileId by vm.activeProfileId.collectAsStateWithLifecycle()
+    val activeLabel = profiles.firstOrNull { it.id == activeProfileId }?.label
 
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(tr(currentTab.label)) },
+                title = {
+                    Column {
+                        Text(tr(currentTab.label), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        // Show which panel is active (with multi-profile) so it's
+                        // always clear what you're connected to; tap ⇄ to switch.
+                        activeLabel?.let {
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showProfiles = true }) {
                         Icon(Icons.Outlined.SwapHoriz, contentDescription = tr("Switch panel"))
