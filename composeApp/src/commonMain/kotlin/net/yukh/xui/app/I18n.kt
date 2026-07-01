@@ -110,6 +110,20 @@ val ruStrings: Map<String, String> = mapOf(
     "Version" to "Версия",
     "Panel URL:" to "URL панели:",
 
+    // Self-update (GitLab releases)
+    "Check for updates" to "Проверить обновления",
+    "Update available" to "Доступно обновление",
+    "Open release page" to "Открыть страницу релиза",
+    "Open the release page to download and reinstall the app." to
+        "Откройте страницу релиза, чтобы скачать и переустановить приложение.",
+    "Later" to "Позже",
+    "Checking for updates…" to "Проверка обновлений…",
+    "You're up to date" to "У вас последняя версия",
+    "You already have the latest version." to "Установлена самая свежая версия.",
+    "Update check failed" to "Не удалось проверить обновления",
+    "Couldn't reach the update server. Try again later." to
+        "Не удалось связаться с сервером обновлений. Попробуйте позже.",
+
     // Common actions + editors
     "Cancel" to "Отмена",
     "Save" to "Сохранить",

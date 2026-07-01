@@ -55,6 +55,7 @@ fun MoreScreen(
     onPanelAdmin: () -> Unit,
     onNodeMtls: () -> Unit,
     onBackup: () -> Unit,
+    onCheckUpdates: () -> Unit,
 ) {
     var hasCode by remember { mutableStateOf(lock.hasPasscode()) }
     var bioOn by remember { mutableStateOf(lock.biometryEnabled()) }
@@ -182,6 +183,9 @@ fun MoreScreen(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
+                    Text(tr("Check for updates"))
+                }
             }
         }
 

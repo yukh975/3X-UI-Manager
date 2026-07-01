@@ -8,3 +8,6 @@ package net.yukh.xui.app
 expect fun platformExportFile(filename: String, bytes: ByteArray)
 
 expect fun platformPickFile(onResult: (filename: String, bytes: ByteArray) -> Unit)
+
+/** Open a URL in the system browser (iOS Safari / desktop default browser). */
+expect fun platformOpenUrl(url: String)

@@ -29,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
+import net.yukh.xui.shared.api.UpdateChecker
 import net.yukh.xui.shared.dto.BulkAdjustRequest
 import net.yukh.xui.shared.dto.BulkDelRequest
 import net.yukh.xui.shared.dto.Client
@@ -142,6 +143,28 @@ fun App() {
             // while connected. A fresh manual sign-in must not trigger it.
             var locked by remember { mutableStateOf(false) }
             val scope = rememberCoroutineScope()
+
+            // Self-update: check the app's GitLab releases (iOS can't install an
+            // unsigned .ipa itself, so we notify + open the release page).
+            var updateState by remember { mutableStateOf<UpdateUiState>(UpdateUiState.Idle) }
+            fun checkUpdatesManual() {
+                updateState = UpdateUiState.Checking
+                scope.launch {
+                    val latest = try { UpdateChecker.fetchLatest() } catch (e: Throwable) { null }
+                    updateState = when {
+                        latest == null -> UpdateUiState.Error
+                        UpdateChecker.isNewer(latest.version, appVersionName()) -> UpdateUiState.Available(latest)
+                        else -> UpdateUiState.UpToDate
+                    }
+                }
+            }
+            // Silent check once on launch — only surfaces when a newer build exists.
+            LaunchedEffect(Unit) {
+                val upd = try { UpdateChecker.latestIfNewer(appVersionName()) } catch (e: Throwable) { null }
+                if (upd != null && updateState == UpdateUiState.Idle) {
+                    updateState = UpdateUiState.Available(upd)
+                }
+            }
 
             // Re-lock on returning from the background — but only while signed in
             // and only after a 30 s grace period, so a quick switch (e.g. to another
@@ -854,6 +877,7 @@ fun App() {
                                     onPanelAdmin = { showPanelAdmin = true },
                                     onNodeMtls = { showMtls = true },
                                     onBackup = { showBackup = true },
+                                    onCheckUpdates = { checkUpdatesManual() },
                                 )
                             }
                         }
@@ -866,6 +890,13 @@ fun App() {
                         }
                     }
                 }
+
+                // Update prompt overlays whatever screen is showing (Connect or panel).
+                UpdateDialog(
+                    state = updateState,
+                    onOpenPage = { platformOpenUrl(it.pageUrl); updateState = UpdateUiState.Idle },
+                    onDismiss = { updateState = UpdateUiState.Idle },
+                )
             }
         }
     }

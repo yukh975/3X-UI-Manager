@@ -37,6 +37,11 @@ private fun topViewController(): UIViewController? {
     return vc
 }
 
+actual fun platformOpenUrl(url: String) {
+    val nsurl = NSURL.URLWithString(url) ?: return
+    UIApplication.sharedApplication.openURL(nsurl, options = emptyMap<Any?, Any?>(), completionHandler = null)
+}
+
 actual fun platformExportFile(filename: String, bytes: ByteArray) {
     val path = NSTemporaryDirectory() + filename
     bytes.toNSData().writeToFile(path, atomically = true)
