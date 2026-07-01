@@ -33,7 +33,7 @@ The upstream project lives at [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui
 
 ## Features
 
-Feature parity with the [Android app](https://github.com/MHSanaei/3x-ui) (see the `main` branch README for the full list): **API-token** connect, live **dashboard**, **inbounds** (toggle/edit), **clients** (search, edit, QR/subscription sharing), **nodes**, the structured **Xray config** editor, **backup/restore**, **panel admin**, and an optional **app lock** (passcode + biometric) that guards the signed-in UI only.
+Feature parity with the [Android app](https://github.com/MHSanaei/3x-ui) (see the `main` branch README for the full list): **API-token** connect, **multiple panels (profiles)** with a switcher, live **dashboard**, **inbounds** (toggle/edit), **clients** (search, edit, QR/subscription sharing), **nodes** (incl. mTLS), the structured **Xray config** editor, **backup/restore**, **panel admin**, and an optional **app lock** (passcode + biometric) that guards the signed-in UI only. An **in-app update check** (on launch + a **Check for updates** button) notifies when a newer GitLab release exists and opens the release page — iOS can't install an unsigned build itself, so you re-download and sideload.
 
 ## Authentication
 
