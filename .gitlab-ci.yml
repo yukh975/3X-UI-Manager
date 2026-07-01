@@ -142,15 +142,13 @@ release:publish:
       # Drop leading blank lines so the notes start at the first heading.
       NOTES="$(printf '%s\n' "$NOTES" | sed -e '/./,$!d')"
       if [ -z "$NOTES" ]; then
-        NOTES="_No changelog entry for this version._"
+        NOTES="See the [changelog]($CI_PROJECT_URL/-/blob/$CI_COMMIT_TAG/CHANGELOG.md)."
       fi
       # Build the description with printf (not a heredoc) so every line of this
       # job stays indented inside the YAML block scalar — a column-0 heredoc
       # body would terminate the block and break YAML parsing.
       HEADER="## What's new in $CI_COMMIT_TAG"
-      # No links into the repository source (changelog blob / commit / pipeline) —
-      # the Releases page lists only the downloadable build artifacts.
-      FOOTER="$(printf '### Download\n- `%s` — signed APK, ready to install on a phone.' "$APK")"
+      FOOTER="$(printf '### Download\n- `%s` — signed APK, ready to install on a phone.\n\n📝 Full [changelog](%s/-/blob/%s/CHANGELOG.md).\n\nBuilt by [pipeline #%s](%s) from %s.' "$APK" "$CI_PROJECT_URL" "$CI_COMMIT_TAG" "$CI_PIPELINE_ID" "$CI_PIPELINE_URL" "$CI_COMMIT_SHORT_SHA")"
       DESC="$(printf '%s\n\n%s\n\n%s\n' "$HEADER" "$NOTES" "$FOOTER")"
       release-cli create \
         --tag-name "$CI_COMMIT_TAG" \
