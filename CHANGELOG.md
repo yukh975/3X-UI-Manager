@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.5.5] — 2026-07-01
+
+### Added
+- **In-app updates.** The app checks its own GitLab releases on launch (and from
+  a *Check for updates* button in Settings / the More tab) and offers the newer
+  version with its release notes. On **Android** it downloads the APK and hands it
+  to the system installer — an in-place update. On **iOS** an app can't install an
+  unsigned build itself, so it opens the release page to re-download and sideload.
+
 ## [0.5.4] — 2026-06-29
 
 ### Changed
