@@ -74,6 +74,9 @@ import net.yukh.xui.ui.screen.nodes.NodesViewModel
 import net.yukh.xui.ui.screen.backup.BackupScreen
 import net.yukh.xui.ui.screen.paneladmin.PanelAdminScreen
 import net.yukh.xui.ui.screen.settings.SettingsScreen
+import net.yukh.xui.update.UpdateDialogHost
+import net.yukh.xui.update.UpdateViewModel
+import androidx.compose.runtime.LaunchedEffect
 import net.yukh.xui.ui.screen.outbounds.OutboundsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
 import net.yukh.xui.ui.screen.xrayedit.DnsScreen
@@ -144,6 +147,10 @@ fun MainScreen(
     val profiles by vm.profiles.collectAsStateWithLifecycle()
     val activeProfileId by vm.activeProfileId.collectAsStateWithLifecycle()
     val activeLabel = profiles.firstOrNull { it.id == activeProfileId }?.label
+
+    // Self-update: check GitLab releases once on launch (silent unless newer).
+    val updateVm: UpdateViewModel = hiltViewModel()
+    LaunchedEffect(Unit) { updateVm.checkOnStart() }
 
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
@@ -350,8 +357,10 @@ fun MainScreen(
 
     if (showSettings) {
         BackHandler(onBack = { showSettings = false })
-        SettingsScreen(onClose = { showSettings = false })
+        SettingsScreen(onClose = { showSettings = false }, onCheckUpdates = { updateVm.checkNow() })
     }
+
+    UpdateDialogHost(updateVm)
 
     if (showProfiles) {
         ProfileSwitcherSheet(

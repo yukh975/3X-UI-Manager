@@ -145,6 +145,18 @@ val ruStrings: Map<String, String> = mapOf(
     "Version" to "Версия",
     "Application" to "Приложение",
 
+    // Self-update (GitLab releases)
+    "Check for updates" to "Проверить обновления",
+    "Update available" to "Доступно обновление",
+    "Later" to "Позже",
+    "Checking for updates…" to "Проверка обновлений…",
+    "Downloading…" to "Загрузка…",
+    "You're up to date" to "У вас последняя версия",
+    "You already have the latest version." to "Установлена самая свежая версия.",
+    "Update check failed" to "Не удалось проверить обновления",
+    "Couldn't reach the update server. Try again later." to
+        "Не удалось связаться с сервером обновлений. Попробуйте позже.",
+
     // App lock
     "App lock" to "Блокировка приложения",
     "Set passcode" to "Задать код-пароль",
