@@ -6,6 +6,20 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.6.1] — 2026-07-02
+
+### Added
+- **Panel alerts.** Optional background notifications for the things you'd
+  otherwise only catch by opening the app: a client is about to expire or has
+  used most of its traffic, or a panel, Xray or node has gone down. Enable it in
+  Settings and set the expiry-days / traffic-% thresholds; every saved panel is
+  checked. On **Android** a periodic background job polls (~30 min); on **iOS**
+  the check runs when you open the app plus opportunistically in the background.
+
+### Fixed
+- **Minimum panel version.** The Connect screen now states the real requirement —
+  panel **v3.4.1** or newer — instead of the outdated v3.3.0.
+
 ## [0.5.7] — 2026-07-02
 
 ### Fixed
