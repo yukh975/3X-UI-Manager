@@ -1,5 +1,6 @@
 package net.yukh.xui.app
 
+import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
 
 // ---- Platform hooks (iOS: UNUserNotificationCenter + BGTaskScheduler;
@@ -76,11 +77,24 @@ object AlertsCheck {
         try {
             // Panel reachable + Xray state. An unreachable panel is ONE incident —
             // skip the per-client/per-node checks so one outage isn't twenty alerts.
-            val status = runCatching { api.serverStatus() }.getOrNull()
+            val status = try {
+                api.serverStatus()
+            } catch (e: AuthExpiredException) {
+                // Token no longer valid — an auth problem the user handles in-app,
+                // NOT a reachability outage. Don't cry "unreachable".
+                fired.remove("miss:${p.id}")
+                return
+            } catch (e: Throwable) {
+                null
+            }
             if (status?.success != true || status.obj == null) {
+                // Don't cry wolf on a single miss (transient timeout / rate-limited
+                // burst): arm on the first miss, only alert on the second.
+                if (fired.add("miss:${p.id}")) return
                 raise("p:${p.id}:down", tr(lang, "Panel unreachable"), p.label)
                 return
             }
+            fired.remove("miss:${p.id}")
             fired.remove("p:${p.id}:down")
 
             if (!status.obj!!.xrayRunning) {
