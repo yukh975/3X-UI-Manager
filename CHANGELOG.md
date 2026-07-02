@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.5.7] — 2026-07-02
+
+### Fixed
+- **Update notes now match the app language.** The "What's new" shown in the
+  in-app update dialog was always in English. It now follows your selected
+  language — the notes are pulled from the matching changelog (English or
+  Russian) for the offered version.
+
 ## [0.5.6] — 2026-07-01
 
 ### Fixed

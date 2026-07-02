@@ -7,6 +7,8 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import net.yukh.xui.data.prefs.AppSettingsStore
+import net.yukh.xui.i18n.LANG_RU
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +37,7 @@ sealed interface UpdateState {
 @HiltViewModel
 class UpdateViewModel @Inject constructor(
     private val app: Application,
+    private val settings: AppSettingsStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<UpdateState>(UpdateState.Idle)
@@ -46,13 +49,20 @@ class UpdateViewModel @Inject constructor(
         runCatching { app.packageManager.getPackageInfo(app.packageName, 0).versionName }
             .getOrNull() ?: "0"
 
+    /** Swap the English release body for the changelog section in the UI language. */
+    private suspend fun localized(release: AppRelease): AppRelease {
+        val russian = settings.getLanguage() == LANG_RU
+        val notes = UpdateChecker.localizedNotes(release.version, russian)
+        return if (notes != null) release.copy(notes = notes) else release
+    }
+
     /** Silent check for startup — only surfaces a dialog when a newer build exists. */
     fun checkOnStart() {
         if (_state.value != UpdateState.Idle) return
         viewModelScope.launch {
             val rel = runCatching { UpdateChecker.latestIfNewer(currentVersion()) }.getOrNull()
             if (rel != null && _state.value == UpdateState.Idle) {
-                _state.value = UpdateState.Available(rel)
+                _state.value = UpdateState.Available(localized(rel))
             }
         }
     }
@@ -64,7 +74,7 @@ class UpdateViewModel @Inject constructor(
             val latest = runCatching { UpdateChecker.fetchLatest() }.getOrNull()
             _state.value = when {
                 latest == null -> UpdateState.Error
-                UpdateChecker.isNewer(latest.version, currentVersion()) -> UpdateState.Available(latest)
+                UpdateChecker.isNewer(latest.version, currentVersion()) -> UpdateState.Available(localized(latest))
                 else -> UpdateState.UpToDate
             }
         }
