@@ -6,6 +6,19 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.7.1] — 2026-07-02
+
+### Added
+- **App version on the Dashboard.** A new card right below the panel version
+  shows the manager app's own version and highlights when a newer release is
+  available — tap it to open the update dialog.
+
+### iOS
+- **Subscription sharing + link actions.** The client editor now shows the
+  auto-updating subscription link with its QR code (resolved from panel
+  settings, like on Android), and every link/QR card gained one-tap *Copy* and
+  system *Share* buttons.
+
 ## [0.6.1] — 2026-07-02
 
 ### Added
