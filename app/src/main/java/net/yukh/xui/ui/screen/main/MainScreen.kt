@@ -255,7 +255,13 @@ fun MainScreen(
             startDestination = MainTabs.Dashboard,
             modifier = Modifier.padding(padding),
         ) {
-            composable(MainTabs.Dashboard) { DashboardScreen() }
+            composable(MainTabs.Dashboard) {
+                val latestApp by updateVm.latestAvailable.collectAsStateWithLifecycle()
+                DashboardScreen(
+                    appUpdateVersion = latestApp?.version,
+                    onAppUpdate = updateVm::reshow,
+                )
+            }
             composable(MainTabs.Inbounds) { InboundsScreen(vm = inboundsVm) }
             composable(MainTabs.Clients) { ClientsScreen(vm = clientsVm) }
             composable(MainTabs.Nodes) { NodesScreen(vm = nodesVm) }

@@ -56,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -71,6 +72,8 @@ import net.yukh.xui.ui.format.formatUptime
 
 @Composable
 fun DashboardScreen(
+    appUpdateVersion: String? = null,
+    onAppUpdate: () -> Unit = {},
     vm: DashboardViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -255,6 +258,11 @@ fun DashboardScreen(
                     info = state.updateInfo,
                     updating = state.updating,
                     onUpdate = { showUpdateDialog = true },
+                )
+
+                AppVersionCard(
+                    updateVersion = appUpdateVersion,
+                    onUpdate = onAppUpdate,
                 )
 
                 GeoDatabasesCard(
@@ -516,6 +524,49 @@ private fun PanelVersionCard(
                             Icon(Icons.Outlined.SystemUpdate, contentDescription = null)
                         }
                     },
+                )
+            }
+        }
+    }
+}
+
+/** The manager app itself — version + a hint (and Update chip) when the GitLab
+ *  check has seen a newer release. Sits right below the panel-version card. */
+@Composable
+private fun AppVersionCard(updateVersion: String?, onUpdate: () -> Unit) {
+    val context = LocalContext.current
+    val appVersion = remember {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
+            .getOrNull() ?: "—"
+    }
+    val updateAvailable = updateVersion != null
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (updateAvailable) MaterialTheme.colorScheme.tertiaryContainer
+            else MaterialTheme.colorScheme.surfaceVariant,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("3X-UI Manager", style = MaterialTheme.typography.labelMedium)
+                Text("v$appVersion", style = MaterialTheme.typography.titleMedium)
+                if (updateAvailable) {
+                    Text(
+                        "${tr("Update available:")} v$updateVersion",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                }
+            }
+            if (updateAvailable) {
+                AssistChip(
+                    onClick = onUpdate,
+                    label = { Text(tr("Update")) },
+                    leadingIcon = { Icon(Icons.Outlined.SystemUpdate, contentDescription = null) },
                 )
             }
         }

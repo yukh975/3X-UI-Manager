@@ -43,6 +43,11 @@ class UpdateViewModel @Inject constructor(
     private val _state = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val state: StateFlow<UpdateState> = _state.asStateFlow()
 
+    /** Newest release any check has seen — survives dialog dismissal so the
+     *  Dashboard app-version card can keep hinting until the user updates. */
+    private val _latestAvailable = MutableStateFlow<AppRelease?>(null)
+    val latestAvailable: StateFlow<AppRelease?> = _latestAvailable.asStateFlow()
+
     private val http = OkHttpClient()
 
     private fun currentVersion(): String =
@@ -61,8 +66,12 @@ class UpdateViewModel @Inject constructor(
         if (_state.value != UpdateState.Idle) return
         viewModelScope.launch {
             val rel = runCatching { UpdateChecker.latestIfNewer(currentVersion()) }.getOrNull()
-            if (rel != null && _state.value == UpdateState.Idle) {
-                _state.value = UpdateState.Available(localized(rel))
+            if (rel != null) {
+                val localized = localized(rel)
+                _latestAvailable.value = localized
+                if (_state.value == UpdateState.Idle) {
+                    _state.value = UpdateState.Available(localized)
+                }
             }
         }
     }
@@ -74,10 +83,19 @@ class UpdateViewModel @Inject constructor(
             val latest = runCatching { UpdateChecker.fetchLatest() }.getOrNull()
             _state.value = when {
                 latest == null -> UpdateState.Error
-                UpdateChecker.isNewer(latest.version, currentVersion()) -> UpdateState.Available(localized(latest))
+                UpdateChecker.isNewer(latest.version, currentVersion()) -> {
+                    val localized = localized(latest)
+                    _latestAvailable.value = localized
+                    UpdateState.Available(localized)
+                }
                 else -> UpdateState.UpToDate
             }
         }
+    }
+
+    /** Re-open the update dialog from the Dashboard app-version card. */
+    fun reshow() {
+        _latestAvailable.value?.let { _state.value = UpdateState.Available(it) }
     }
 
     fun dismiss() { _state.value = UpdateState.Idle }
