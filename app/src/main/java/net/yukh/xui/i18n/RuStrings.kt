@@ -56,8 +56,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Subscription base URL (optional)" to "Базовый URL подписки (опционально)",
     "Connect" to "Подключиться",
     "Connecting…" to "Подключение…",
-    "Sign in with an API token. Requires panel v3.3.0 or newer." to
-        "Вход по API-токену. Нужна панель версии v3.3.0 или новее.",
+    "Sign in with an API token. Requires panel v3.4.1 or newer." to
+        "Вход по API-токену. Нужна панель версии v3.4.1 или новее.",
     "Where to get it: open the panel in a browser, go to " +
         "Settings → Security → API Token, add a token, then copy " +
         "it here. (3x-ui tokens are full admin — keep it private.)" to

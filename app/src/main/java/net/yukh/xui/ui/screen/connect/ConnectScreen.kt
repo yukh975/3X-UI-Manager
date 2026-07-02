@@ -87,7 +87,7 @@ fun ConnectScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                tr("Sign in with an API token. Requires panel v3.3.0 or newer."),
+                tr("Sign in with an API token. Requires panel v3.4.1 or newer."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
