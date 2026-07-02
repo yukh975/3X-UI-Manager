@@ -3,6 +3,7 @@ package net.yukh.xui.shared.api
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -31,12 +32,45 @@ private data class GitlabRelease(
  */
 object UpdateChecker {
     private const val API = "https://git.home.yukh.net/api/v4/projects/19"
+    private const val FILES = "$API/repository/files"
     const val RELEASES_PAGE = "https://git.home.yukh.net/yukh/3X-UI-Manager/-/releases"
 
     /** The latest release if strictly newer than [current], else null. */
     suspend fun latestIfNewer(current: String): AppUpdate? {
         val latest = fetchLatest() ?: return null
         return if (isNewer(latest.version, current)) latest else null
+    }
+
+    /**
+     * The changelog section for [version] in the app's language — the GitLab
+     * release body is English-only, but we keep a Russian changelog too, so the
+     * "what's new" shown in the dialog can match the UI language. Reads the raw
+     * `CHANGELOG.ru.md` / `CHANGELOG.md` at the version tag and extracts its
+     * `## [version]` block. Returns null on any failure → caller keeps the
+     * release body as a fallback.
+     */
+    suspend fun localizedNotes(version: String, russian: Boolean): String? {
+        val file = if (russian) "CHANGELOG.ru.md" else "CHANGELOG.md"
+        val client = platformHttpClient(allowInsecure = false) {}
+        return try {
+            val text = client.get("$FILES/$file/raw?ref=v$version").bodyAsText()
+            extractSection(text, version)
+        } catch (e: Throwable) {
+            null
+        } finally {
+            client.close()
+        }
+    }
+
+    /** Pull the "## [version] …" block out of a Keep-a-Changelog file. */
+    private fun extractSection(changelog: String, version: String): String? {
+        val lines = changelog.lines()
+        val start = lines.indexOfFirst { it.startsWith("## [$version]") }
+        if (start < 0) return null
+        val rest = lines.drop(start + 1)
+        val end = rest.indexOfFirst { it.startsWith("## [") }
+        val body = (if (end < 0) rest else rest.take(end)).joinToString("\n").trim()
+        return body.ifEmpty { null }
     }
 
     /** The latest release regardless of the running version (for a manual check). */

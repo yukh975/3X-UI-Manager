@@ -27,6 +27,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.yukh.xui.shared.api.AppUpdate
 import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.UpdateChecker
@@ -149,13 +150,19 @@ fun App() {
             // Self-update: check the app's GitLab releases (iOS can't install an
             // unsigned .ipa itself, so we notify + open the release page).
             var updateState by remember { mutableStateOf<UpdateUiState>(UpdateUiState.Idle) }
+            // Swap the English release body for the changelog section in the UI
+            // language (falls back to the release body when the fetch fails).
+            suspend fun localizedUpdate(u: AppUpdate): AppUpdate {
+                val notes = UpdateChecker.localizedNotes(u.version, lang == LANG_RU)
+                return if (notes != null) u.copy(notes = notes) else u
+            }
             fun checkUpdatesManual() {
                 updateState = UpdateUiState.Checking
                 scope.launch {
                     val latest = try { UpdateChecker.fetchLatest() } catch (e: Throwable) { null }
                     updateState = when {
                         latest == null -> UpdateUiState.Error
-                        UpdateChecker.isNewer(latest.version, appVersionName()) -> UpdateUiState.Available(latest)
+                        UpdateChecker.isNewer(latest.version, appVersionName()) -> UpdateUiState.Available(localizedUpdate(latest))
                         else -> UpdateUiState.UpToDate
                     }
                 }
@@ -164,7 +171,7 @@ fun App() {
             LaunchedEffect(Unit) {
                 val upd = try { UpdateChecker.latestIfNewer(appVersionName()) } catch (e: Throwable) { null }
                 if (upd != null && updateState == UpdateUiState.Idle) {
-                    updateState = UpdateUiState.Available(upd)
+                    updateState = UpdateUiState.Available(localizedUpdate(upd))
                 }
             }
 
