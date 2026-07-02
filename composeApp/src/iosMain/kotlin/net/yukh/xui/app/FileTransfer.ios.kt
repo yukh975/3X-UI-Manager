@@ -42,6 +42,11 @@ actual fun platformOpenUrl(url: String) {
     UIApplication.sharedApplication.openURL(nsurl, options = emptyMap<Any?, Any?>(), completionHandler = null)
 }
 
+actual fun platformShareText(text: String) {
+    val activity = UIActivityViewController(activityItems = listOf(text), applicationActivities = null)
+    topViewController()?.presentViewController(activity, animated = true, completion = null)
+}
+
 actual fun platformExportFile(filename: String, bytes: ByteArray) {
     val path = NSTemporaryDirectory() + filename
     bytes.toNSData().writeToFile(path, atomically = true)

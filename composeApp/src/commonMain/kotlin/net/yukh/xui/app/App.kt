@@ -41,6 +41,7 @@ import net.yukh.xui.shared.dto.InboundModel
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
+import net.yukh.xui.shared.dto.PanelSubSettings
 import net.yukh.xui.shared.dto.ServerStatus
 import net.yukh.xui.shared.dto.TrafficSummary
 import net.yukh.xui.shared.dto.VlessEncAuth
@@ -116,6 +117,7 @@ fun App() {
             var editingClientNew by remember { mutableStateOf(false) }
             var clientLinks by remember { mutableStateOf<List<String>>(emptyList()) }
             var clientLinksLoading by remember { mutableStateOf(false) }
+            var clientSubUrl by remember { mutableStateOf<String?>(null) }
             var clientIps by remember { mutableStateOf<List<ClientIpInfo>>(emptyList()) }
             var clientIpsLoading by remember { mutableStateOf(false) }
             var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -150,6 +152,9 @@ fun App() {
             // Self-update: check the app's GitLab releases (iOS can't install an
             // unsigned .ipa itself, so we notify + open the release page).
             var updateState by remember { mutableStateOf<UpdateUiState>(UpdateUiState.Idle) }
+            // Newest release any check has seen — survives dialog dismissal so the
+            // Dashboard app-version card keeps hinting until the user updates.
+            var lastAvailableUpdate by remember { mutableStateOf<AppUpdate?>(null) }
             // Swap the English release body for the changelog section in the UI
             // language (falls back to the release body when the fetch fails).
             suspend fun localizedUpdate(u: AppUpdate): AppUpdate {
@@ -162,7 +167,11 @@ fun App() {
                     val latest = try { UpdateChecker.fetchLatest() } catch (e: Throwable) { null }
                     updateState = when {
                         latest == null -> UpdateUiState.Error
-                        UpdateChecker.isNewer(latest.version, appVersionName()) -> UpdateUiState.Available(localizedUpdate(latest))
+                        UpdateChecker.isNewer(latest.version, appVersionName()) -> {
+                            val u = localizedUpdate(latest)
+                            lastAvailableUpdate = u
+                            UpdateUiState.Available(u)
+                        }
                         else -> UpdateUiState.UpToDate
                     }
                 }
@@ -170,8 +179,12 @@ fun App() {
             // Silent check once on launch — only surfaces when a newer build exists.
             LaunchedEffect(Unit) {
                 val upd = try { UpdateChecker.latestIfNewer(appVersionName()) } catch (e: Throwable) { null }
-                if (upd != null && updateState == UpdateUiState.Idle) {
-                    updateState = UpdateUiState.Available(localizedUpdate(upd))
+                if (upd != null) {
+                    val u = localizedUpdate(upd)
+                    lastAvailableUpdate = u
+                    if (updateState == UpdateUiState.Idle) {
+                        updateState = UpdateUiState.Available(u)
+                    }
                 }
             }
 
@@ -530,12 +543,23 @@ fun App() {
                         error = editorError,
                         links = clientLinks,
                         linksLoading = clientLinksLoading,
+                        subUrl = clientSubUrl,
                         onShowLinks = {
                             scope.launch {
                                 clientLinksLoading = true
                                 val r = try { api?.clientLinks(editingClient!!.email) } catch (e: Throwable) { null }
                                 clientLinks = r?.obj ?: emptyList()
                                 clientLinksLoading = false
+                            }
+                            // Subscription URL needs panel settings (token-readable
+                            // v3.3.0+) — fetch in parallel, degrade silently.
+                            scope.launch {
+                                val c = editingClient
+                                val s = try { api?.subSettings() } catch (e: Throwable) { null }
+                                clientSubUrl =
+                                    if (c != null && s?.success == true && s.obj != null)
+                                        s.obj!!.subscriptionUrl(PanelSubSettings.hostOf(baseUrl), c.subId)
+                                    else null
                             }
                         },
                         ips = clientIps,
@@ -581,7 +605,7 @@ fun App() {
                                     }
                                 } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
-                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientIps = emptyList(); refreshAll() }
+                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); refreshAll() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
                             }
                         },
@@ -591,11 +615,11 @@ fun App() {
                                 val r = try { api?.deleteClient(editingClient!!.email) }
                                     catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
-                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientIps = emptyList(); refreshAll() }
+                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); refreshAll() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
                             }
                         },
-                        onCancel = { editingClient = null; clientLinks = emptyList(); clientIps = emptyList(); editorError = null },
+                        onCancel = { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); editorError = null },
                     )
                 } else if (editingInbound != null) {
                     InboundEditorScreen(
@@ -805,6 +829,10 @@ fun App() {
                                         metricChart = MetricChartState(block = block, bucket = 2, loading = true)
                                         scope.launch { loadMetricSeries() }
                                     },
+                                    appUpdateVersion = lastAvailableUpdate?.version,
+                                    onAppUpdate = {
+                                        lastAvailableUpdate?.let { updateState = UpdateUiState.Available(it) }
+                                    },
                                 )
                                 metricChart?.let { mc ->
                                     MetricHistoryDialog(
@@ -830,8 +858,8 @@ fun App() {
                                 2 -> ClientsListScreen(
                                     clients,
                                     onlineEmails = onlines.toSet(),
-                                    onAdd = { editorError = null; clientLinks = emptyList(); clientIps = emptyList(); editingClientNew = true; editingClient = Client() },
-                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); clientIps = emptyList(); editingClientNew = false; editingClient = c },
+                                    onAdd = { editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); editingClientNew = true; editingClient = Client() },
+                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); editingClientNew = false; editingClient = c },
                                     onToggle = { c, en -> scope.launch { api?.updateClient(c.email, c.toModel().copy(enable = en)); refreshAll() } },
                                     onExport = {
                                         scope.launch {

@@ -44,6 +44,7 @@ import net.yukh.xui.shared.dto.MtlsTrustCaRequest
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeIdsRequest
 import net.yukh.xui.shared.dto.NodeModel
+import net.yukh.xui.shared.dto.PanelSubSettings
 import net.yukh.xui.shared.dto.PanelUpdateInfo
 import net.yukh.xui.shared.dto.ServerStatus
 import net.yukh.xui.shared.dto.VlessEncResponse
@@ -155,6 +156,10 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     /** Connection (share) links for a client, e.g. ["vless://…", …]. */
     suspend fun clientLinks(email: String): ApiResponse<List<String>> =
         client.get("$base/panel/api/clients/links/$email") { auth() }.body()
+
+    /** Panel settings subset for the subscription URL (token-readable v3.3.0+). */
+    suspend fun subSettings(): ApiResponse<PanelSubSettings> =
+        client.post("$base/panel/api/setting/all") { auth() }.body()
 
     suspend fun attachClient(email: String, inboundIds: List<Int>): ApiAck =
         client.post("$base/panel/api/clients/$email/attach") {

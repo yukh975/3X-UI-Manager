@@ -1,6 +1,8 @@
 package net.yukh.xui.app
 
 import java.awt.Desktop
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.net.URI
 import javax.swing.JFileChooser
@@ -8,6 +10,13 @@ import javax.swing.JFileChooser
 actual fun platformOpenUrl(url: String) {
     runCatching {
         if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI(url))
+    }
+}
+
+/** No system share sheet on desktop — the nearest useful thing is the clipboard. */
+actual fun platformShareText(text: String) {
+    runCatching {
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
     }
 }
 

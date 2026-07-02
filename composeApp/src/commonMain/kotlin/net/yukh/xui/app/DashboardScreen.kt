@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -54,6 +55,8 @@ fun DashboardScreen(
     error: String?,
     onRefresh: () -> Unit,
     onMetric: (MetricBlock) -> Unit,
+    appUpdateVersion: String? = null,
+    onAppUpdate: () -> Unit = {},
 ) {
     var pendingGeo by remember { mutableStateOf<String?>(null) }
     var pendingGeoAll by remember { mutableStateOf(false) }
@@ -122,6 +125,7 @@ fun DashboardScreen(
             ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}", onClick = { onMetric(MetricBlock.CONN) })
             if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
             if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
+            AppVersionCard(updateVersion = appUpdateVersion, onUpdate = onAppUpdate)
             mainTraffic?.let { TrafficCard(it) }
             if (geoFiles.isNotEmpty()) GeoCard(
                 files = geoFiles,
@@ -339,6 +343,40 @@ private fun ValueCard(title: String, value: String, onClick: (() -> Unit)? = nul
         ) {
             Text(title, style = MaterialTheme.typography.labelMedium)
             Text(value, style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+/** The manager app itself — version + an update hint when the GitLab check has
+ *  seen a newer release. Sits right below the panel-version card. */
+@Composable
+private fun AppVersionCard(updateVersion: String?, onUpdate: () -> Unit) {
+    val updateAvailable = updateVersion != null
+    Card(
+        modifier = Modifier.fillMaxWidth()
+            .let { if (updateAvailable) it.clickable(onClick = onUpdate) else it },
+        colors = if (updateAvailable) {
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+        } else {
+            CardDefaults.cardColors()
+        },
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text("3X-UI Manager", style = MaterialTheme.typography.labelMedium)
+                if (updateAvailable) {
+                    Text(
+                        "${tr("Update available:")} v$updateVersion",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                }
+            }
+            Text("v${appVersionName()}", style = MaterialTheme.typography.titleMedium)
         }
     }
 }

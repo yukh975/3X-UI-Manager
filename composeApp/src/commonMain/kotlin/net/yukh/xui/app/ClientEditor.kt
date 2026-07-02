@@ -34,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
@@ -58,6 +60,7 @@ fun ClientEditorScreen(
     error: String?,
     links: List<String>,
     linksLoading: Boolean,
+    subUrl: String? = null,
     onShowLinks: () -> Unit,
     ips: List<ClientIpInfo>,
     ipsLoading: Boolean,
@@ -146,6 +149,31 @@ fun ClientEditorScreen(
                     Text(tr("Show connection links"))
                 }
                 if (linksLoading) Text(tr("Loading…"), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // Subscription — one auto-updating link for all of the client's
+                // configs (resolved from panel settings; null on old panels).
+                subUrl?.let { sub ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(tr("Subscription"), style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                tr("Auto-updating link for all configs"),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Image(
+                                painter = rememberQrCodePainter(sub),
+                                contentDescription = null,
+                                modifier = Modifier.size(200.dp),
+                            )
+                            SelectionContainer { Text(sub, style = MaterialTheme.typography.bodySmall) }
+                            LinkActions(sub)
+                        }
+                    }
+                }
                 links.forEach { link ->
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -159,6 +187,7 @@ fun ClientEditorScreen(
                                 modifier = Modifier.size(200.dp),
                             )
                             SelectionContainer { Text(link, style = MaterialTheme.typography.bodySmall) }
+                            LinkActions(link)
                         }
                     }
                 }
@@ -235,5 +264,19 @@ private fun CToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit
     ) {
         Text(label, modifier = Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+/** Copy / system-share actions under a QR link card. */
+@Composable
+private fun LinkActions(content: String) {
+    val clipboard = LocalClipboardManager.current
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(onClick = { clipboard.setText(AnnotatedString(content)) }) {
+            Text(tr("Copy"))
+        }
+        OutlinedButton(onClick = { platformShareText(content) }) {
+            Text(tr("Share"))
+        }
     }
 }

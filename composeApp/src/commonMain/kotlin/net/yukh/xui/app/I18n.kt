@@ -37,6 +37,14 @@ val ruStrings: Map<String, String> = mapOf(
     "Sign in with an API token. Requires panel v3.4.1 or newer." to
         "Вход по API-токену. Нужна панель версии v3.4.1 или новее.",
 
+    "Update available:" to "Доступно обновление:",
+
+    // Client share (subscription + link actions)
+    "Subscription" to "Подписка",
+    "Auto-updating link for all configs" to "Авто-обновляемая ссылка на все конфиги",
+    "Copy" to "Копировать",
+    "Share" to "Поделиться",
+
     // Panel alerts (settings card + notification texts)
     "Panel alerts" to "Оповещения панели",
     "Client expiry, traffic limits, panel and node status" to

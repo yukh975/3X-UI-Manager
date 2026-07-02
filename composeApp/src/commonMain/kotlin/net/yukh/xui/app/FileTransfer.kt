@@ -11,3 +11,7 @@ expect fun platformPickFile(onResult: (filename: String, bytes: ByteArray) -> Un
 
 /** Open a URL in the system browser (iOS Safari / desktop default browser). */
 expect fun platformOpenUrl(url: String)
+
+/** Share plain text via the platform share sheet (iOS UIActivityViewController;
+ *  desktop falls back to copying into the clipboard). */
+expect fun platformShareText(text: String)
