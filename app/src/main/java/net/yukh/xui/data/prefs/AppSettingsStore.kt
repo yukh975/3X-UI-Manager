@@ -19,9 +19,25 @@ class AppSettingsStore @Inject constructor(
     fun getLanguage(): String = prefs.getString(KEY_LANG, DEFAULT_LANG) ?: DEFAULT_LANG
     fun setLanguage(lang: String) = prefs.edit { putString(KEY_LANG, lang) }
 
+    // ---- Panel alerts (background polling → local notifications) ----
+
+    fun getAlertsEnabled(): Boolean = prefs.getBoolean(KEY_ALERTS, false)
+    fun setAlertsEnabled(enabled: Boolean) = prefs.edit { putBoolean(KEY_ALERTS, enabled) }
+
+    /** Warn when a client expires within this many days. */
+    fun getAlertExpiryDays(): Int = prefs.getInt(KEY_ALERT_EXPIRY_DAYS, 3)
+    fun setAlertExpiryDays(days: Int) = prefs.edit { putInt(KEY_ALERT_EXPIRY_DAYS, days) }
+
+    /** Warn when a client has used at least this % of its traffic quota. */
+    fun getAlertTrafficPct(): Int = prefs.getInt(KEY_ALERT_TRAFFIC_PCT, 90)
+    fun setAlertTrafficPct(pct: Int) = prefs.edit { putInt(KEY_ALERT_TRAFFIC_PCT, pct) }
+
     private companion object {
         const val FILE = "xui_app_settings"
         const val KEY_LANG = "language"
         const val DEFAULT_LANG = "en"
+        const val KEY_ALERTS = "alerts.enabled"
+        const val KEY_ALERT_EXPIRY_DAYS = "alerts.expiryDays"
+        const val KEY_ALERT_TRAFFIC_PCT = "alerts.trafficPct"
     }
 }

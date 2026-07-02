@@ -1,5 +1,10 @@
 package net.yukh.xui.ui.screen.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,12 +42,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.i18n.LANG_EN
 import net.yukh.xui.i18n.LANG_RU
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.security.BiometricAuth
+import net.yukh.xui.work.AlertScheduler
 import androidx.compose.material3.OutlinedButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,6 +72,28 @@ fun SettingsScreen(
     var biometric by remember { mutableStateOf(vm.biometricEnabled()) }
     var showSetPasscode by remember { mutableStateOf(false) }
     val biometricAvailable = remember { BiometricAuth.canAuthenticate(context) }
+
+    var alerts by remember { mutableStateOf(vm.alertsEnabled()) }
+    var expiryDays by remember { mutableStateOf(vm.alertExpiryDays().toString()) }
+    var trafficPct by remember { mutableStateOf(vm.alertTrafficPct().toString()) }
+    fun startAlerts() {
+        vm.setAlertsEnabled(true)
+        alerts = true
+        AlertScheduler.ensureScheduled(context)
+        AlertScheduler.runNow(context) // immediate first pass — instant feedback
+    }
+    // Android 13+ needs the runtime notification permission; enable on the
+    // way back regardless of the answer (the OS just won't show them if denied).
+    val notifPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { startAlerts() }
+    fun enableAlerts() {
+        val needsPermission = Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        if (needsPermission) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        else startAlerts()
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -138,6 +167,85 @@ fun SettingsScreen(
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            // ---- Panel alerts ----
+            Text(tr("Notifications"), style = MaterialTheme.typography.titleMedium)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(tr("Panel alerts"), style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                tr("Client expiry, traffic limits, panel and node status"),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = alerts,
+                            onCheckedChange = { on ->
+                                if (on) {
+                                    enableAlerts()
+                                } else {
+                                    vm.setAlertsEnabled(false)
+                                    alerts = false
+                                    AlertScheduler.cancel(context)
+                                }
+                            },
+                        )
+                    }
+                    if (alerts) {
+                        HorizontalDivider()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            OutlinedTextField(
+                                value = expiryDays,
+                                onValueChange = { raw ->
+                                    val t = raw.filter(Char::isDigit).take(3)
+                                    expiryDays = t
+                                    t.toIntOrNull()?.takeIf { it in 1..365 }
+                                        ?.let(vm::setAlertExpiryDays)
+                                },
+                                label = { Text(tr("Days before expiry")) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                            )
+                            OutlinedTextField(
+                                value = trafficPct,
+                                onValueChange = { raw ->
+                                    val t = raw.filter(Char::isDigit).take(3)
+                                    trafficPct = t
+                                    t.toIntOrNull()?.takeIf { it in 1..100 }
+                                        ?.let(vm::setAlertTrafficPct)
+                                },
+                                label = { Text(tr("Traffic threshold (%)")) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        Text(
+                            tr("Checks all saved panels roughly every 30 minutes."),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .padding(bottom = 12.dp),
+                        )
                     }
                 }
             }

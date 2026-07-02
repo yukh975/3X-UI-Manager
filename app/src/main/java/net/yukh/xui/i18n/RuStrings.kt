@@ -58,6 +58,26 @@ val ruStrings: Map<String, String> = mapOf(
     "Connecting…" to "Подключение…",
     "Sign in with an API token. Requires panel v3.4.1 or newer." to
         "Вход по API-токену. Нужна панель версии v3.4.1 или новее.",
+
+    // Panel alerts (settings + notifications)
+    "Notifications" to "Уведомления",
+    "Panel alerts" to "Оповещения панели",
+    "Client expiry, traffic limits, panel and node status" to
+        "Истечение клиентов, лимиты трафика, состояние панели и узлов",
+    "Days before expiry" to "Дней до истечения",
+    "Traffic threshold (%)" to "Порог трафика (%)",
+    "Checks all saved panels roughly every 30 minutes." to
+        "Проверяет все сохранённые панели примерно раз в 30 минут.",
+    "Client alerts" to "Оповещения о клиентах",
+    "Client expiry and traffic limits" to "Истечение клиентов и лимиты трафика",
+    "Panel, Xray and node status" to "Состояние панели, Xray и узлов",
+    "Panel unreachable" to "Панель недоступна",
+    "Xray is down" to "Xray остановлен",
+    "Client expired" to "Клиент истёк",
+    "Client expires soon" to "Клиент скоро истечёт",
+    "d" to "д",
+    "Traffic limit almost reached" to "Лимит трафика почти исчерпан",
+    "Node offline" to "Узел недоступен",
     "Where to get it: open the panel in a browser, go to " +
         "Settings → Security → API Token, add a token, then copy " +
         "it here. (3x-ui tokens are full admin — keep it private.)" to
