@@ -106,6 +106,8 @@ fun App() {
             var showBackup by remember { mutableStateOf(false) }
             var showPanelAdmin by remember { mutableStateOf(false) }
             var showMtls by remember { mutableStateOf(false) }
+            // Pre-sign-in settings, reached from the Connect screen's gear.
+            var showConnectSettings by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
             var xrayLoading by remember { mutableStateOf(false) }
@@ -446,6 +448,9 @@ fun App() {
             fun deleteProfile(p: SavedSession) {
                 val left = store.removeProfile(p.id)
                 profiles = left
+                // Signing out of the last panel returns the app to its fresh-install
+                // state, so drop the app-lock passcode too (kept while any panel remains).
+                if (left.isEmpty()) { lock.removePasscode(); locked = false }
                 if (p.id == activeId) {
                     val next = left.firstOrNull()
                     if (next != null) switchProfile(next) else clearBinding()
@@ -482,6 +487,13 @@ fun App() {
                         onUnlock = { code -> if (lock.check(code)) { locked = false; true } else false },
                         onBiometric = { lock.authenticate("Unlock 3X-UI Manager") { ok -> if (ok) locked = false } },
                     )
+                } else if (!connected && showConnectSettings) {
+                    ConnectSettingsScreen(
+                        lang = lang,
+                        onLang = { lang = it; store.saveLang(it) },
+                        onCheckUpdates = { checkUpdatesManual() },
+                        onClose = { showConnectSettings = false },
+                    )
                 } else if (!connected) {
                     ConnectScreen(
                         baseUrl = baseUrl,
@@ -493,6 +505,7 @@ fun App() {
                         onToken = { token = it; error = null },
                         onAllowInsecure = { allowInsecure = it },
                         onConnect = { scope.launch { connect(baseUrl, token, allowInsecure) } },
+                        onSettings = { showConnectSettings = true },
                     )
                 } else if (editingClient != null) {
                     ClientEditorScreen(

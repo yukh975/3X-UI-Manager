@@ -1,6 +1,7 @@
 package net.yukh.xui.app
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,7 +39,9 @@ fun ConnectScreen(
     onConnect: () -> Unit,
     addMode: Boolean = false,
     onClose: (() -> Unit)? = null,
+    onSettings: (() -> Unit)? = null,
 ) {
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -110,6 +113,15 @@ fun ConnectScreen(
         if (addMode && onClose != null) {
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onClose, enabled = !busy) { Text(tr("Cancel")) }
+        }
+    }
+        // Settings entry (language / version / update check) for the first launch,
+        // before any panel is signed in and the More tab exists.
+        if (onSettings != null) {
+            TextButton(
+                onClick = onSettings,
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+            ) { Text("⚙", style = MaterialTheme.typography.headlineSmall) }
         }
     }
 }
