@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.5.6] — 2026-07-01
+
+### Fixed
+- **Settings on the first screen.** The Connect screen (before you sign in) now
+  has a settings button — language, app version, and the update check are
+  reachable on a fresh install, not only from the signed-in menu.
+- **App-lock passcode resets with the last panel.** Signing out of your last
+  panel returns the app to its fresh-install state, so the app-lock passcode is
+  cleared too. It's kept as long as any panel is still saved.
+
 ## [0.5.5] — 2026-07-01
 
 ### Added
