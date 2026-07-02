@@ -15,6 +15,7 @@ import net.yukh.xui.data.prefs.ConnectionAuth
 import net.yukh.xui.data.prefs.ConnectionProfile
 import net.yukh.xui.data.prefs.ConnectionStore
 import net.yukh.xui.i18n.tr
+import retrofit2.HttpException
 
 /**
  * Background poll behind the "Panel alerts" setting: walks every saved panel
@@ -54,11 +55,28 @@ class AlertsWorker @AssistedInject constructor(
 
         // Panel reachable + Xray state. An unreachable panel is one incident —
         // skip the per-client/per-node checks so one outage isn't twenty alerts.
-        val status = runCatching { api.getServerStatus() }.getOrNull()
+        val status = try {
+            api.getServerStatus()
+        } catch (e: HttpException) {
+            // 401 = the API token is no longer valid — that's an auth problem the
+            // user handles in-app, NOT a reachability outage. Don't cry "unreachable".
+            if (e.code() == 401) { resetMiss(profile.id); return }
+            null
+        } catch (e: Throwable) {
+            null
+        }
         if (status?.success != true || status.obj == null) {
-            raise("p:${profile.id}:down", Notifier.CHANNEL_PANEL, tr(lang, "Panel unreachable"), panelName)
+            // Don't cry wolf on a single miss: a transient timeout / a burst of
+            // concurrent requests hitting a rate limit shouldn't fire instantly.
+            // Require two consecutive misses before the "unreachable" alert.
+            val misses = state.getInt("miss:${profile.id}", 0) + 1
+            state.edit { putInt("miss:${profile.id}", misses) }
+            if (misses >= 2) {
+                raise("p:${profile.id}:down", Notifier.CHANNEL_PANEL, tr(lang, "Panel unreachable"), panelName)
+            }
             return
         }
+        resetMiss(profile.id)
         clear("p:${profile.id}:down")
 
         if (!status.obj.xrayRunning) {
@@ -123,6 +141,11 @@ class AlertsWorker @AssistedInject constructor(
                 clear(key)
             }
         }
+    }
+
+    /** Clear the consecutive-miss counter once the panel answers again. */
+    private fun resetMiss(id: String) {
+        if (state.contains("miss:$id")) state.edit { remove("miss:$id") }
     }
 
     /** Notify once per incident: skip if this key already fired. */

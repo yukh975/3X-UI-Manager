@@ -18,13 +18,16 @@ object AlertScheduler {
     private val online =
         Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-    /** Idempotent (KEEP) — safe to call on every app start. */
+    /** Idempotent (KEEP) — safe to call on every app start. The first run is
+     *  delayed a full period so it doesn't fire a duplicate burst alongside the
+     *  immediate [runNow] pass when the user enables alerts. */
     fun ensureScheduled(context: Context) {
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             PERIODIC,
             ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<AlertsWorker>(30, TimeUnit.MINUTES)
                 .setConstraints(online)
+                .setInitialDelay(30, TimeUnit.MINUTES)
                 .build(),
         )
     }

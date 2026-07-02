@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.7.2] — 2026-07-02
+
+### Fixed
+- **Panel alerts no longer cry wolf.** Turning alerts on could immediately fire a
+  false "panel unreachable" for panels that were up: the check ran twice at once
+  and the burst of concurrent requests could get rejected. Now the periodic check
+  doesn't duplicate the immediate one, an "unreachable" alert needs two failed
+  checks in a row, and an invalid token is reported as an auth problem rather than
+  an outage.
+
 ## [0.7.1] — 2026-07-02
 
 ### Added
