@@ -7,6 +7,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import net.yukh.xui.data.api.ApiResponse
 import net.yukh.xui.data.api.XuiApi
+import net.yukh.xui.security.LockState
 import net.yukh.xui.data.api.XuiApiFactory
 import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.ApiToken
@@ -53,6 +54,7 @@ private val exportPrettyJson = Json { prettyPrint = true; isLenient = true }
 class PanelRepository @Inject constructor(
     private val store: ConnectionStore,
     private val json: Json,
+    private val lockState: LockState,
 ) {
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
@@ -133,6 +135,9 @@ class PanelRepository @Inject constructor(
         val remaining = _profiles.value.filterNot { it.id == id }
         _profiles.value = remaining
         store.saveProfiles(remaining)
+        // Signing out of the last panel returns the app to its fresh-install state,
+        // so drop the app-lock passcode too (keep it while any panel remains).
+        if (remaining.isEmpty()) lockState.removePasscode()
         if (_activeProfileId.value == id) {
             val next = remaining.firstOrNull { it.auth is ConnectionAuth.Token }
             if (next != null) bindProfile(next) else clearActiveBinding()

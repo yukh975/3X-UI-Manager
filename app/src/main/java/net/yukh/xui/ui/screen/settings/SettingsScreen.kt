@@ -50,6 +50,7 @@ import androidx.compose.material3.OutlinedButton
 fun SettingsScreen(
     onClose: () -> Unit,
     onCheckUpdates: () -> Unit = {},
+    showAppLock: Boolean = true,
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val lang by vm.language.collectAsStateWithLifecycle()
@@ -96,43 +97,45 @@ fun SettingsScreen(
                 }
             }
 
-            // ---- App lock ----
-            Text(tr("App lock"), style = MaterialTheme.typography.titleMedium)
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    SettingRow(
-                        title = if (hasPasscode) tr("Change passcode") else tr("Set passcode"),
-                        onClick = { showSetPasscode = true },
-                    )
-                    if (hasPasscode) {
-                        HorizontalDivider()
+            // ---- App lock (hidden before sign-in; the lock guards the panel UI) ----
+            if (showAppLock) {
+                Text(tr("App lock"), style = MaterialTheme.typography.titleMedium)
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
                         SettingRow(
-                            title = tr("Remove passcode"),
-                            titleColor = MaterialTheme.colorScheme.error,
-                            onClick = {
-                                vm.removePasscode()
-                                hasPasscode = false
-                                biometric = false
-                            },
+                            title = if (hasPasscode) tr("Change passcode") else tr("Set passcode"),
+                            onClick = { showSetPasscode = true },
                         )
-                        if (biometricAvailable) {
+                        if (hasPasscode) {
                             HorizontalDivider()
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    tr("Unlock with fingerprint"),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Switch(
-                                    checked = biometric,
-                                    onCheckedChange = { vm.setBiometricEnabled(it); biometric = it },
-                                )
+                            SettingRow(
+                                title = tr("Remove passcode"),
+                                titleColor = MaterialTheme.colorScheme.error,
+                                onClick = {
+                                    vm.removePasscode()
+                                    hasPasscode = false
+                                    biometric = false
+                                },
+                            )
+                            if (biometricAvailable) {
+                                HorizontalDivider()
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        tr("Unlock with fingerprint"),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Switch(
+                                        checked = biometric,
+                                        onCheckedChange = { vm.setBiometricEnabled(it); biometric = it },
+                                    )
+                                }
                             }
                         }
                     }

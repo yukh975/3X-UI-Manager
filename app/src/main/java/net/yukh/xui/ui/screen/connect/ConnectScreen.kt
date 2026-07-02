@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -47,6 +48,7 @@ fun ConnectScreen(
     onConnected: () -> Unit,
     addMode: Boolean = false,
     onClose: (() -> Unit)? = null,
+    onSettings: (() -> Unit)? = null,
     vm: ConnectViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -60,6 +62,16 @@ fun ConnectScreen(
                     if (onClose != null) {
                         IconButton(onClick = onClose) {
                             Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = tr("Close"))
+                        }
+                    }
+                },
+                actions = {
+                    // Settings are otherwise only in the signed-in ⋮ menu; expose
+                    // them here so language / version / updates are reachable before
+                    // the first sign-in (initial Connect screen only, not add-panel).
+                    if (onSettings != null) {
+                        IconButton(onClick = onSettings) {
+                            Icon(Icons.Outlined.Settings, contentDescription = tr("Settings"))
                         }
                     }
                 },
