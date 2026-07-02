@@ -22,10 +22,18 @@
 	<string>0.5.7</string>
 	<key>CFBundleVersion</key>
 	<string>50700</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>net.yukh.xui.alerts.refresh</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock 3X-UI Manager with Face ID.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

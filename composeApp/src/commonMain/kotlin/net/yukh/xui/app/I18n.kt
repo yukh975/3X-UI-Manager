@@ -34,6 +34,24 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Connect screen
     "3X-UI Manager" to "3X-UI Manager",
+    "Sign in with an API token. Requires panel v3.4.1 or newer." to
+        "Вход по API-токену. Нужна панель версии v3.4.1 или новее.",
+
+    // Panel alerts (settings card + notification texts)
+    "Panel alerts" to "Оповещения панели",
+    "Client expiry, traffic limits, panel and node status" to
+        "Истечение клиентов, лимиты трафика, состояние панели и узлов",
+    "Days before expiry" to "Дней до истечения",
+    "Traffic threshold (%)" to "Порог трафика (%)",
+    "Checked when the app opens and opportunistically in the background." to
+        "Проверяется при открытии приложения и по возможности в фоне.",
+    "Panel unreachable" to "Панель недоступна",
+    "Xray is down" to "Xray остановлен",
+    "Client expired" to "Клиент истёк",
+    "Client expires soon" to "Клиент скоро истечёт",
+    "d" to "д",
+    "Traffic limit almost reached" to "Лимит трафика почти исчерпан",
+    "Node offline" to "Узел недоступен",
     "Connect to your panel" to "Подключение к панели",
     "Connect to another panel" to "Подключение к другой панели",
     "Add panel" to "Добавить панель",

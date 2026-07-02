@@ -57,6 +57,9 @@ fun ConnectSettingsScreen(
             }
         }
 
+        // ---- Panel alerts ----
+        PanelAlertsCard()
+
         // ---- About ----
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -175,6 +175,12 @@ fun App() {
                 }
             }
 
+            // Panel alerts: one pass per app open — iOS backgrounds run only
+            // opportunistically (BGAppRefresh), so on-open is the reliable path.
+            LaunchedEffect(Unit) {
+                runCatching { AlertsCheck.run(store) }
+            }
+
             // Re-lock on returning from the background — but only while signed in
             // and only after a 30 s grace period, so a quick switch (e.g. to another
             // app to copy a panel URL) and back doesn't prompt for the passcode. The

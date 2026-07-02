@@ -138,6 +138,9 @@ fun MoreScreen(
             }
         }
 
+        // ---- Panel alerts ----
+        PanelAlertsCard()
+
         // ---- Xray config ----
         Card(modifier = Modifier.fillMaxWidth().clickable { onXrayConfig() }) {
             Row(
