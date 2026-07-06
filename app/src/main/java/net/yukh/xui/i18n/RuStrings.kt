@@ -62,8 +62,8 @@ val ruStrings: Map<String, String> = mapOf(
     // Panel alerts (settings + notifications)
     "Notifications" to "Уведомления",
     "Panel alerts" to "Оповещения панели",
-    "Client expiry, traffic limits, panel and node status" to
-        "Истечение клиентов, лимиты трафика, состояние панели и узлов",
+    "Client expiry, traffic limits, inbounds & node status" to
+        "Истечение клиентов, лимиты трафика, доступность инбаундов и узлов",
     "Days before expiry" to "Дней до истечения",
     "Traffic threshold (%)" to "Порог трафика (%)",
     "Checks all saved panels roughly every 30 minutes." to
@@ -71,7 +71,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Client alerts" to "Оповещения о клиентах",
     "Client expiry and traffic limits" to "Истечение клиентов и лимиты трафика",
     "Panel, Xray and node status" to "Состояние панели, Xray и узлов",
-    "Panel unreachable" to "Панель недоступна",
+    "Inbounds unreachable" to "Инбаунды недоступны",
     "Xray is down" to "Xray остановлен",
     "Client expired" to "Клиент истёк",
     "Client expires soon" to "Клиент скоро истечёт",

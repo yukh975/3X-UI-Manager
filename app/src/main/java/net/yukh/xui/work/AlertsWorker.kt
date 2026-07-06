@@ -7,20 +7,35 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import net.yukh.xui.data.api.XuiApi
 import net.yukh.xui.data.api.XuiApiFactory
+import net.yukh.xui.data.api.dto.PanelSettings
+import net.yukh.xui.data.auth.InsecureTls
 import net.yukh.xui.data.prefs.AppSettingsStore
 import net.yukh.xui.data.prefs.ConnectionAuth
 import net.yukh.xui.data.prefs.ConnectionProfile
 import net.yukh.xui.data.prefs.ConnectionStore
 import net.yukh.xui.i18n.tr
-import retrofit2.HttpException
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 /**
  * Background poll behind the "Panel alerts" setting: walks every saved panel
- * and raises local notifications for client expiry / traffic quota and for
- * panel / Xray / node outages.
+ * and raises local notifications for client expiry / traffic quota, an Xray /
+ * node outage, and — the reachability signal — whether the public entry point
+ * (Caddy on :443) answers.
+ *
+ * The **outage** check targets `:443`, NOT the panel management API: the panel
+ * is frequently firewalled off the phone's network (iptables), so its
+ * reachability is a poor health signal, while Caddy on :443 is what actually
+ * serves the inbounds. Any response there (any HTTP status — Caddy decides
+ * access) means the service is up. The panel-API checks (Xray / clients / nodes)
+ * still run, but best-effort: if the API isn't reachable they're silently
+ * skipped, never a false "unreachable".
  *
  * Each alert fires ONCE per incident: a fired key is remembered and only
  * re-armed when the condition clears (node back online, traffic reset, expiry
@@ -52,32 +67,28 @@ class AlertsWorker @AssistedInject constructor(
         val token = (profile.auth as? ConnectionAuth.Token)?.token ?: return
         val api = XuiApiFactory.tokenAuthed(profile.baseUrl, profile.allowInsecureTls, token, json)
         val panelName = profile.name.ifBlank { profile.baseUrl }
+        val host = PanelSettings.hostOf(profile.baseUrl)
 
-        // Panel reachable + Xray state. An unreachable panel is one incident —
-        // skip the per-client/per-node checks so one outage isn't twenty alerts.
-        val status = try {
-            api.getServerStatus()
-        } catch (e: HttpException) {
-            // 401 = the API token is no longer valid — that's an auth problem the
-            // user handles in-app, NOT a reachability outage. Don't cry "unreachable".
-            if (e.code() == 401) { resetMiss(profile.id); return }
-            null
-        } catch (e: Throwable) {
-            null
-        }
-        if (status?.success != true || status.obj == null) {
-            // Don't cry wolf on a single miss: a transient timeout / a burst of
-            // concurrent requests hitting a rate limit shouldn't fire instantly.
-            // Require two consecutive misses before the "unreachable" alert.
+        // 1. Reachability = does the public entry point (Caddy :443) answer? Any
+        //    response means the inbounds are being served; a refused connection /
+        //    timeout after two consecutive misses is a real outage. (No cry-wolf
+        //    on a single transient miss.)
+        if (caddyReachable(host, profile.allowInsecureTls)) {
+            resetMiss(profile.id)
+            clear("p:${profile.id}:down")
+        } else {
             val misses = state.getInt("miss:${profile.id}", 0) + 1
             state.edit { putInt("miss:${profile.id}", misses) }
             if (misses >= 2) {
-                raise("p:${profile.id}:down", Notifier.CHANNEL_PANEL, tr(lang, "Panel unreachable"), panelName)
+                raise("p:${profile.id}:down", Notifier.CHANNEL_PANEL, tr(lang, "Inbounds unreachable"), "$panelName · :443")
             }
-            return
         }
-        resetMiss(profile.id)
-        clear("p:${profile.id}:down")
+
+        // 2. Panel-API health (Xray / clients / nodes) — best-effort. The panel is
+        //    often firewalled off the phone, so an unreachable API (or a 401) is
+        //    silently skipped, never a reachability alert.
+        val status = runCatching { api.getServerStatus() }.getOrNull()
+        if (status?.success != true || status.obj == null) return
 
         if (!status.obj.xrayRunning) {
             raise("p:${profile.id}:xray", Notifier.CHANNEL_PANEL, tr(lang, "Xray is down"), panelName)
@@ -88,6 +99,21 @@ class AlertsWorker @AssistedInject constructor(
         checkClients(api, profile)
         checkNodes(api, profile, panelName)
     }
+
+    /**
+     * True if the host answers on :443 — a completed TLS handshake + any HTTP
+     * response (Caddy replies even when it denies access). A refused connection,
+     * timeout or DNS failure is "down". Uses the profile's self-signed-TLS flag.
+     */
+    private suspend fun caddyReachable(host: String, allowInsecure: Boolean): Boolean =
+        withContext(Dispatchers.IO) {
+            val builder = OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+            if (allowInsecure) InsecureTls.apply(builder)
+            val req = Request.Builder().url("https://$host:443/").head().build()
+            runCatching { builder.build().newCall(req).execute().use { true } }.getOrDefault(false)
+        }
 
     private suspend fun checkClients(api: XuiApi, profile: ConnectionProfile) {
         val clients = runCatching { api.listClients() }.getOrNull()?.obj ?: return
