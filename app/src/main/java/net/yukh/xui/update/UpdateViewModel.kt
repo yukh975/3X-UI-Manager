@@ -54,11 +54,12 @@ class UpdateViewModel @Inject constructor(
         runCatching { app.packageManager.getPackageInfo(app.packageName, 0).versionName }
             .getOrNull() ?: "0"
 
-    /** Swap the English release body for the changelog section in the UI language. */
+    /** Swap the English release body for the changelog section in the UI language,
+     *  and un-wrap its 80-col hard breaks so the dialog doesn't break mid-sentence. */
     private suspend fun localized(release: AppRelease): AppRelease {
         val russian = settings.getLanguage() == LANG_RU
-        val notes = UpdateChecker.localizedNotes(release.version, russian)
-        return if (notes != null) release.copy(notes = notes) else release
+        val notes = UpdateChecker.localizedNotes(release.version, russian) ?: release.notes
+        return release.copy(notes = UpdateChecker.reflowNotes(notes))
     }
 
     /** Silent check for startup — only surfaces a dialog when a newer build exists. */

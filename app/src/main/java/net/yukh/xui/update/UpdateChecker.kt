@@ -62,6 +62,28 @@ object UpdateChecker {
         return body.ifEmpty { null }
     }
 
+    private val NUMBERED = Regex("^\\d+[.)]\\s")
+    private val BLANK_RUN = Regex("\n{3,}")
+
+    /**
+     * Un-wrap the changelog's hard line breaks for display: the source is wrapped
+     * at ~80 columns, so shown verbatim it breaks mid-sentence. Join each list
+     * item / paragraph's continuation lines into one logical line and let the
+     * dialog soft-wrap. Headings (`#`), list items (`-`/`*`/`+`/`N.`), block
+     * quotes and blank lines keep their own line.
+     */
+    fun reflowNotes(md: String): String {
+        val out = mutableListOf<String>()
+        for (raw in md.lines()) {
+            val t = raw.trim()
+            val newBlock = t.isEmpty() || t.startsWith("#") || t.startsWith("- ") ||
+                t.startsWith("* ") || t.startsWith("+ ") || t.startsWith("> ") ||
+                NUMBERED.containsMatchIn(t)
+            if (out.isEmpty() || newBlock) out.add(t) else out[out.lastIndex] = out.last() + " " + t
+        }
+        return out.joinToString("\n").replace(BLANK_RUN, "\n\n").trim()
+    }
+
     /** The latest release regardless of the running version (for a manual check). */
     suspend fun fetchLatest(): AppRelease? = withContext(Dispatchers.IO) {
         val req = Request.Builder().url("$API/releases?per_page=1").build()

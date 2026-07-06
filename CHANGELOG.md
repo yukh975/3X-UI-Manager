@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.2] — 2026-07-06
+
+### Fixed
+- **Update notes no longer break mid-sentence.** The "What's new" shown in the update dialog was printed with the changelog's source line breaks, so text wrapped in odd places. It now reflows into clean paragraphs that wrap to the dialog width.
+
 ## [0.8.1] — 2026-07-06
 
 ### Added
