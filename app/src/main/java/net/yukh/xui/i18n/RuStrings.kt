@@ -66,8 +66,8 @@ val ruStrings: Map<String, String> = mapOf(
         "Истечение клиентов, лимиты трафика, доступность инбаундов и узлов",
     "Days before expiry" to "Дней до истечения",
     "Traffic threshold (%)" to "Порог трафика (%)",
-    "Checks all saved panels roughly every 30 minutes." to
-        "Проверяет все сохранённые панели примерно раз в 30 минут.",
+    "Checks all saved panels every 30 minutes." to
+        "Проверяет все сохранённые панели раз в 30 минут.",
     "Client alerts" to "Оповещения о клиентах",
     "Client expiry and traffic limits" to "Истечение клиентов и лимиты трафика",
     "Panel, Xray and node status" to "Состояние панели, Xray и узлов",

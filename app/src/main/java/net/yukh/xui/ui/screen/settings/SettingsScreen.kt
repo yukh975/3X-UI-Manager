@@ -230,7 +230,8 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                .padding(horizontal = 16.dp)
+                                .padding(top = 24.dp, bottom = 12.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             OutlinedTextField(
@@ -261,7 +262,7 @@ fun SettingsScreen(
                             )
                         }
                         Text(
-                            tr("Checks all saved panels roughly every 30 minutes."),
+                            tr("Checks all saved panels every 30 minutes."),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
