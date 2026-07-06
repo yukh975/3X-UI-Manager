@@ -47,13 +47,13 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Panel alerts (settings card + notification texts)
     "Panel alerts" to "Оповещения панели",
-    "Client expiry, traffic limits, panel and node status" to
-        "Истечение клиентов, лимиты трафика, состояние панели и узлов",
+    "Client expiry, traffic limits, inbounds & node status" to
+        "Истечение клиентов, лимиты трафика, доступность инбаундов и узлов",
     "Days before expiry" to "Дней до истечения",
     "Traffic threshold (%)" to "Порог трафика (%)",
     "Checked when the app opens and opportunistically in the background." to
         "Проверяется при открытии приложения и по возможности в фоне.",
-    "Panel unreachable" to "Панель недоступна",
+    "Inbounds unreachable" to "Инбаунды недоступны",
     "Xray is down" to "Xray остановлен",
     "Client expired" to "Клиент истёк",
     "Client expires soon" to "Клиент скоро истечёт",

@@ -45,7 +45,7 @@ fun PanelAlertsCard() {
                 Column(Modifier.weight(1f)) {
                     Text(tr("Panel alerts"), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        tr("Client expiry, traffic limits, panel and node status"),
+                        tr("Client expiry, traffic limits, inbounds & node status"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

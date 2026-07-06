@@ -1,7 +1,8 @@
 package net.yukh.xui.app
 
-import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
+import net.yukh.xui.shared.api.caddyReachable
+import net.yukh.xui.shared.dto.PanelSubSettings
 
 // ---- Platform hooks (iOS: UNUserNotificationCenter + BGTaskScheduler;
 //      desktop: no-ops) ----
@@ -73,29 +74,25 @@ object AlertsCheck {
             if (fired.add(key)) postLocalNotification(key, title, text)
         }
 
-        val api = PanelApi(p.baseUrl, p.token, p.allowInsecure)
-        try {
-            // Panel reachable + Xray state. An unreachable panel is ONE incident —
-            // skip the per-client/per-node checks so one outage isn't twenty alerts.
-            val status = try {
-                api.serverStatus()
-            } catch (e: AuthExpiredException) {
-                // Token no longer valid — an auth problem the user handles in-app,
-                // NOT a reachability outage. Don't cry "unreachable".
-                fired.remove("miss:${p.id}")
-                return
-            } catch (e: Throwable) {
-                null
-            }
-            if (status?.success != true || status.obj == null) {
-                // Don't cry wolf on a single miss (transient timeout / rate-limited
-                // burst): arm on the first miss, only alert on the second.
-                if (fired.add("miss:${p.id}")) return
-                raise("p:${p.id}:down", tr(lang, "Panel unreachable"), p.label)
-                return
-            }
+        // 1. Reachability = does the public entry point (Caddy :443) answer? Any
+        //    response means the inbounds are served; the panel API is often
+        //    firewalled off the phone, so we alert on :443, not on the API.
+        //    Grace: arm on the first miss, alert only on the second in a row.
+        val host = PanelSubSettings.hostOf(p.baseUrl)
+        if (caddyReachable(host, p.allowInsecure)) {
             fired.remove("miss:${p.id}")
             fired.remove("p:${p.id}:down")
+        } else if (!fired.add("miss:${p.id}")) {
+            raise("p:${p.id}:down", tr(lang, "Inbounds unreachable"), "${p.label} · :443")
+        }
+
+        // 2. Panel-API health (Xray / clients / nodes) — best-effort. If the API
+        //    isn't reachable (firewalled) or the token expired (401 →
+        //    AuthExpiredException, caught here), it's silently skipped.
+        val api = PanelApi(p.baseUrl, p.token, p.allowInsecure)
+        try {
+            val status = runCatching { api.serverStatus() }.getOrNull()
+            if (status?.success != true || status.obj == null) return
 
             if (!status.obj!!.xrayRunning) {
                 raise("p:${p.id}:xray", tr(lang, "Xray is down"), p.label)
