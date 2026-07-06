@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.3] — 2026-07-06
+
+### Added
+- **Configurable panel port for reachability alerts.** Panel alert settings now have a *Panel port* field (default 443) — the port on the panel host that Panel alerts probe to decide whether the panel is reachable. Handy when your inbounds listen on localhost behind a reverse proxy: monitor the panel's public port instead. Per-inbound ports are still monitored separately, from each inbound's editor.
+
 ## [0.8.2] — 2026-07-06
 
 ### Fixed

@@ -32,6 +32,11 @@ class AppSettingsStore @Inject constructor(
     fun getAlertTrafficPct(): Int = prefs.getInt(KEY_ALERT_TRAFFIC_PCT, 90)
     fun setAlertTrafficPct(pct: Int) = prefs.edit { putInt(KEY_ALERT_TRAFFIC_PCT, pct) }
 
+    /** The panel-host port probed for reachability (default 443 — the usual
+     *  public entry; set it to whatever your panel's public port is). */
+    fun getAlertPanelPort(): Int = prefs.getInt(KEY_ALERT_PANEL_PORT, 443)
+    fun setAlertPanelPort(port: Int) = prefs.edit { putInt(KEY_ALERT_PANEL_PORT, port) }
+
     private companion object {
         const val FILE = "xui_app_settings"
         const val KEY_LANG = "language"
@@ -39,5 +44,6 @@ class AppSettingsStore @Inject constructor(
         const val KEY_ALERTS = "alerts.enabled"
         const val KEY_ALERT_EXPIRY_DAYS = "alerts.expiryDays"
         const val KEY_ALERT_TRAFFIC_PCT = "alerts.trafficPct"
+        const val KEY_ALERT_PANEL_PORT = "alerts.panelPort"
     }
 }

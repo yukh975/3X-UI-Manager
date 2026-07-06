@@ -29,4 +29,6 @@ class SettingsViewModel @Inject constructor(
     fun setAlertExpiryDays(days: Int) = settings.setAlertExpiryDays(days)
     fun alertTrafficPct(): Int = settings.getAlertTrafficPct()
     fun setAlertTrafficPct(pct: Int) = settings.setAlertTrafficPct(pct)
+    fun alertPanelPort(): Int = settings.getAlertPanelPort()
+    fun setAlertPanelPort(port: Int) = settings.setAlertPanelPort(port)
 }

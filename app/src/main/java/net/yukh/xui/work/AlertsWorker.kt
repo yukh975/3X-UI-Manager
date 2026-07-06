@@ -70,10 +70,12 @@ class AlertsWorker @AssistedInject constructor(
         val panelName = profile.name.ifBlank { profile.baseUrl }
         val host = PanelSettings.hostOf(profile.baseUrl)
 
-        // 1a. Public entry: is port 443 reachable? (grace of 2 misses.)
+        // 1a. Panel host reachability on the configured port (default 443 — the
+        //     usual public entry). Grace of 2 misses.
+        val panelPort = settings.getAlertPanelPort()
         reach(
-            "p:${profile.id}:down", "miss:${profile.id}", tcpReachable(host, 443),
-            tr(lang, "Inbounds unreachable"), "$panelName · :443",
+            "p:${profile.id}:down", "miss:${profile.id}", tcpReachable(host, panelPort),
+            tr(lang, "Panel unreachable"), "$panelName · :$panelPort",
         )
 
         // 1b. Per-inbound: probe the ports of inbounds the user flagged. The port

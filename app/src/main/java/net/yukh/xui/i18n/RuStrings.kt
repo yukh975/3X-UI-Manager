@@ -73,6 +73,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Panel, Xray and node status" to "Состояние панели, Xray и узлов",
     "Inbounds unreachable" to "Инбаунды недоступны",
     "Inbound unreachable" to "Инбаунд недоступен",
+    "Panel unreachable" to "Панель недоступна",
+    "Panel port" to "Порт панели",
+    "This port on the panel host is probed for reachability (default 443). Per-inbound ports are monitored separately, from each inbound's editor." to
+        "Этот порт на хосте панели проверяется на доступность (по умолчанию 443). Порты отдельных инбаундов мониторятся отдельно — из редактора каждого инбаунда.",
     "Monitor reachability" to "Мониторить доступность",
     "Panel alerts notify you if this inbound's port stops answering (for inbounds exposed directly, without a reverse proxy)." to
         "Оповещения панели сообщат, если порт этого инбаунда перестанет отвечать (для инбаундов с прямым доступом, без реверс-прокси).",

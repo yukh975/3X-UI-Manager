@@ -76,6 +76,7 @@ fun SettingsScreen(
     var alerts by remember { mutableStateOf(vm.alertsEnabled()) }
     var expiryDays by remember { mutableStateOf(vm.alertExpiryDays().toString()) }
     var trafficPct by remember { mutableStateOf(vm.alertTrafficPct().toString()) }
+    var panelPort by remember { mutableStateOf(vm.alertPanelPort().toString()) }
     fun startAlerts() {
         vm.setAlertsEnabled(true)
         alerts = true
@@ -205,6 +206,27 @@ fun SettingsScreen(
                     }
                     if (alerts) {
                         HorizontalDivider()
+                        OutlinedTextField(
+                            value = panelPort,
+                            onValueChange = { raw ->
+                                val t = raw.filter(Char::isDigit).take(5)
+                                panelPort = t
+                                t.toIntOrNull()?.takeIf { it in 1..65535 }?.let(vm::setAlertPanelPort)
+                            },
+                            label = { Text(tr("Panel port")) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .padding(top = 12.dp),
+                        )
+                        Text(
+                            tr("This port on the panel host is probed for reachability (default 443). Per-inbound ports are monitored separately, from each inbound's editor."),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 4.dp),
+                        )
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
