@@ -32,6 +32,7 @@ fun PanelAlertsCard() {
     val store = remember { SessionStore() }
     val scope = rememberCoroutineScope()
     var enabled by remember { mutableStateOf(store.alertsEnabled()) }
+    var port by remember { mutableStateOf(store.alertPanelPort().toString()) }
     var days by remember { mutableStateOf(store.alertExpiryDays().toString()) }
     var pct by remember { mutableStateOf(store.alertTrafficPct().toString()) }
 
@@ -67,6 +68,22 @@ fun PanelAlertsCard() {
                 )
             }
             if (enabled) {
+                OutlinedTextField(
+                    value = port,
+                    onValueChange = { raw ->
+                        val t = raw.filter(Char::isDigit).take(5)
+                        port = t
+                        t.toIntOrNull()?.takeIf { it in 1..65535 }?.let(store::setAlertPanelPort)
+                    },
+                    label = { Text(tr("Panel port")) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    tr("This port on the panel host is probed for reachability (default 443). Per-inbound ports are monitored separately, from each inbound's editor."),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

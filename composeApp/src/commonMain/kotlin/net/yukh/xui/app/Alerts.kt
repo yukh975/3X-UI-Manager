@@ -27,10 +27,16 @@ expect fun epochNowMs(): Long
 private const val KEY_ALERTS_ENABLED = "xui.alerts.enabled"
 private const val KEY_ALERTS_EXPIRY_DAYS = "xui.alerts.expiryDays"
 private const val KEY_ALERTS_TRAFFIC_PCT = "xui.alerts.trafficPct"
+private const val KEY_ALERTS_PANEL_PORT = "xui.alerts.panelPort"
 private const val KEY_ALERTS_FIRED = "xui.alerts.fired"
 
 fun SessionStore.alertsEnabled(): Boolean = getString(KEY_ALERTS_ENABLED) == "1"
 fun SessionStore.setAlertsEnabled(on: Boolean) = putString(KEY_ALERTS_ENABLED, if (on) "1" else "0")
+
+/** The panel-host port probed for reachability (default 443 — the usual public
+ *  entry; set it to whatever your panel's public port is). */
+fun SessionStore.alertPanelPort(): Int = getString(KEY_ALERTS_PANEL_PORT)?.toIntOrNull() ?: 443
+fun SessionStore.setAlertPanelPort(port: Int) = putString(KEY_ALERTS_PANEL_PORT, port.toString())
 
 /** Warn when a client expires within this many days. */
 fun SessionStore.alertExpiryDays(): Int = getString(KEY_ALERTS_EXPIRY_DAYS)?.toIntOrNull() ?: 3
@@ -81,11 +87,13 @@ object AlertsCheck {
         }
 
         // 1. Reachability at the port level, NOT the panel API (often firewalled
-        //    off the phone). 1a: the public entry, port 443.
+        //    off the phone). 1a: the panel host on the configured port (default
+        //    443 — the usual public entry).
         val host = PanelSubSettings.hostOf(p.baseUrl)
+        val panelPort = store.alertPanelPort()
         reach(
-            "p:${p.id}:down", "miss:${p.id}", tcpReachable(host, 443),
-            tr(lang, "Inbounds unreachable"), "${p.label} · :443",
+            "p:${p.id}:down", "miss:${p.id}", tcpReachable(host, panelPort),
+            tr(lang, "Panel unreachable"), "${p.label} · :$panelPort",
         )
         // 1b: per-inbound ports the user flagged (port snapshotted locally, so it
         //     works even when the panel API is unreachable).

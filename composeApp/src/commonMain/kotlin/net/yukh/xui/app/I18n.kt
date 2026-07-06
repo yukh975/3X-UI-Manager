@@ -49,10 +49,14 @@ val ruStrings: Map<String, String> = mapOf(
     "Panel alerts" to "Оповещения панели",
     "Client expiry, traffic limits, inbounds & node status" to
         "Истечение клиентов, лимиты трафика, доступность инбаундов и узлов",
+    "Panel port" to "Порт панели",
+    "This port on the panel host is probed for reachability (default 443). Per-inbound ports are monitored separately, from each inbound's editor." to
+        "Этот порт на хосте панели проверяется на доступность (по умолчанию 443). Порты отдельных инбаундов мониторятся отдельно — из редактора каждого инбаунда.",
     "Days before expiry" to "Дней до истечения",
     "Traffic threshold (%)" to "Порог трафика (%)",
     "Checked when the app opens and opportunistically in the background." to
         "Проверяется при открытии приложения и по возможности в фоне.",
+    "Panel unreachable" to "Панель недоступна",
     "Inbounds unreachable" to "Инбаунды недоступны",
     "Inbound unreachable" to "Инбаунд недоступен",
     "Monitor reachability" to "Мониторить доступность",
