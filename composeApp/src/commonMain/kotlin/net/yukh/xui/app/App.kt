@@ -159,8 +159,8 @@ fun App() {
             // Swap the English release body for the changelog section in the UI
             // language (falls back to the release body when the fetch fails).
             suspend fun localizedUpdate(u: AppUpdate): AppUpdate {
-                val notes = UpdateChecker.localizedNotes(u.version, lang == LANG_RU)
-                return if (notes != null) u.copy(notes = notes) else u
+                val notes = UpdateChecker.localizedNotes(u.version, lang == LANG_RU) ?: u.notes
+                return u.copy(notes = UpdateChecker.reflowNotes(notes))
             }
             fun checkUpdatesManual() {
                 updateState = UpdateUiState.Checking
