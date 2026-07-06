@@ -9,13 +9,12 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.7.3] — 2026-07-06
 
 ### Changed
-- **Panel alerts now monitor the public entry point (:443), not the panel API.**
-  The management panel is often firewalled off your phone (so a "panel
-  unreachable" alert was a false alarm), while Caddy on port 443 is what actually
-  serves the inbounds. The reachability alert now checks whether the host answers
-  on :443 — any response means clients are being served; nothing there means a
-  real outage. Client expiry / traffic / Xray / node checks still run against the
-  panel API, best-effort (skipped silently when it isn't reachable).
+- **Panel alerts now check that port 443 is reachable, not the panel API.** The
+  management panel is often firewalled off your phone, so its reachability was a
+  poor health signal. The "unreachable" alert now checks whether the host answers
+  on port 443 (the usual public entry). Client expiry / traffic / Xray / node
+  checks still run against the panel API, best-effort (skipped silently when it
+  isn't reachable).
 
 ## [0.7.2] — 2026-07-02
 
