@@ -85,7 +85,7 @@ fun PanelAlertsCard() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     OutlinedTextField(
