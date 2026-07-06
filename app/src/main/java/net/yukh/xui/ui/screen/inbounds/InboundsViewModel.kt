@@ -29,6 +29,8 @@ import net.yukh.xui.data.json.putString
 import net.yukh.xui.data.json.putStrings
 import net.yukh.xui.data.json.string
 import net.yukh.xui.data.json.strings
+import net.yukh.xui.data.prefs.MonitoredInbound
+import net.yukh.xui.data.prefs.MonitoredInboundsStore
 import net.yukh.xui.data.repo.PanelRepository
 
 private const val BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0
@@ -71,6 +73,8 @@ data class InboundEditorState(
     val originalClients: JsonElement? = null,
     val saving: Boolean = false,
     val error: String? = null,
+    // Local "monitor this inbound's port for reachability" flag (see AlertsWorker).
+    val monitored: Boolean = false,
     // VLESS encryption key generator (lazy-loaded when the dialog opens)
     val vlessKeys: List<VlessEncAuth>? = null,
     val vlessKeysLoading: Boolean = false,
@@ -86,6 +90,7 @@ data class InboundEditorState(
 @HiltViewModel
 class InboundsViewModel @Inject constructor(
     private val repo: PanelRepository,
+    private val monitoredStore: MonitoredInboundsStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(InboundsUiState())
@@ -224,6 +229,8 @@ class InboundsViewModel @Inject constructor(
                                 sniffing = ib.sniffing.asObject(),
                                 settingsText = settingsWithoutClients(settingsObj),
                                 originalClients = settingsObj["clients"],
+                                monitored = repo.activeProfileId.value
+                                    ?.let { monitoredStore.isMonitored(it, ib.id) } ?: false,
                             ),
                         )
                     }
@@ -244,6 +251,15 @@ class InboundsViewModel @Inject constructor(
 
     fun setEditorRemark(v: String) = edit { it.copy(remark = v) }
     fun setEditorEnable(v: Boolean) = edit { it.copy(enable = v) }
+
+    /** Toggle background reachability monitoring for this saved inbound. Snapshots
+     *  the current port + remark so the alert probe can hit the port directly. */
+    fun setEditorMonitored(on: Boolean) {
+        val e = _state.value.editor ?: return
+        val pid = repo.activeProfileId.value ?: return
+        monitoredStore.setMonitored(pid, MonitoredInbound(e.id, e.port.toIntOrNull() ?: 0, e.remark), on)
+        edit { it.copy(monitored = on) }
+    }
     fun setEditorListen(v: String) = edit { it.copy(listen = v) }
     fun setEditorPort(v: String) = edit { it.copy(port = v.filter(Char::isDigit)) }
     fun setEditorTotalGb(v: String) = edit { it.copy(totalGb = v.filter { c -> c.isDigit() || c == '.' }) }

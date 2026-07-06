@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.1] — 2026-07-06
+
+### Added
+- **Per-inbound reachability monitoring.** Each inbound now has a *Monitor
+  reachability* switch — turn it on and Panel alerts will TCP-probe that
+  inbound's port directly and notify you if it stops answering. Handy for
+  inbounds exposed directly, without a reverse proxy. The default port-443 check
+  stays; the reachability probe is now a plain TCP port check, so it works for
+  any port or protocol.
+
 ## [0.7.3] — 2026-07-06
 
 ### Changed

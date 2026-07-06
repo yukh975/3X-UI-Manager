@@ -176,6 +176,15 @@ fun InboundEditorScreen(
                     color = MaterialTheme.colorScheme.error,
                 )
             }
+            // Reachability monitoring — only for a saved inbound (needs a real port).
+            if (!state.isNew) {
+                SwitchRow(tr("Monitor reachability"), state.monitored, vm::setEditorMonitored)
+                Text(
+                    tr("Panel alerts notify you if this inbound's port stops answering (for inbounds exposed directly, without a reverse proxy)."),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             LabeledDropdown(tr("Protocol"), state.protocol, InboundTemplates.PROTOCOLS, state.isNew, vm::setEditorProtocol)
 
             HorizontalDivider()

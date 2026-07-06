@@ -72,6 +72,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Client expiry and traffic limits" to "Истечение клиентов и лимиты трафика",
     "Panel, Xray and node status" to "Состояние панели, Xray и узлов",
     "Inbounds unreachable" to "Инбаунды недоступны",
+    "Inbound unreachable" to "Инбаунд недоступен",
+    "Monitor reachability" to "Мониторить доступность",
+    "Panel alerts notify you if this inbound's port stops answering (for inbounds exposed directly, without a reverse proxy)." to
+        "Оповещения панели сообщат, если порт этого инбаунда перестанет отвечать (для инбаундов с прямым доступом, без реверс-прокси).",
     "Xray is down" to "Xray остановлен",
     "Client expired" to "Клиент истёк",
     "Client expires soon" to "Клиент скоро истечёт",
