@@ -99,6 +99,7 @@ fun App() {
             var editingNodeNew by remember { mutableStateOf(false) }
             var editingInbound by remember { mutableStateOf<InboundModel?>(null) }
             var editingInboundNew by remember { mutableStateOf(false) }
+            var editingInboundMonitored by remember { mutableStateOf(false) }
             var showXray by remember { mutableStateOf(false) }
             var showGeneralX by remember { mutableStateOf(false) }
             var showDnsX by remember { mutableStateOf(false) }
@@ -638,6 +639,16 @@ fun App() {
                             }
                         },
                         onClearVlessEnc = { vlessEncAuths = null },
+                        monitored = editingInboundMonitored,
+                        showMonitor = !editingInboundNew,
+                        onMonitoredChange = { on ->
+                            val ib = editingInbound
+                            val pid = activeId
+                            if (ib != null && pid != null) {
+                                store.setInboundMonitored(pid, MonitoredInbound(ib.id, ib.port, ib.remark), on)
+                                editingInboundMonitored = on
+                            }
+                        },
                         onSave = { model ->
                             scope.launch {
                                 editorSaving = true; editorError = null
@@ -844,13 +855,17 @@ fun App() {
                                 1 -> InboundsListScreen(
                                     inbounds,
                                     speeds = inboundSpeeds,
-                                    onAdd = { editingInboundNew = true; editorError = null; editingInbound = InboundModel() },
+                                    onAdd = { editingInboundNew = true; editorError = null; editingInboundMonitored = false; editingInbound = InboundModel() },
                                     onEdit = { id ->
                                         scope.launch {
                                             editorError = null
                                             val r = try { api?.getInbound(id) } catch (e: Throwable) { null }
-                                            if (r?.success == true && r.obj != null) { editingInboundNew = false; editingInbound = r.obj }
-                                            else error = r?.msg?.ifBlank { null } ?: "Couldn't load inbound"
+                                            if (r?.success == true && r.obj != null) {
+                                                editingInboundNew = false
+                                                editingInboundMonitored =
+                                                    activeId?.let { store.isInboundMonitored(it, r.obj!!.id) } ?: false
+                                                editingInbound = r.obj
+                                            } else error = r?.msg?.ifBlank { null } ?: "Couldn't load inbound"
                                         }
                                     },
                                     onToggle = { id, en -> scope.launch { api?.setInboundEnable(id, en); refreshAll() } },

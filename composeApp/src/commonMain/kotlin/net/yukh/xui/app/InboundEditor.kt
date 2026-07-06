@@ -78,6 +78,9 @@ fun InboundEditorScreen(
     vlessEncLoading: Boolean = false,
     onGenVlessEnc: () -> Unit = {},
     onClearVlessEnc: () -> Unit = {},
+    monitored: Boolean = false,
+    showMonitor: Boolean = false,
+    onMonitoredChange: (Boolean) -> Unit = {},
     onSave: (InboundModel) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit,
@@ -144,6 +147,15 @@ fun InboundEditorScreen(
             Chips(InboundTemplates.TRAFFIC_RESET, trafficReset) { trafficReset = it }
 
             EditToggle(tr("Enabled"), enable) { enable = it }
+
+            if (showMonitor) {
+                EditToggle(tr("Monitor reachability"), monitored, onMonitoredChange)
+                Text(
+                    tr("Panel alerts notify you if this inbound's port stops answering (for inbounds exposed directly, without a reverse proxy)."),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
 
             JsonField(tr("Protocol settings (JSON)"), settingsJson) { settingsJson = it }
 

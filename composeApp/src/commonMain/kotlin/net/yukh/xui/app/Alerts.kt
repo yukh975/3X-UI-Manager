@@ -1,7 +1,7 @@
 package net.yukh.xui.app
 
 import net.yukh.xui.shared.api.PanelApi
-import net.yukh.xui.shared.api.caddyReachable
+import net.yukh.xui.shared.api.tcpReachable
 import net.yukh.xui.shared.dto.PanelSubSettings
 
 // ---- Platform hooks (iOS: UNUserNotificationCenter + BGTaskScheduler;
@@ -73,17 +73,28 @@ object AlertsCheck {
         fun raise(key: String, title: String, text: String) {
             if (fired.add(key)) postLocalNotification(key, title, text)
         }
+        // Reachability with a two-miss grace (fired set): arm on the 1st miss,
+        // alert only on the 2nd in a row; clear on success.
+        fun reach(downKey: String, missKey: String, up: Boolean, title: String, text: String) {
+            if (up) { fired.remove(missKey); fired.remove(downKey) }
+            else if (!fired.add(missKey)) raise(downKey, title, text)
+        }
 
-        // 1. Reachability = does the public entry point (Caddy :443) answer? Any
-        //    response means the inbounds are served; the panel API is often
-        //    firewalled off the phone, so we alert on :443, not on the API.
-        //    Grace: arm on the first miss, alert only on the second in a row.
+        // 1. Reachability at the port level, NOT the panel API (often firewalled
+        //    off the phone). 1a: the public entry, port 443.
         val host = PanelSubSettings.hostOf(p.baseUrl)
-        if (caddyReachable(host, p.allowInsecure)) {
-            fired.remove("miss:${p.id}")
-            fired.remove("p:${p.id}:down")
-        } else if (!fired.add("miss:${p.id}")) {
-            raise("p:${p.id}:down", tr(lang, "Inbounds unreachable"), "${p.label} · :443")
+        reach(
+            "p:${p.id}:down", "miss:${p.id}", tcpReachable(host, 443),
+            tr(lang, "Inbounds unreachable"), "${p.label} · :443",
+        )
+        // 1b: per-inbound ports the user flagged (port snapshotted locally, so it
+        //     works even when the panel API is unreachable).
+        for (mi in store.monitoredInbounds(p.id)) {
+            if (mi.port !in 1..65535) continue
+            reach(
+                "i:${p.id}:${mi.id}:down", "imiss:${p.id}:${mi.id}", tcpReachable(host, mi.port),
+                tr(lang, "Inbound unreachable"), "${mi.remark.ifBlank { "inbound #${mi.id}" }} · :${mi.port}",
+            )
         }
 
         // 2. Panel-API health (Xray / clients / nodes) — best-effort. If the API

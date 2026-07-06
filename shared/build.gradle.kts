@@ -34,6 +34,8 @@ kotlin {
             implementation("io.ktor:ktor-client-core:$ktor")
             implementation("io.ktor:ktor-client-content-negotiation:$ktor")
             implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor")
+            // Raw TCP sockets for the port-reachability probe (panel alerts).
+            implementation("io.ktor:ktor-network:$ktor")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

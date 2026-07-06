@@ -54,6 +54,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Checked when the app opens and opportunistically in the background." to
         "Проверяется при открытии приложения и по возможности в фоне.",
     "Inbounds unreachable" to "Инбаунды недоступны",
+    "Inbound unreachable" to "Инбаунд недоступен",
+    "Monitor reachability" to "Мониторить доступность",
+    "Panel alerts notify you if this inbound's port stops answering (for inbounds exposed directly, without a reverse proxy)." to
+        "Оповещения панели сообщат, если порт этого инбаунда перестанет отвечать (для инбаундов с прямым доступом, без реверс-прокси).",
     "Xray is down" to "Xray остановлен",
     "Client expired" to "Клиент истёк",
     "Client expires soon" to "Клиент скоро истечёт",

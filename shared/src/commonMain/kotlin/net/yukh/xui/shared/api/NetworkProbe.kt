@@ -1,26 +1,29 @@
 package net.yukh.xui.shared.api
 
-import io.ktor.client.request.head
+import io.ktor.network.selector.SelectorManager
+import io.ktor.network.sockets.aSocket
+import io.ktor.utils.io.core.use
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * True if [host] answers on **:443** — a completed request with any HTTP status
- * (Caddy replies even when it denies access, so any response = the public entry
- * point is up). A refused connection, timeout or DNS failure is "down".
+ * True if a TCP connection to [host]:[port] opens — i.e. the port is reachable.
+ * A refused connection, timeout or DNS failure is "down".
  *
- * Used by the panel-alerts reachability check instead of the panel management
- * API: the panel is often firewalled off the phone (iptables), while Caddy on
- * :443 is what actually serves the inbounds. Respects the profile's
- * self-signed-TLS flag. Uses a throwaway client with no response validator, so
- * a 403/404 does not throw — only a genuine connection failure does.
+ * Used by the panel-alerts reachability check at the port level, NOT via the
+ * panel management API: the panel is often firewalled off the phone (iptables),
+ * while the public entry (port 443, or an inbound's own port) is what actually
+ * serves clients. Works for any TCP service (HTTP, a raw proxy inbound, …).
  */
-suspend fun caddyReachable(host: String, allowInsecure: Boolean): Boolean {
-    val client = platformHttpClient(allowInsecure) {}
+suspend fun tcpReachable(host: String, port: Int): Boolean {
+    val selector = SelectorManager(Dispatchers.Default)
     return try {
-        client.head("https://$host:443/")
-        true
+        withTimeoutOrNull(8_000) {
+            aSocket(selector).tcp().connect(host, port).use { true }
+        } ?: false
     } catch (e: Throwable) {
         false
     } finally {
-        client.close()
+        selector.close()
     }
 }
