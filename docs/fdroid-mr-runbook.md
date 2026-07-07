@@ -6,7 +6,8 @@ file lives in the repo — clone it anywhere). No secrets are stored here.
 
 ## Status
 
-- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — awaiting F-Droid maintainer review.
+- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — CI all green (9/9, incl. `fdroid build`); awaiting maintainer merge.
+- **Current release:** v0.8.6 (commit `a041ae92b5a96204686146d50bad82712aa19427`).
 - **Target project** `fdroid/fdroiddata` id **36528**.
 - **Fork** `yukh975/fdroiddata` id **84185961**, branch **`add-net-yukh-xui`**.
 - **App source mirror:** <https://github.com/yukh975/3X-UI-Manager> (default branch `main`, tag `v0.8.5`).
@@ -79,8 +80,21 @@ gated to the canonical project. Inspect:
 ## Future releases
 
 New `v*` tags on the mirror are auto-picked up by F-Droid once the app is in the
-catalog (`UpdateCheckMode: Tags`, `AutoUpdateMode: Version v%v`). Keep the GitHub
+catalog (`UpdateCheckMode: Tags`, `AutoUpdateMode: Version`). Keep the GitHub
 mirror in sync: `git push github main --tags`.
+
+## What F-Droid requires (learned in review)
+
+1. **`versionCode`/`versionName` must be plain literals** in `app/build.gradle.kts`
+   `defaultConfig` (a CI/git-derived value makes `fdroid build` produce the wrong
+   code and `checkupdates` find nothing). Bump both on every release. A GitLab tag
+   pipeline may still override them on lines that don't match F-Droid's scanner.
+2. **Store title/summary/description live in fastlane**
+   (`fastlane/metadata/android/en-US/…`), not the `.yml`.
+3. **`Builds.commit` is the full 40-char hash**, not a tag/branch.
+4. **Keep `AutoName`** — `checkupdates` regenerates it and fails on the diff if absent.
+5. **`AutoUpdateMode: Version`** (not `Version v%v`).
+6. Validate: `fdroid rewritemeta net.yukh.xui` + `fdroid lint net.yukh.xui`.
 
 ## Current metadata (`metadata/net.yukh.xui.yml`)
 
@@ -94,33 +108,20 @@ SourceCode: https://github.com/yukh975/3X-UI-Manager
 IssueTracker: https://github.com/yukh975/3X-UI-Manager/issues
 
 AutoName: 3X-UI Manager
-Summary: Manage your 3x-ui / Xray proxy panels from your phone
-Description: |-
-    A native client for the 3x-ui panel. Connect to one or more panels with an
-    API token and manage them on the go:
-
-    * Dashboard: Xray status, system stats, client counts
-    * Inbounds and clients: create, edit, enable/disable, traffic and expiry
-    * Config sharing: subscription and per-client QR codes
-    * Nodes: status, mTLS, updates
-    * Optional local notifications when a panel port stops answering or a client is about to expire or run out of traffic
-
-    The app talks only to the panels you point it at; it bundles no trackers and
-    no proprietary libraries.
 
 RepoType: git
 Repo: https://github.com/yukh975/3X-UI-Manager.git
 
 Builds:
-  - versionName: 0.8.5
-    versionCode: 80500
-    commit: v0.8.5
+  - versionName: 0.8.6
+    versionCode: 80600
+    commit: a041ae92b5a96204686146d50bad82712aa19427
     subdir: app
     gradle:
       - fdroid
 
-AutoUpdateMode: Version v%v
+AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]
-CurrentVersion: 0.8.5
-CurrentVersionCode: 80500
+CurrentVersion: 0.8.6
+CurrentVersionCode: 80600
 ```
