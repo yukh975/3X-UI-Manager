@@ -1,0 +1,3 @@
+Now open source (MIT) and published on F-Droid.
+
+Recent additions: date & time stamped into panel-alert notifications; a configurable "Panel port" for reachability checks.

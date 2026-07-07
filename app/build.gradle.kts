@@ -11,45 +11,18 @@ plugins {
 
 // ---------- Versioning ----------------------------------------------------
 //
-// versionCode and versionName are derived at configuration time:
+// versionCode / versionName are plain literals in defaultConfig below. Bump
+// BOTH on every release to match the git tag:
+//   v0.8.6  ->  versionName "0.8.6", versionCode 80600
+//   (scheme: major*1_000_000 + minor*10_000 + patch*100)
 //
-//   versionCode  ← CI_PIPELINE_IID  (monotonic per project; set by GitLab)
-//                  fallback: `git rev-list --count HEAD` for local builds
-//                  fallback: 1
-//
-//   versionName  ← CI_COMMIT_TAG    (e.g. "v0.2.0" → "0.2.0")
-//                  fallback: `git describe --tags --abbrev=0 --match v0.*`
-//                  (v0.* = the app's release tags; excludes the upstream panel
-//                   tags like v3.3.0 that the fork carries after the merge.
-//                   Extend the glob when the app crosses to v1.x.)
-//                  fallback: "0.1.0-<short_sha>" so artifacts from untagged
-//                            commits still have a unique identifier.
+// They MUST stay literals: F-Droid builds the app with no CI variables in its
+// environment, and its `fdroid checkupdates` scanner reads the versionCode
+// straight from this file — a computed value breaks both. A GitLab tag pipeline
+// still overrides them from CI_COMMIT_TAG (see defaultConfig) as a convenience,
+// which does not disturb the literal the scanner sees.
 
-// providers.exec defers process execution and is configuration-cache safe,
-// unlike the legacy Project.exec which Gradle 8+ forbids at config time.
-fun runGit(vararg args: String): String? = try {
-    val output = providers.exec {
-        commandLine("git", *args)
-        workingDir = rootDir
-        isIgnoreExitValue = true
-    }
-    val exit = output.result.get().exitValue
-    if (exit == 0) output.standardOutput.asText.get().trim().ifEmpty { null } else null
-} catch (_: Throwable) {
-    null
-}
-
-/**
- * Map a semver tag to a deterministic versionCode.
- *
- *  v1.2.3  →  1_020_300
- *  v0.3.0  →    30_000
- *  v0.2.0  →    20_000
- *
- * Scheme: major*1_000_000 + minor*10_000 + patch*100. Leaves 99 slots per
- * patch level and 99 patches per minor for dev/branch builds to occupy
- * without ever colliding with a future release tag.
- */
+/** Map a semver tag ("v0.8.6") to the versionCode scheme (80600). */
 fun parseSemverVersionCode(tag: String?): Int? {
     val v = tag?.removePrefix("v") ?: return null
     val parts = v.split(".")
@@ -58,34 +31,6 @@ fun parseSemverVersionCode(tag: String?): Int? {
     val minor = parts[1].toIntOrNull() ?: return null
     val patch = parts[2].toIntOrNull() ?: return null
     return major * 1_000_000 + minor * 10_000 + patch * 100
-}
-
-val resolvedVersionCode: Int =
-    // Tagged release → version code derived from the tag (stable across
-    // rebuilds, predictable for users).
-    parseSemverVersionCode(System.getenv("CI_COMMIT_TAG"))
-        // Branch CI build → pipeline IID. Monotonic per build, far below
-        // any realistic tag code, so never collides. Must come BEFORE the
-        // git-describe fallback because runners do a shallow clone that
-        // still reaches recent tags — every branch build between v0.2.0
-        // and v0.3.0 would otherwise be stuck at 20_000.
-        ?: System.getenv("CI_PIPELINE_IID")?.toIntOrNull()
-        // Local builds with a reachable tag get a meaningful code; pure
-        // local builds without one fall through to 1.
-        ?: parseSemverVersionCode(runGit("describe", "--tags", "--abbrev=0", "--match", "v0.*"))
-        ?: 1
-
-val resolvedVersionName: String = run {
-    val tag = System.getenv("CI_COMMIT_TAG")?.takeIf { it.isNotBlank() }
-        ?: runGit("describe", "--tags", "--abbrev=0", "--match", "v0.*")
-    if (tag != null) {
-        tag.removePrefix("v")
-    } else {
-        val sha = System.getenv("CI_COMMIT_SHORT_SHA")
-            ?: runGit("rev-parse", "--short=8", "HEAD")
-            ?: "dev"
-        "0.1.0-$sha"
-    }
 }
 
 // ---------- Release signing -----------------------------------------------
@@ -136,8 +81,15 @@ android {
         applicationId = "net.yukh.xui"
         minSdk = 24
         targetSdk = 35
-        versionCode = resolvedVersionCode
-        versionName = resolvedVersionName
+        versionCode = 80600
+        versionName = "0.8.6"
+        // GitLab tag pipeline overrides the literals above from the tag. These
+        // lines don't match F-Droid's versionCode/versionName scanner (no bare
+        // literal), so the values above remain what it reads.
+        System.getenv("CI_COMMIT_TAG")?.let { tag ->
+            versionName = tag.removePrefix("v")
+            parseSemverVersionCode(tag)?.let { versionCode = it }
+        }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

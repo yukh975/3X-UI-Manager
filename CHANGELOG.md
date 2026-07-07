@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.6] — 2026-07-07
+
+### Changed
+- **Build changes for F-Droid.** The version is now declared statically (rather than derived from CI/git) so F-Droid can build the app reproducibly, and the store description moved to fastlane metadata. No user-facing changes.
+
 ## [0.8.5] — 2026-07-07
 
 ### Added

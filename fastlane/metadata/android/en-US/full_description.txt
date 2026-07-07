@@ -1,0 +1,9 @@
+A native client for the 3x-ui panel. Connect to one or more panels with an API token and manage them on the go:
+
+* Dashboard: Xray status, system stats, client counts
+* Inbounds and clients: create, edit, enable/disable, traffic and expiry
+* Config sharing: subscription and per-client QR codes
+* Nodes: status, mTLS, updates
+* Optional local notifications when a panel port stops answering or a client is about to expire or run out of traffic
+
+The app talks only to the panels you point it at; it bundles no trackers and no proprietary libraries.
