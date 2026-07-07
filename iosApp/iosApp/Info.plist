@@ -19,9 +19,9 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.8.5</string>
+	<string>0.8.6</string>
 	<key>CFBundleVersion</key>
-	<string>80500</string>
+	<string>80600</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>net.yukh.xui.alerts.refresh</string>
