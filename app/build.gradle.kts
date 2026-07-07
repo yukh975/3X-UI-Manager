@@ -81,8 +81,8 @@ android {
         applicationId = "net.yukh.xui"
         minSdk = 24
         targetSdk = 35
-        versionCode = 80600
-        versionName = "0.8.6"
+        versionCode = 80700
+        versionName = "0.8.7"
         // GitLab tag pipeline overrides the literals above from the tag. These
         // lines don't match F-Droid's versionCode/versionName scanner (no bare
         // literal), so the values above remain what it reads.
@@ -118,6 +118,9 @@ android {
             signingConfigs.findByName("release")
                 ?.takeIf { it.storeFile != null }
                 ?.let { signingConfig = it }
+            // Don't embed the git commit hash (META-INF/version-control-info.textproto):
+            // it varies per checkout and breaks F-Droid's reproducible-build verification.
+            vcsInfo { include = false }
         }
     }
 

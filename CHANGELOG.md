@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.7] — 2026-07-07
+
+### Changed
+- **Reproducible builds for F-Droid.** The APK no longer embeds the build's git commit hash (it varied per checkout and broke F-Droid's byte-for-byte verification), so the F-Droid build can be signed with the project's own release key. No user-facing changes.
+
 ## [0.8.6] — 2026-07-07
 
 ### Changed

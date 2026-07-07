@@ -1,0 +1,1 @@
+Build change for F-Droid reproducible builds (the F-Droid build is now signed with the project's own release key). No user-facing changes.
