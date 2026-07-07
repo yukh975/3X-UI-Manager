@@ -77,12 +77,19 @@ android {
     namespace = "net.yukh.xui"
     compileSdk = 35
 
+    // Don't embed the Play-oriented dependency-metadata block in the APK's
+    // signing block: F-Droid's scanner rejects it, and it isn't needed here.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = "net.yukh.xui"
         minSdk = 24
         targetSdk = 35
-        versionCode = 80700
-        versionName = "0.8.7"
+        versionCode = 80800
+        versionName = "0.8.8"
         // GitLab tag pipeline overrides the literals above from the tag. These
         // lines don't match F-Droid's versionCode/versionName scanner (no bare
         // literal), so the values above remain what it reads.

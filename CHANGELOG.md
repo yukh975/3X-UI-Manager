@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.8] — 2026-07-07
+
+### Changed
+- **Build change for F-Droid.** The APK no longer embeds the Play-oriented dependency-metadata block (an extra APK signing block that F-Droid's scanner rejects). No user-facing changes.
+
 ## [0.8.7] — 2026-07-07
 
 ### Changed

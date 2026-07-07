@@ -1,0 +1,1 @@
+Build change for F-Droid: the APK no longer embeds the Play-oriented dependency-metadata signing block, which F-Droid's scanner rejects. No user-facing changes.
