@@ -6,7 +6,8 @@ file lives in the repo — clone it anywhere). No secrets are stored here.
 
 ## Status
 
-- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — CI fully green (9/9, incl. reproducible `fdroid build` that byte-matches the published APK, and `check apk`); F-Droid will ship the developer-signed APK; awaiting maintainer merge.
+- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — **review passed** (2026-07-07, maintainer linsui: "This MR is mostly ready. We'll test it later. If everything works well we'll merge it."). Labels `New App` + `reproducible-builds` + `review-requested`: queued for F-Droid's final testing, then merge; their queue is long, may take a while. CI fully green (9/9, incl. reproducible `fdroid build` that byte-matches the published APK, and `check apk`); F-Droid will ship the developer-signed APK.
+- **Standing rule while the MR waits:** on EVERY new app release, update the MR metadata (versionName / versionCode / commit / CurrentVersion — see "Apply a metadata change" below). Requested explicitly by the maintainer.
 - **Current release:** v0.8.8 (commit `497d7632f16f714b9124d228035e250b5a5117d2`).
 - **Target project** `fdroid/fdroiddata` id **36528**.
 - **Fork** `yukh975/fdroiddata` id **84185961**, branch **`add-net-yukh-xui`**.
@@ -14,6 +15,25 @@ file lives in the repo — clone it anywhere). No secrets are stored here.
 - **App id / version:** `net.yukh.xui`, 0.8.8 / versionCode 80800.
 - **Reproducible builds:** F-Droid ships the developer-signed APK (signing cert SHA-256 `668cdb5cd9deb1798e1b5a0ac126dba3b1b36b0da2062c64309aeb53cf8f964a`). Each release must publish the `fdroid`-flavor APK as `fdroid.apk` on the matching GitHub release (the `Binaries:` URL).
 - gitlab.com account **yukh975** (validated → CI allowed).
+
+## After the merge (how updates reach the catalog)
+
+No more MRs for regular releases. F-Droid's `checkupdates` bot polls the GitHub
+repo for new `v*` tags (`UpdateCheckMode: Tags`), auto-adds the new version to its
+own metadata (`AutoUpdateMode: Version`), builds from source, byte-compares with
+the published `fdroid.apk` and ships the dev-signed APK. An update typically
+appears in the catalog 1–5 days after tagging. An MR is only needed again to
+change the metadata itself (categories, signing key, flavors, …). If `fdroid.apk`
+is missing from a release, that version simply never ships on F-Droid.
+
+## Monitoring
+
+Autonomous: a Claude desktop Routine **`check-fdroid-mr`** (every 6 h, SKILL.md in
+`~/.claude/scheduled-tasks/check-fdroid-mr/`) runs `python3 ~/.fdroid-mr-monitor.py`,
+which diffs the MR state/labels/comments/CI against `~/.fdroid-mr-42307-state.json`
+and reports only on changes (push notification + an issue in the home-GitLab
+`yukh/notifications` project via the `~/.gl-notify-token` bot token). Manual check:
+run the monitor script, or ask Claude "проверь MR".
 
 ## Why F-Droid
 
