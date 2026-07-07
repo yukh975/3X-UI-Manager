@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.4] — 2026-07-07
+
+### Added
+- **Panel alert notifications now include the date and time they fired.** A "panel unreachable" read hours later was ambiguous — by then the panel is often back up, with no way to tell when it actually happened. Each alert now appends the moment it was raised in the device's time zone, e.g. `host · :443 · 07 Jul, 09:59`.
+
 ## [0.8.3] — 2026-07-06
 
 ### Added

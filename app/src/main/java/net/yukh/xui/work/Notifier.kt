@@ -7,6 +7,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import net.yukh.xui.MainActivity
 import net.yukh.xui.R
 import net.yukh.xui.i18n.tr
@@ -42,6 +45,13 @@ object Notifier {
     /** Post a notification; [key] makes the id stable so repeats replace, not stack. */
     fun notify(context: Context, channel: String, key: String, title: String, text: String) {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+        // Stamp the moment the alert fired into the body: a "panel unreachable"
+        // read hours later is useless without knowing WHEN it happened (the panel
+        // is often back up by then). Device-local time zone; also set as the
+        // notification's own `when` so the system header shows it too.
+        val now = System.currentTimeMillis()
+        val stamp = SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()).format(Date(now))
+        val body = "$text · $stamp"
         val open = PendingIntent.getActivity(
             context,
             0,
@@ -52,8 +62,10 @@ object Notifier {
         val n = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setWhen(now)
+            .setShowWhen(true)
             .setContentIntent(open)
             .setAutoCancel(true)
             .build()
