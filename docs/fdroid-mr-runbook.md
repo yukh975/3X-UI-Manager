@@ -6,12 +6,13 @@ file lives in the repo — clone it anywhere). No secrets are stored here.
 
 ## Status
 
-- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — CI all green (9/9, incl. `fdroid build`); awaiting maintainer merge.
-- **Current release:** v0.8.6 (commit `a041ae92b5a96204686146d50bad82712aa19427`).
+- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — CI fully green (9/9, incl. reproducible `fdroid build` that byte-matches the published APK, and `check apk`); F-Droid will ship the developer-signed APK; awaiting maintainer merge.
+- **Current release:** v0.8.8 (commit `497d7632f16f714b9124d228035e250b5a5117d2`).
 - **Target project** `fdroid/fdroiddata` id **36528**.
 - **Fork** `yukh975/fdroiddata` id **84185961**, branch **`add-net-yukh-xui`**.
-- **App source mirror:** <https://github.com/yukh975/3X-UI-Manager> (default branch `main`, tag `v0.8.5`).
-- **App id / version:** `net.yukh.xui`, 0.8.5 / versionCode 80500.
+- **App source mirror:** <https://github.com/yukh975/3X-UI-Manager> (default branch `main`, tags `v*`).
+- **App id / version:** `net.yukh.xui`, 0.8.8 / versionCode 80800.
+- **Reproducible builds:** F-Droid ships the developer-signed APK (signing cert SHA-256 `668cdb5cd9deb1798e1b5a0ac126dba3b1b36b0da2062c64309aeb53cf8f964a`). Each release must publish the `fdroid`-flavor APK as `fdroid.apk` on the matching GitHub release (the `Binaries:` URL).
 - gitlab.com account **yukh975** (validated → CI allowed).
 
 ## Why F-Droid
@@ -96,6 +97,31 @@ mirror in sync: `git push github main --tags`.
 5. **`AutoUpdateMode: Version`** (not `Version v%v`).
 6. Validate: `fdroid rewritemeta net.yukh.xui` + `fdroid lint net.yukh.xui`.
 
+### Reproducible builds (so F-Droid ships the dev-signed APK)
+
+The `Binaries:` + `AllowedAPKSigningKeys:` fields make F-Droid build from
+source and byte-compare against the developer's published APK; if they match it
+ships *your* signed APK instead of re-signing. Two AGP defaults break the
+byte-match and must be disabled **on the release build type / android block** in
+`app/build.gradle.kts` (both already in place):
+
+7. **`vcsInfo { include = false }`** (release buildType) — drops
+   `META-INF/version-control-info.textproto`, which embeds the git commit hash
+   and varies per checkout. (The Gradle property `android.enableVcsInfo=false`
+   does **not** work; use the DSL block.)
+8. **`dependenciesInfo { includeInApk = false; includeInBundle = false }`**
+   (android block) — drops the Play-oriented "dependency metadata" block that
+   AGP adds *inside the APK signing block*. F-Droid's `check apk` scanner rejects
+   it ("Found extra signing block 'Dependency metadata'").
+
+Per release: build `:app:assembleFdroidRelease` with the release keystore,
+publish the APK as **`fdroid.apk`** on the GitHub release for the tag, and keep
+`Binaries:` pointing at `…/releases/download/v%v/fdroid.apk`. The
+`AllowedAPKSigningKeys` value is the signing cert's SHA-256
+(`apksigner verify --print-certs`). The `Binaries` line must stay ≤ ~90 chars or
+older `fdroid rewritemeta` wraps it and the CI check fails — hence the short
+`fdroid.apk` asset name.
+
 ## Current metadata (`metadata/net.yukh.xui.yml`)
 
 ```yaml
@@ -111,17 +137,20 @@ AutoName: 3X-UI Manager
 
 RepoType: git
 Repo: https://github.com/yukh975/3X-UI-Manager.git
+Binaries: https://github.com/yukh975/3X-UI-Manager/releases/download/v%v/fdroid.apk
 
 Builds:
-  - versionName: 0.8.6
-    versionCode: 80600
-    commit: a041ae92b5a96204686146d50bad82712aa19427
+  - versionName: 0.8.8
+    versionCode: 80800
+    commit: 497d7632f16f714b9124d228035e250b5a5117d2
     subdir: app
     gradle:
       - fdroid
 
+AllowedAPKSigningKeys: 668cdb5cd9deb1798e1b5a0ac126dba3b1b36b0da2062c64309aeb53cf8f964a
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]
-CurrentVersion: 0.8.6
-CurrentVersionCode: 80600
+CurrentVersion: 0.8.8
+CurrentVersionCode: 80800
 ```
