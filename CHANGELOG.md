@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.5] — 2026-07-07
+
+### Added
+- **The app is now open source under the MIT license.** A LICENSE file was added and an `fdroid` build flavor prepared so the app can ship on F-Droid (which builds it from source, without the in-app updater). The GitLab-released build is unchanged.
+
 ## [0.8.4] — 2026-07-07
 
 ### Added
