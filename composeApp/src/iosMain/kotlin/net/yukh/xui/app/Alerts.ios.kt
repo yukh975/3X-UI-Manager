@@ -9,6 +9,7 @@ import platform.BackgroundTasks.BGAppRefreshTask
 import platform.BackgroundTasks.BGAppRefreshTaskRequest
 import platform.BackgroundTasks.BGTaskScheduler
 import platform.Foundation.NSDate
+import platform.Foundation.NSDateFormatter
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.timeIntervalSince1970
 import platform.UserNotifications.UNAuthorizationOptionAlert
@@ -53,10 +54,15 @@ actual fun requestNotificationPermission() {
     ) { _, _ -> }
 }
 
+private val alertTimeFormatter = NSDateFormatter().apply { dateFormat = "dd MMM, HH:mm" }
+
 actual fun postLocalNotification(id: String, title: String, body: String) {
+    // Stamp when the alert fired into the body — read hours later, a "panel
+    // unreachable" is useless without knowing WHEN (it is often back up by then).
+    val stamp = alertTimeFormatter.stringFromDate(NSDate())
     val content = UNMutableNotificationContent().apply {
         setTitle(title)
-        setBody(body)
+        setBody("$body · $stamp")
         setSound(UNNotificationSound.defaultSound)
     }
     // null trigger = deliver immediately; a repeated id replaces, not stacks.
