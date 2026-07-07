@@ -78,7 +78,7 @@ build:release:
         echo "$RELEASE_KEYSTORE_B64" | base64 -d > "$RELEASE_KEYSTORE_FILE"
         echo ">>> Keystore decoded ($(wc -c < "$RELEASE_KEYSTORE_FILE") bytes)"
       fi
-    - gradle assembleRelease --no-daemon --stacktrace --warning-mode=summary
+    - gradle assembleStandardRelease --no-daemon --stacktrace --warning-mode=summary
     - rm -f "$RELEASE_KEYSTORE_FILE"
     - |
       if [ -n "$CI_COMMIT_TAG" ]; then
@@ -90,15 +90,15 @@ build:release:
         # cwd is $CI_PROJECT_DIR (set in before_script).
         curl --fail --silent --show-error --request PUT \
           --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-          --upload-file app/build/outputs/apk/release/3x-ui-manager-release.apk \
+          --upload-file app/build/outputs/apk/standard/release/3x-ui-manager-standard-release.apk \
           "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION/3x-ui-manager-$PKG_VERSION.apk"
         echo
       fi
   artifacts:
     name: "xui-android-release-${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}"
     paths:
-      - app/build/outputs/apk/release/3x-ui-manager-release.apk
-      - app/build/outputs/mapping/release/mapping.txt
+      - app/build/outputs/apk/standard/release/3x-ui-manager-standard-release.apk
+      - app/build/outputs/mapping/standardRelease/mapping.txt
     expire_in: 26 weeks
     when: on_success
 

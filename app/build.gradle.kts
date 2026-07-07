@@ -169,6 +169,24 @@ android {
         }
     }
 
+    // Distribution flavors. `standard` is the GitLab-released build with the
+    // in-app self-updater; `fdroid` strips the updater and the
+    // REQUEST_INSTALL_PACKAGES permission (see src/fdroid/AndroidManifest.xml)
+    // because F-Droid manages updates itself and forbids apps that fetch and
+    // install their own APKs.
+    flavorDimensions += "dist"
+    productFlavors {
+        create("standard") {
+            dimension = "dist"
+            isDefault = true
+            buildConfigField("boolean", "IN_APP_UPDATER", "true")
+        }
+        create("fdroid") {
+            dimension = "dist"
+            buildConfigField("boolean", "IN_APP_UPDATER", "false")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -184,6 +202,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

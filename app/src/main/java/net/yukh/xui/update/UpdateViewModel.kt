@@ -7,6 +7,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import net.yukh.xui.BuildConfig
 import net.yukh.xui.data.prefs.AppSettingsStore
 import net.yukh.xui.i18n.LANG_RU
 import kotlinx.coroutines.Dispatchers
@@ -62,8 +63,10 @@ class UpdateViewModel @Inject constructor(
         return release.copy(notes = UpdateChecker.reflowNotes(notes))
     }
 
-    /** Silent check for startup — only surfaces a dialog when a newer build exists. */
+    /** Silent check for startup — only surfaces a dialog when a newer build exists.
+     *  No-op on the F-Droid flavor, which delegates updates to the store. */
     fun checkOnStart() {
+        if (!BuildConfig.IN_APP_UPDATER) return
         if (_state.value != UpdateState.Idle) return
         viewModelScope.launch {
             val rel = runCatching { UpdateChecker.latestIfNewer(currentVersion()) }.getOrNull()
@@ -77,8 +80,10 @@ class UpdateViewModel @Inject constructor(
         }
     }
 
-    /** Manual check from Settings — reports up-to-date and errors too. */
+    /** Manual check from Settings — reports up-to-date and errors too.
+     *  No-op on the F-Droid flavor (the "Check for updates" button is hidden). */
     fun checkNow() {
+        if (!BuildConfig.IN_APP_UPDATER) return
         _state.value = UpdateState.Checking
         viewModelScope.launch {
             val latest = runCatching { UpdateChecker.fetchLatest() }.getOrNull()
@@ -104,6 +109,9 @@ class UpdateViewModel @Inject constructor(
     /** Download the release APK and launch the installer (falls back to the web
      *  page if the release has no APK asset). */
     fun downloadAndInstall(release: AppRelease) {
+        // The F-Droid flavor has no install permission and no updater UI; guard
+        // anyway so the download/install path can never run there.
+        if (!BuildConfig.IN_APP_UPDATER) return
         val url = release.apkUrl ?: run { openPage(release); return }
         _state.value = UpdateState.Downloading(0)
         viewModelScope.launch {

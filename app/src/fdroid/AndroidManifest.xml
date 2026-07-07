@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  F-Droid distribution flavor. F-Droid manages updates itself and its inclusion
+  policy forbids apps that download and install their own APKs, so this build
+  strips the install permission. The in-app updater is also disabled at build
+  time via BuildConfig.IN_APP_UPDATER (see app/build.gradle.kts).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:node="remove" />
+</manifest>

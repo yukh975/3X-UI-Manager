@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.yukh.xui.BuildConfig
 import net.yukh.xui.i18n.LANG_EN
 import net.yukh.xui.i18n.LANG_RU
 import net.yukh.xui.i18n.tr
@@ -287,8 +288,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text("© 2026 Yuriy Khachaturian (yukh.net)", style = MaterialTheme.typography.bodyMedium)
-                    OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
-                        Text(tr("Check for updates"))
+                    // F-Droid ships its own updater, so hide the in-app check there.
+                    if (BuildConfig.IN_APP_UPDATER) {
+                        OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
+                            Text(tr("Check for updates"))
+                        }
                     }
                 }
             }
