@@ -1,0 +1,1 @@
+Fix: crash at startup on Android 7 (API 24–25) — notification channels (an Android 8+ API) were created without a version guard. Found by F-Droid community testing.

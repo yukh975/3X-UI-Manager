@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import java.text.SimpleDateFormat
@@ -25,6 +26,12 @@ object Notifier {
 
     /** Idempotent; also updates channel names after a language switch. */
     fun ensureChannels(context: Context, lang: String) {
+        // Notification channels exist only since Android 8 (API 26). On older
+        // versions there is nothing to create — NotificationCompat ignores the
+        // channel id and per-notification priority (set in notify()) takes the
+        // role of channel importance. Unguarded, this crashed Android 7 devices
+        // with NoClassDefFoundError right in Application.onCreate.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(
             NotificationChannel(
@@ -61,6 +68,13 @@ object Notifier {
         )
         val n = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setPriority(
+                if (channel == CHANNEL_PANEL) {
+                    NotificationCompat.PRIORITY_HIGH
+                } else {
+                    NotificationCompat.PRIORITY_DEFAULT
+                },
+            )
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))

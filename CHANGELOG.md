@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.9] — 2026-07-07
+
+### Fixed
+- **Crash at startup on Android 7 (API 24–25).** Notification channels — an Android 8+ API — were created without a version guard in Application.onCreate, so the app crashed with NoClassDefFoundError before drawing anything. Channel creation is now skipped on pre-Android 8 devices, where per-notification priority carries the importance instead. Found by F-Droid community testing.
+
 ## [0.8.8] — 2026-07-07
 
 ### Changed
