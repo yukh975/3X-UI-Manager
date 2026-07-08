@@ -6,9 +6,8 @@ file lives in the repo — clone it anywhere). No secrets are stored here.
 
 ## Status
 
-- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — **review passed** (2026-07-07, maintainer linsui: "This MR is mostly ready. We'll test it later. If everything works well we'll merge it."). Labels `New App` + `reproducible-builds` + `review-requested`: queued for F-Droid's final testing, then merge; their queue is long, may take a while. CI fully green (9/9, incl. reproducible `fdroid build` that byte-matches the published APK, and `check apk`); F-Droid will ship the developer-signed APK.
-- **Standing rule while the MR waits:** on EVERY new app release, update the MR metadata (versionName / versionCode / commit / CurrentVersion — see "Apply a metadata change" below). Requested explicitly by the maintainer.
-- **Current release:** v0.8.8 (commit `497d7632f16f714b9124d228035e250b5a5117d2`).
+- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — **MERGED 2026-07-08 by linsui** at v0.8.9 (after community device testing: signing key verified, network behavior confirmed clean, and an Android 7 startup crash found → fixed in v0.8.9). `net.yukh.xui` is in fdroiddata; waiting for F-Droid's build cycle to publish the package at <https://f-droid.org/packages/net.yukh.xui> (typically days). No further MR work — see "After the merge" below for how updates flow from here.
+- **Current release:** v0.8.9 (commit `817dcbb2e58dedf7568f7f7db34745ae7ed748f1`).
 - **Target project** `fdroid/fdroiddata` id **36528**.
 - **Fork** `yukh975/fdroiddata` id **84185961**, branch **`add-net-yukh-xui`**.
 - **App source mirror:** <https://github.com/yukh975/3X-UI-Manager> (default branch `main`, tags `v*`).
