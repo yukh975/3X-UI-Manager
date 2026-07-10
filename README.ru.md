@@ -4,7 +4,21 @@
 
 Эта ветка (`main`) — приложение для **Android** (Kotlin + Jetpack Compose), собирается прямо из корня репозитория.
 
+[![Доступно в F-Droid](https://fdroid.gitlab.io/artwork/badge/get-it-on.png)](https://f-droid.org/packages/net.yukh.xui)
+
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![Platform: Android 7+](https://img.shields.io/badge/Android-7%2B-3DDC84?logo=android&logoColor=white) ![Made with Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)
+
 🇬🇧 [English version](README.md) · 📝 [Список изменений](CHANGELOG.ru.md)
+
+---
+
+## Установка
+
+- **[F-Droid](https://f-droid.org/packages/net.yukh.xui)** — рекомендуется; воспроизводимая сборка, обновления через клиент F-Droid.
+- **[GitHub Releases](https://github.com/yukh975/3X-UI-Manager/releases/latest)** — подписанный APK (флейвор `standard`, со встроенным обновлением) + воспроизводимый `fdroid.apk`.
+- **iOS** — неподписанный `.ipa` для сайдлоада (AltStore / Sideloadly), приложен к каждому релизу.
+
+Нужна панель **3x-ui v3.3.0 или новее** (авторизация по API-токену).
 
 ---
 

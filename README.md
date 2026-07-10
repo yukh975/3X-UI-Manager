@@ -4,7 +4,21 @@ Native mobile clients for managing [3x-ui](https://github.com/MHSanaei/3x-ui) pa
 
 This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built straight from the repository root.
 
+[![Get it on F-Droid](https://fdroid.gitlab.io/artwork/badge/get-it-on.png)](https://f-droid.org/packages/net.yukh.xui)
+
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![Platform: Android 7+](https://img.shields.io/badge/Android-7%2B-3DDC84?logo=android&logoColor=white) ![Made with Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)
+
 🇷🇺 [Версия на русском](README.ru.md) · 📝 [Changelog](CHANGELOG.md)
+
+---
+
+## Download
+
+- **[F-Droid](https://f-droid.org/packages/net.yukh.xui)** — recommended; reproducible build, auto-updates through the F-Droid client.
+- **[GitHub Releases](https://github.com/yukh975/3X-UI-Manager/releases/latest)** — signed APK (`standard` flavor, with in-app updates) + the reproducible `fdroid.apk`.
+- **iOS** — unsigned `.ipa` for sideloading (AltStore / Sideloadly), attached to each release.
+
+Requires a panel running **3x-ui v3.3.0 or newer** (API-token auth).
 
 ---
 
