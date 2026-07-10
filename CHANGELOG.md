@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.8.10] — 2026-07-10
+
+### Added
+- **"Star on GitHub" button in the About screen** — opens the project repository so you can star it. Present in both builds.
+
+### Changed
+- **F-Droid build:** the About screen now reads "Installed from F-Droid — updates come through the F-Droid catalog." in place of the (hidden) update-check button, so it's clear where updates come from.
+- **F-Droid catalog:** added a launcher-icon PNG to the store metadata so the catalog listing shows the app icon (the pure-vector adaptive icon didn't render there).
+
 ## [0.8.9] — 2026-07-07
 
 ### Fixed

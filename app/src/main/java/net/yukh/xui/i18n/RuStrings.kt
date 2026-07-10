@@ -175,6 +175,8 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Self-update (GitLab releases)
     "Check for updates" to "Проверить обновления",
+    "Star on GitHub" to "Поставить звезду на GitHub",
+    "Installed from F-Droid — updates come through the F-Droid catalog." to "Установлена версия из F-Droid — обновления приходят через каталог F-Droid.",
     "Update available" to "Доступно обновление",
     "Later" to "Позже",
     "Checking for updates…" to "Проверка обновлений…",

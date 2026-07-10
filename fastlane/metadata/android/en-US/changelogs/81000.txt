@@ -1,0 +1,1 @@
+Added a "Star on GitHub" button in the About screen. The F-Droid build now explains that updates come through the F-Droid catalog. Added a launcher icon to the catalog metadata so the listing shows the app icon.
