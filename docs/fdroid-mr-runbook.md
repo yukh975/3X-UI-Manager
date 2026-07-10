@@ -6,7 +6,12 @@ file lives in the repo — clone it anywhere). No secrets are stored here.
 
 ## Status
 
-- **MR:** <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307> — **MERGED 2026-07-08 by linsui** at v0.8.9 (after community device testing: signing key verified, network behavior confirmed clean, and an Android 7 startup crash found → fixed in v0.8.9). `net.yukh.xui` is in fdroiddata; waiting for F-Droid's build cycle to publish the package at <https://f-droid.org/packages/net.yukh.xui> (typically days). No further MR work — see "After the merge" below for how updates flow from here.
+- **PUBLISHED: <https://f-droid.org/packages/net.yukh.xui>** — live since
+  2026-07-10 at **0.8.9 (80900)**, shipped as the developer-signed reproducible
+  build. The inclusion MR <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/42307>
+  was merged 2026-07-08 by linsui (community device testing verified the signing
+  key, clean network behavior, and caught an Android 7 startup crash → fixed in
+  v0.8.9). No further MR work — see "After the merge" below for how updates flow.
 - **Current release:** v0.8.9 (commit `817dcbb2e58dedf7568f7f7db34745ae7ed748f1`).
 - **Target project** `fdroid/fdroiddata` id **36528**.
 - **Fork** `yukh975/fdroiddata` id **84185961**, branch **`add-net-yukh-xui`**.
