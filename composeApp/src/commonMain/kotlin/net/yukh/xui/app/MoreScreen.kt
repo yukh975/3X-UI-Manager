@@ -186,6 +186,12 @@ fun MoreScreen(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                OutlinedButton(
+                    onClick = { platformOpenUrl("https://github.com/yukh975/3X-UI-Manager") },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(tr("Star on GitHub"))
+                }
                 OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
                     Text(tr("Check for updates"))
                 }
