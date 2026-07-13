@@ -133,6 +133,21 @@ fun OutboundEditorScreen(
             }
             Field(tr("Send through"), draft.string("sendThrough")) { onDraftChange(draft.putString("sendThrough", it)) }
 
+            // Top-level target resolution (panel 3.5.0). Freedom/WireGuard carry
+            // their own settings.domainStrategy control, so skip them here.
+            if (protocol != "freedom" && protocol != "wireguard") {
+                LabeledDropdown(
+                    tr("Target Strategy"),
+                    draft.string("targetStrategy").ifBlank { "AsIs" },
+                    FREEDOM_DOMAIN_STRATEGY,
+                ) { v ->
+                    onDraftChange(
+                        if (v == "AsIs") draft.put("targetStrategy", null)
+                        else draft.putString("targetStrategy", v),
+                    )
+                }
+            }
+
             when (protocol) {
                 "freedom" -> FreedomForm(draft, onDraftChange)
                 "blackhole" -> BlackholeForm(draft, onDraftChange)
