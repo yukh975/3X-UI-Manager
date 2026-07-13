@@ -417,8 +417,8 @@ class PanelRepository @Inject constructor(
     suspend fun testOutbound(outbound: JsonObject, mode: String): Result<TestOutboundResult> =
         authedData { it.testOutbound(json.encodeToString(JsonObject.serializer(), outbound), mode) }
 
-    suspend fun testRoute(domain: String, ip: String, port: String, network: String): Result<RouteTestResult> =
-        authedData { it.routeTest(domain, ip, port, network) }
+    suspend fun testRoute(domain: String, ip: String, port: String, network: String, inboundTag: String): Result<RouteTestResult> =
+        authedData { it.routeTest(domain, ip, port, network, inboundTag) }
 
     // ---- Panel admin (settings) -------------------------------------------
 

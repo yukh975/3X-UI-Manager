@@ -168,16 +168,22 @@ fun RoutingScreen(onClose: () -> Unit, vm: RoutingViewModel = hiltViewModel()) {
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
                 !state.available -> SessionGate()
-                else -> RoutingBody(cfg, vm)
+                else -> RoutingBody(cfg, state.inboundTags, vm)
             }
         }
     }
 }
 
 @Composable
-private fun RouteTestDialog(vm: RoutingViewModel, networkOptions: List<String>, onClose: () -> Unit) {
+private fun RouteTestDialog(
+    vm: RoutingViewModel,
+    inboundTags: List<String>,
+    networkOptions: List<String>,
+    onClose: () -> Unit,
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     var dest by remember { mutableStateOf("") }
+    var inboundTag by remember(inboundTags) { mutableStateOf(inboundTags.firstOrNull() ?: "") }
     var network by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("") }
     AlertDialog(
@@ -199,6 +205,9 @@ private fun RouteTestDialog(vm: RoutingViewModel, networkOptions: List<String>, 
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (inboundTags.isNotEmpty()) {
+                    LabeledDropdown(tr("Inbound"), inboundTag, inboundTags) { inboundTag = it }
+                }
                 LabeledDropdown(tr("Network"), network, networkOptions) { network = it }
                 when {
                     state.routeTesting -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -233,7 +242,7 @@ private fun RouteTestDialog(vm: RoutingViewModel, networkOptions: List<String>, 
         },
         confirmButton = {
             TextButton(
-                onClick = { vm.testRoute(dest, network, port) },
+                onClick = { vm.testRoute(dest, inboundTag, network, port) },
                 enabled = dest.isNotBlank() && !state.routeTesting,
             ) { Text(tr("Test")) }
         },
@@ -242,7 +251,7 @@ private fun RouteTestDialog(vm: RoutingViewModel, networkOptions: List<String>, 
 }
 
 @Composable
-private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
+private fun RoutingBody(cfg: JsonObject, inboundTags: List<String>, vm: RoutingViewModel) {
     val routing = cfg.child("routing")
     val rules = routing.array("rules")
     val balancers = routing.array("balancers")
@@ -267,7 +276,7 @@ private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
             Text(tr("Test route"))
         }
         if (showRouteTest) {
-            RouteTestDialog(vm = vm, networkOptions = RULE_NETWORK, onClose = { showRouteTest = false })
+            RouteTestDialog(vm = vm, inboundTags = inboundTags, networkOptions = RULE_NETWORK, onClose = { showRouteTest = false })
         }
 
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

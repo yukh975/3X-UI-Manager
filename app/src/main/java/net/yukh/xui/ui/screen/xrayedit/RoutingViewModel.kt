@@ -31,6 +31,8 @@ data class RoutingUiState(
     val routeTesting: Boolean = false,
     val routeTestResult: RouteTestResult? = null,
     val routeTestError: String? = null,
+    // All inbound tags (local + node) for the route tester's inbound picker.
+    val inboundTags: List<String> = emptyList(),
 )
 
 @HiltViewModel
@@ -44,9 +46,14 @@ class RoutingViewModel @Inject constructor(
     fun load() {
         _state.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
+            val inbounds = repo.listInbounds()
             repo.loadXrayConfig()
                 .onSuccess { (cfg, url) ->
-                    _state.update { it.copy(loading = false, available = true, config = cfg, testUrl = url, dirty = false, error = null) }
+                    val tags = inbounds.getOrNull().orEmpty()
+                        .map { it.tag }
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                    _state.update { it.copy(loading = false, available = true, config = cfg, testUrl = url, inboundTags = tags, dirty = false, error = null) }
                 }
                 .onFailure { e -> _state.update { it.copy(loading = false, available = false, error = e.message ?: "Xray config unavailable") } }
         }
@@ -73,9 +80,11 @@ class RoutingViewModel @Inject constructor(
         }
     }
 
-    /** Probe the live routing for [dest] (a domain or IP). Tests the saved
-     *  config on the server, so unsaved edits aren't reflected until Save. */
-    fun testRoute(dest: String, network: String, port: String) {
+    /** Probe the live routing for [dest] (a domain or IP) as seen from
+     *  [inboundTag]. Most rules key on the inbound, so without it the router
+     *  can't decide and everything falls through to the default outbound.
+     *  Tests the saved config on the server, so unsaved edits need a Save first. */
+    fun testRoute(dest: String, inboundTag: String, network: String, port: String) {
         val d = dest.trim()
         if (d.isBlank() || _state.value.routeTesting) return
         val isIp = d.none { it.isLetter() } && (d.contains('.') || d.contains(':'))
@@ -86,6 +95,7 @@ class RoutingViewModel @Inject constructor(
                 ip = if (isIp) d else "",
                 port = port.trim(),
                 network = network,
+                inboundTag = inboundTag,
             )
                 .onSuccess { r -> _state.update { it.copy(routeTesting = false, routeTestResult = r) } }
                 .onFailure { e -> _state.update { it.copy(routeTesting = false, routeTestError = e.message ?: "test failed") } }

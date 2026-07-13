@@ -261,6 +261,7 @@ interface XuiApi {
         @Field("ip") ip: String,
         @Field("port") port: String,
         @Field("network") network: String,
+        @Field("inboundTag") inboundTag: String,
     ): ApiResponse<RouteTestResult>
 
     // ---- Panel admin (settings) -------------------------------------------
