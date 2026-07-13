@@ -29,6 +29,9 @@ class MainActivity : FragmentActivity() {
     lateinit var languageState: LanguageState
 
     @Inject
+    lateinit var speedUnitState: net.yukh.xui.data.prefs.SpeedUnitState
+
+    @Inject
     lateinit var lockState: LockState
 
     @Inject
@@ -58,7 +61,11 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val lang by languageState.language.collectAsStateWithLifecycle()
-            CompositionLocalProvider(LocalAppLanguage provides lang) {
+            val speedInBits by speedUnitState.inBits.collectAsStateWithLifecycle()
+            CompositionLocalProvider(
+                LocalAppLanguage provides lang,
+                net.yukh.xui.ui.format.LocalSpeedInBits provides speedInBits,
+            ) {
                 XuiTheme {
                     val locked by lockState.locked.collectAsStateWithLifecycle()
                     val connected by repo.connected.collectAsStateWithLifecycle()

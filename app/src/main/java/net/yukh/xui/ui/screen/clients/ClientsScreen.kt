@@ -77,6 +77,7 @@ import net.yukh.xui.ui.components.ExportJsonDialog
 import net.yukh.xui.ui.components.ImportJsonDialog
 import net.yukh.xui.ui.components.LabeledDropdown
 import net.yukh.xui.ui.format.formatBytes
+import net.yukh.xui.ui.format.formatSpeed
 import net.yukh.xui.ui.format.formatExpiryDays
 import net.yukh.xui.ui.format.formatLastOnline
 
@@ -444,7 +445,7 @@ private fun ClientRow(
             }
             if (speed != null && (speed.first > 0 || speed.second > 0)) {
                 Text(
-                    "↑ ${speed.first.formatBytes()}/s   ↓ ${speed.second.formatBytes()}/s",
+                    "↑ ${formatSpeed(speed.first, net.yukh.xui.ui.format.LocalSpeedInBits.current)}   ↓ ${formatSpeed(speed.second, net.yukh.xui.ui.format.LocalSpeedInBits.current)}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )

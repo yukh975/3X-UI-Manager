@@ -1,5 +1,6 @@
 package net.yukh.xui.ui.format
 
+import androidx.compose.runtime.compositionLocalOf
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -10,6 +11,20 @@ import net.yukh.xui.i18n.LANG_RU
 import net.yukh.xui.i18n.tr
 
 private val units = arrayOf("B", "KB", "MB", "GB", "TB", "PB")
+private val bitUnits = arrayOf("bit/s", "Kbit/s", "Mbit/s", "Gbit/s", "Tbit/s")
+
+/** Whether live speeds render in bits/s. Provided at the root from user prefs. */
+val LocalSpeedInBits = compositionLocalOf { false }
+
+/** Format a bytes/second rate. bytes → "12.0 KB/s" (1024-based, matching
+ *  [formatBytes]); bits → "96.0 Kbit/s" (×8, 1000-based, network convention). */
+fun formatSpeed(bytesPerSec: Long, bits: Boolean): String {
+    if (!bits) return "${bytesPerSec.formatBytes()}/s"
+    val v = (if (bytesPerSec < 0) 0 else bytesPerSec) * 8.0
+    if (v == 0.0) return "0 bit/s"
+    val exp = (ln(v) / ln(1000.0)).toInt().coerceIn(0, bitUnits.size - 1)
+    return "%.1f %s".format(Locale.US, v / 1000.0.pow(exp.toDouble()), bitUnits[exp])
+}
 
 /** Pretty-print a byte count as e.g. "1.4 GB". 0 → "0 B"; negative → absolute. */
 fun Long.formatBytes(): String {

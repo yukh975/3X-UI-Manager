@@ -41,6 +41,7 @@ import net.yukh.xui.i18n.LocalAppLanguage
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatExpiry
+import net.yukh.xui.ui.format.formatSpeed
 
 @Composable
 fun InboundsScreen(
@@ -205,7 +206,7 @@ private fun InboundRow(
 
             if (speed != null && (speed.first > 0 || speed.second > 0)) {
                 Text(
-                    "↑ ${speed.first.formatBytes()}/s   ↓ ${speed.second.formatBytes()}/s",
+                    "↑ ${formatSpeed(speed.first, net.yukh.xui.ui.format.LocalSpeedInBits.current)}   ↓ ${formatSpeed(speed.second, net.yukh.xui.ui.format.LocalSpeedInBits.current)}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )

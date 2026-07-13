@@ -136,6 +136,8 @@ val ruStrings: Map<String, String> = mapOf(
     "MTProto secret" to "Секрет MTProto",
     "Ad-tag (sponsored channel, 32 hex)" to "Ad-tag (спонсорский канал, 32 hex)",
     "Regenerate" to "Перегенерировать",
+    "Speed units" to "Единицы скорости",
+    "Show speeds in bits/s" to "Показывать скорость в битах/с",
     "WireGuard allowed IPs" to "Разрешённые IP WireGuard",
     "Comma-separated; leave empty to auto-assign." to "Через запятую; пусто — назначить автоматически.",
     "Test" to "Тест",

@@ -37,6 +37,10 @@ class AppSettingsStore @Inject constructor(
     fun getAlertPanelPort(): Int = prefs.getInt(KEY_ALERT_PANEL_PORT, 443)
     fun setAlertPanelPort(port: Int) = prefs.edit { putInt(KEY_ALERT_PANEL_PORT, port) }
 
+    /** Show live speeds in bits/s (Kbit/s…) instead of bytes/s (KB/s). */
+    fun getSpeedInBits(): Boolean = prefs.getBoolean(KEY_SPEED_BITS, false)
+    fun setSpeedInBits(value: Boolean) = prefs.edit { putBoolean(KEY_SPEED_BITS, value) }
+
     private companion object {
         const val FILE = "xui_app_settings"
         const val KEY_LANG = "language"
@@ -45,5 +49,6 @@ class AppSettingsStore @Inject constructor(
         const val KEY_ALERT_EXPIRY_DAYS = "alerts.expiryDays"
         const val KEY_ALERT_TRAFFIC_PCT = "alerts.trafficPct"
         const val KEY_ALERT_PANEL_PORT = "alerts.panelPort"
+        const val KEY_SPEED_BITS = "ui.speedInBits"
     }
 }

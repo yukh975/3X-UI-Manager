@@ -5,6 +5,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.StateFlow
 import net.yukh.xui.data.prefs.AppSettingsStore
+import net.yukh.xui.data.prefs.SpeedUnitState
 import net.yukh.xui.i18n.LanguageState
 import net.yukh.xui.security.LockState
 
@@ -13,9 +14,13 @@ class SettingsViewModel @Inject constructor(
     private val languageState: LanguageState,
     private val lockState: LockState,
     private val settings: AppSettingsStore,
+    private val speedUnitState: SpeedUnitState,
 ) : ViewModel() {
     val language: StateFlow<String> = languageState.language
     fun setLanguage(lang: String) = languageState.set(lang)
+
+    val speedInBits: StateFlow<Boolean> = speedUnitState.inBits
+    fun setSpeedInBits(value: Boolean) = speedUnitState.set(value)
 
     fun hasPasscode(): Boolean = lockState.isLockEnabled()
     fun biometricEnabled(): Boolean = lockState.isBiometricEnabled()

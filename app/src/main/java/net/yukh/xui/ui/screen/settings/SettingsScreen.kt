@@ -67,6 +67,7 @@ fun SettingsScreen(
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val lang by vm.language.collectAsStateWithLifecycle()
+    val speedInBits by vm.speedInBits.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val appVersion = remember {
         runCatching {
@@ -130,6 +131,25 @@ fun SettingsScreen(
                     LanguageRow("English", selected = lang == LANG_EN) { vm.setLanguage(LANG_EN) }
                     HorizontalDivider()
                     LanguageRow("Русский", selected = lang == LANG_RU) { vm.setLanguage(LANG_RU) }
+                }
+            }
+
+            // ---- Speed units ----
+            Text(tr("Speed units"), style = MaterialTheme.typography.titleMedium)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(tr("Show speeds in bits/s"), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            if (speedInBits) "Kbit/s · Mbit/s" else "KB/s · MB/s",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = speedInBits, onCheckedChange = { vm.setSpeedInBits(it) })
                 }
             }
 
