@@ -288,6 +288,8 @@ fun MainScreen(
             onTgId = clientsVm::setEditorTgId,
             onGroup = clientsVm::setEditorGroup,
             onComment = clientsVm::setEditorComment,
+            onAdTag = clientsVm::setEditorAdTag,
+            onRegenerateSecret = clientsVm::regenerateSecret,
             onExpiry = clientsVm::setEditorExpiry,
             onToggleInbound = clientsVm::toggleEditorInbound,
             onSave = clientsVm::saveEditor,

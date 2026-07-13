@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,6 +58,8 @@ fun ClientEditorScreen(
     onTgId: (String) -> Unit,
     onGroup: (String) -> Unit,
     onComment: (String) -> Unit,
+    onAdTag: (String) -> Unit,
+    onRegenerateSecret: () -> Unit,
     onExpiry: (Long) -> Unit,
     onToggleInbound: (Int) -> Unit,
     onSave: () -> Unit,
@@ -200,6 +203,29 @@ fun ClientEditorScreen(
                 label = { Text(tr("Comment (optional)")) },
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            if (state.isMtproto) {
+                OutlinedTextField(
+                    value = state.secret,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(tr("MTProto secret")) },
+                    trailingIcon = {
+                        IconButton(onClick = onRegenerateSecret) {
+                            Icon(Icons.Filled.Refresh, contentDescription = tr("Regenerate"))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = state.adTag,
+                    onValueChange = onAdTag,
+                    label = { Text(tr("Ad-tag (sponsored channel, 32 hex)")) },
+                    isError = state.adTag.isNotEmpty() && state.adTag.length != 32,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             state.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)

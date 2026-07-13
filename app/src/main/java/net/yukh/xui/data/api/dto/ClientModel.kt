@@ -18,6 +18,8 @@ data class ClientModel(
     val email: String = "",
     val password: String = "",
     val auth: String = "",
+    val secret: String = "",
+    val adTag: String = "",
     val security: String = "auto",
     val flow: String = "",
     val limitIp: Int = 0,

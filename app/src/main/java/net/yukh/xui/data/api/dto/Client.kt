@@ -20,6 +20,9 @@ data class Client(
     val security: String = "",
     val password: String = "",
     val auth: String = "",
+    // MTProto (panel 3.5.0): FakeTLS secret + optional advertising tag.
+    val secret: String = "",
+    val adTag: String = "",
     val enable: Boolean = true,
     val tgId: Long = 0,
     val limitIp: Int = 0,
@@ -50,6 +53,8 @@ data class Client(
         email = email,
         password = password,
         auth = auth,
+        secret = secret,
+        adTag = adTag,
         security = security,
         flow = flow,
         limitIp = limitIp,

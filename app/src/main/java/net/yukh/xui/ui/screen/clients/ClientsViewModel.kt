@@ -81,6 +81,25 @@ private fun Client.matchesSearch(q: String): Boolean =
         auth.contains(q, ignoreCase = true) ||
         (tgId != 0L && tgId.toString().contains(q))
 
+private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+
+private fun randomHex(bytes: Int): String {
+    val b = ByteArray(bytes)
+    java.security.SecureRandom().nextBytes(b)
+    return b.toHex()
+}
+
+/** The fronting domain encoded in a FakeTLS secret ("ee"+16 bytes+domain hex),
+ *  or "" if the secret is empty/malformed. */
+private fun mtprotoSecretDomain(secret: String): String {
+    var s = secret
+    if (s.startsWith("ee") || s.startsWith("dd")) s = s.substring(2)
+    if (s.length <= 32) return ""
+    return runCatching {
+        s.substring(32).chunked(2).map { (it.toInt(16) and 0xFF).toByte() }.toByteArray().decodeToString()
+    }.getOrDefault("")
+}
+
 /** Form state for creating or editing a client. Numeric inputs are kept as
  *  strings so partial/empty typing doesn't fight the user. */
 data class ClientEditorState(
@@ -95,6 +114,8 @@ data class ClientEditorState(
     val tgId: String = "",
     val group: String = "",
     val comment: String = "",
+    val secret: String = "",
+    val adTag: String = "",
     val selectedInboundIds: Set<Int> = emptySet(),
     val availableInbounds: List<InboundSlim> = emptyList(),
     val availableGroups: List<String> = emptyList(),
@@ -104,6 +125,10 @@ data class ClientEditorState(
 ) {
     val canSave: Boolean
         get() = !saving && email.isNotBlank() && (!isNew || selectedInboundIds.isNotEmpty())
+
+    /** A selected inbound is MTProto — show the secret / ad-tag fields. */
+    val isMtproto: Boolean
+        get() = availableInbounds.any { it.id in selectedInboundIds && it.protocol == "mtproto" }
 }
 
 @HiltViewModel
@@ -296,6 +321,8 @@ class ClientsViewModel @Inject constructor(
                     tgId = if (client.tgId != 0L) client.tgId.toString() else "",
                     group = client.group,
                     comment = client.comment,
+                    secret = client.secret,
+                    adTag = client.adTag,
                     selectedInboundIds = client.inboundIds.toSet(),
                     availableGroups = existingGroups(),
                     inboundsLoading = true,
@@ -331,6 +358,15 @@ class ClientsViewModel @Inject constructor(
     fun setEditorGroup(v: String) = updateEditor { it.copy(group = v) }
     fun setEditorComment(v: String) = updateEditor { it.copy(comment = v) }
     fun setEditorExpiry(ms: Long) = updateEditor { it.copy(expiryTime = ms) }
+    fun setEditorAdTag(v: String) = updateEditor { it.copy(adTag = v.filter { c -> c.isDigit() || c in 'a'..'f' || c in 'A'..'F' }.take(32)) }
+
+    /** Regenerate the MTProto FakeTLS secret, keeping the fronting domain from
+     *  the current secret (or cloudflare's if there isn't one yet). Format:
+     *  "ee" + 16 random bytes (hex) + domain (hex). */
+    fun regenerateSecret() = updateEditor {
+        val domain = mtprotoSecretDomain(it.secret).ifBlank { "www.cloudflare.com" }
+        it.copy(secret = "ee" + randomHex(16) + domain.encodeToByteArray().toHex())
+    }
     fun toggleEditorInbound(id: Int) = updateEditor {
         it.copy(
             selectedInboundIds = if (id in it.selectedInboundIds) it.selectedInboundIds - id
@@ -353,6 +389,8 @@ class ClientsViewModel @Inject constructor(
             tgId = e.tgId.toLongOrNull() ?: 0,
             group = e.group.trim(),
             comment = e.comment.trim(),
+            secret = if (e.isMtproto) e.secret.trim() else base.secret,
+            adTag = if (e.isMtproto) e.adTag.trim() else base.adTag,
         )
         _state.update { s -> s.editor?.let { s.copy(editor = it.copy(saving = true, error = null)) } ?: s }
         viewModelScope.launch {
