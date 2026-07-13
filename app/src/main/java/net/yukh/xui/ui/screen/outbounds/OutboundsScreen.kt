@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,6 +56,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.outboundAddressSummary
 import net.yukh.xui.data.api.dto.outboundProtocol
+import net.yukh.xui.data.api.dto.TestOutboundResult
 import net.yukh.xui.data.api.dto.outboundTag
 import net.yukh.xui.data.json.asObject
 import net.yukh.xui.data.parse.parseVlessLink
@@ -213,6 +216,9 @@ fun OutboundsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp),
                 ) {
+                    item {
+                        OutboundTestModeRow(mode = state.testMode, onModeChange = vm::setTestMode)
+                    }
                     itemsIndexed(state.outbounds) { index, ob ->
                         OutboundRow(
                             index = index,
@@ -220,6 +226,9 @@ fun OutboundsScreen(
                             tag = ob.outboundTag(),
                             protocol = ob.outboundProtocol(),
                             address = ob.outboundAddressSummary(),
+                            testing = index in state.testing,
+                            result = state.testResults[index],
+                            onTest = { vm.testOutbound(index) },
                             onClick = { vm.openEdit(index) },
                             onUp = { vm.move(index, -1) },
                             onDown = { vm.move(index, +1) },
@@ -296,12 +305,29 @@ fun OutboundsScreen(
 }
 
 @Composable
+private fun OutboundTestModeRow(mode: String, onModeChange: (String) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(tr("Test mode"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        listOf("tcp" to "TCP", "http" to "HTTP", "real" to tr("Real delay")).forEach { (value, label) ->
+            FilterChip(selected = mode == value, onClick = { onModeChange(value) }, label = { Text(label) })
+        }
+    }
+}
+
+@Composable
 private fun OutboundRow(
     index: Int,
     total: Int,
     tag: String,
     protocol: String,
     address: String,
+    testing: Boolean,
+    result: TestOutboundResult?,
+    onTest: () -> Unit,
     onClick: () -> Unit,
     onUp: () -> Unit,
     onDown: () -> Unit,
@@ -323,6 +349,31 @@ private fun OutboundRow(
                 if (index == 0) {
                     Text(tr("default route"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 }
+                if (result != null) {
+                    val line = if (result.success) {
+                        buildString {
+                            append("⚡ ${result.delay} ms")
+                            result.egress?.let { e ->
+                                val ip = e.ipv4.ifBlank { e.ipv6 }
+                                if (ip.isNotBlank()) append("  ·  $ip")
+                                if (e.country.isNotBlank()) append("  ·  ${e.country}")
+                                if (e.warp.isNotBlank() && e.warp != "off") append("  ·  WARP")
+                            }
+                        }
+                    } else {
+                        "✗ ${result.error.ifBlank { tr("unreachable") }}"
+                    }
+                    Text(
+                        line,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (result.success) Color(0xFF34C759) else MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+            if (testing) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                TextButton(onClick = onTest) { Text(tr("Test")) }
             }
             IconButton(onClick = onUp, enabled = index > 0) {
                 Icon(Icons.Filled.KeyboardArrowUp, contentDescription = tr("Move up"))

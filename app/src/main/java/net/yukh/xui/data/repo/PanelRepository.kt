@@ -29,10 +29,12 @@ import net.yukh.xui.data.api.dto.MtlsTrustCaRequest
 import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.VlessEncAuth
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
+import net.yukh.xui.data.api.dto.TestOutboundResult
 import net.yukh.xui.data.api.dto.XraySettingEnvelope
 import net.yukh.xui.data.prefs.ConnectionAuth
 import net.yukh.xui.data.prefs.ConnectionProfile
@@ -410,6 +412,9 @@ class PanelRepository @Inject constructor(
 
     suspend fun updateXraySetting(configJson: String, testUrl: String): Result<Unit> =
         authedAck { it.updateXraySetting(configJson, testUrl) }
+
+    suspend fun testOutbound(outbound: JsonObject, mode: String): Result<TestOutboundResult> =
+        authedData { it.testOutbound(json.encodeToString(JsonObject.serializer(), outbound), mode) }
 
     // ---- Panel admin (settings) -------------------------------------------
 

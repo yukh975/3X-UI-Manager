@@ -25,6 +25,7 @@ import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.ServerStatus
+import net.yukh.xui.data.api.dto.TestOutboundResult
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -240,6 +241,15 @@ interface XuiApi {
         @Field("xraySetting") xraySetting: String,
         @Field("outboundTestUrl") outboundTestUrl: String,
     ): ApiAck
+
+    // Probes one outbound; the panel supplies the test URL server-side (SSRF-safe).
+    // mode: "tcp" (dial only), "http" (request through xray), "real" (full real delay).
+    @FormUrlEncoded
+    @POST("panel/api/xray/testOutbound")
+    suspend fun testOutbound(
+        @Field("outbound") outbound: String,
+        @Field("mode") mode: String,
+    ): ApiResponse<TestOutboundResult>
 
     // ---- Panel admin (settings) -------------------------------------------
 

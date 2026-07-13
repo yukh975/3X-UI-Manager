@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import net.yukh.xui.data.api.dto.TestOutboundResult
 import net.yukh.xui.data.api.dto.defaultOutbound
 import net.yukh.xui.data.api.dto.outboundTag
 import net.yukh.xui.data.json.array
@@ -34,6 +35,10 @@ data class OutboundsUiState(
     val savedMessage: String? = null,
     val editing: EditingOutbound? = null,
     val editorError: String? = null,
+    // Outbound connectivity test (panel 3.5.0): mode + per-index results/in-flight.
+    val testMode: String = "tcp",
+    val testResults: Map<Int, TestOutboundResult> = emptyMap(),
+    val testing: Set<Int> = emptySet(),
 )
 
 @HiltViewModel
@@ -57,12 +62,39 @@ class OutboundsViewModel @Inject constructor(
                     testUrl = env.outboundTestUrl
                     val list = configObj.array("outbounds").map { it.asObject() }
                     _state.update {
-                        it.copy(loading = false, available = true, outbounds = list, dirty = false, error = null)
+                        it.copy(
+                            loading = false, available = true, outbounds = list, dirty = false, error = null,
+                            testResults = emptyMap(), testing = emptySet(),
+                        )
                     }
                 }
                 .onFailure { e ->
                     _state.update {
                         it.copy(loading = false, available = false, error = e.message ?: "Xray config unavailable")
+                    }
+                }
+        }
+    }
+
+    // ---- outbound connectivity test (panel 3.5.0) -------------------------
+
+    fun setTestMode(mode: String) = _state.update { it.copy(testMode = mode) }
+
+    fun testOutbound(index: Int) {
+        val ob = _state.value.outbounds.getOrNull(index) ?: return
+        val mode = _state.value.testMode
+        _state.update { it.copy(testing = it.testing + index) }
+        viewModelScope.launch {
+            repo.testOutbound(ob, mode)
+                .onSuccess { r ->
+                    _state.update { it.copy(testResults = it.testResults + (index to r), testing = it.testing - index) }
+                }
+                .onFailure { e ->
+                    _state.update {
+                        it.copy(
+                            testResults = it.testResults + (index to TestOutboundResult(success = false, error = e.message ?: "test failed")),
+                            testing = it.testing - index,
+                        )
                     }
                 }
         }
@@ -112,7 +144,7 @@ class OutboundsViewModel @Inject constructor(
     fun deleteAt(index: Int) = _state.update {
         val list = it.outbounds.toMutableList()
         if (index in list.indices) list.removeAt(index)
-        it.copy(outbounds = list, dirty = true)
+        it.copy(outbounds = list, dirty = true, testResults = emptyMap())
     }
 
     /** Move the outbound at [index] by [delta] (-1 up / +1 down). Order = priority. */
@@ -122,7 +154,7 @@ class OutboundsViewModel @Inject constructor(
         if (index in list.indices && to in list.indices) {
             val item = list.removeAt(index)
             list.add(to, item)
-            it.copy(outbounds = list, dirty = true)
+            it.copy(outbounds = list, dirty = true, testResults = emptyMap())
         } else it
     }
 
