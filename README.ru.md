@@ -134,29 +134,4 @@
 
 ---
 
-## Стек
-
-- Kotlin 2.1 + Jetpack Compose (Material 3)
-- Min SDK 24 (Android 7.0), target/compile SDK 35 (Android 15)
-- Hilt (DI), Retrofit + OkHttp + kotlinx.serialization (сеть), zxing (QR-коды)
-- Внутренняя локализация через лёгкий `tr()` (английский источник + русский словарь)
-
-## Сборка
-
-Откройте этот репозиторий в Android Studio — он синхронизирует и скачает всё, включая Gradle wrapper. Из командной строки:
-
-```bash
-gradle wrapper --gradle-version 8.10.2   # один раз (jar wrapper'а в .gitignore)
-./gradlew assembleDebug                   # debug APK
-./gradlew assembleRelease                 # подписанный release APK (нужен keystore)
-```
-
-## CI / релизы
-
-[`.gitlab-ci.yml`](.gitlab-ci.yml) собирает **только** по тегу версии (`vX.Y.Z`) или ручному запуску — пуши в ветку сборку не запускают. Пайплайн по тегу собирает **подписанный release APK**, загружает его в Generic Package Registry и автоматически создаёт GitLab Release. `versionName`/`versionCode` берутся из тега.
-
-Чтобы выпустить релиз: запушьте тег `vX.Y.Z`.
-
----
-
 © 2026 Yuriy Khachaturian ([yukh.net](https://yukh.net))

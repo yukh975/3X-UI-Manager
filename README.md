@@ -134,29 +134,4 @@ The `subId` is unique per client (the app already has it), so each client gets i
 
 ---
 
-## Tech stack
-
-- Kotlin 2.1 + Jetpack Compose (Material 3)
-- Min SDK 24 (Android 7.0), target/compile SDK 35 (Android 15)
-- Hilt (DI), Retrofit + OkHttp + kotlinx.serialization (networking), zxing (QR codes)
-- In-app i18n via a lightweight `tr()` lookup (English source + Russian dictionary)
-
-## Building
-
-Open this repository in Android Studio — it syncs and downloads everything, including the Gradle wrapper. From the command line:
-
-```bash
-gradle wrapper --gradle-version 8.10.2   # one-time (the wrapper jar is git-ignored)
-./gradlew assembleDebug                   # debug APK
-./gradlew assembleRelease                 # signed release APK (needs keystore)
-```
-
-## CI / releases
-
-[`.gitlab-ci.yml`](.gitlab-ci.yml) builds **only** on a version tag (`vX.Y.Z`) or a manual trigger — branch pushes don't build. A tag pipeline builds the **signed release APK**, uploads it to the project's Generic Package Registry, and auto-creates a GitLab Release. `versionName`/`versionCode` derive from the tag.
-
-To cut a release: push a `vX.Y.Z` tag.
-
----
-
 © 2026 Yuriy Khachaturian ([yukh.net](https://yukh.net))
