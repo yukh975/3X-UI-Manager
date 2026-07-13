@@ -36,3 +36,8 @@ release.properties
 # OS junk
 .DS_Store
 Thumbs.db
+
+# internal / AI working files — kept out of the app repo
+/docs/
+/CLAUDE.md
+/fdroid-publishing.md
