@@ -6,6 +6,19 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.9.1] — 2026-07-13
+
+Feature parity with panel 3.5.0.
+
+### Added
+- **Live speed per client** — the Clients screen now shows each client's live ↑/↓ rate (derived from the traffic delta between polls), the same way inbounds already did.
+- **Outbound connectivity test** — a Test action per outbound (mode selector: TCP / HTTP / Real delay) that reports the round-trip delay and, for HTTP/Real probes, the egress IP and country (with a WARP marker). The test URL stays server-side.
+- **Target Strategy selector** in the outbound editor (AsIs … ForceIPv4), next to Send through.
+- **Route test** in the Routing section — enter a domain or IP (plus optional port/network) and see which outbound it resolves to, the balancer chain if any, or a "default outbound" verdict.
+
+### Changed
+- **Client search** now matches Telegram ID, comment, sub ID, UUID, password and auth — previously it matched the email only.
+
 ## [0.8.10] — 2026-07-10
 
 ### Added
