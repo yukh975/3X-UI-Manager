@@ -6,6 +6,19 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.9.2] — 2026-07-13
+
+More panel 3.5.0 parity.
+
+### Added
+- **Subscription announcement** — a Subscription section in Panel admin to read and edit `subAnnounce`, the banner shown on the subscription info page.
+- **MTProto client fields** — when a selected inbound is MTProto, the client editor shows the FakeTLS secret (with a regenerate button) and an ad-tag field (32-hex). Personal `tg://` links already worked through the share sheet.
+- **WireGuard allowed IPs** — when a selected inbound is WireGuard, the client editor shows an editable "allowed IPs" field (empty auto-assigns).
+
+### Fixed
+- **Route test always said "default outbound".** It never sent the inbound, and most routing rules key on it, so the router couldn't decide. The tester now has an inbound picker and passes it through.
+- **Editing MTProto or WireGuard clients could drop their secret / peer keys** — the client model now carries `secret`, `adTag` and the WireGuard peer fields, so a save round-trips them untouched.
+
 ## [0.9.1] — 2026-07-13
 
 Feature parity with panel 3.5.0.
