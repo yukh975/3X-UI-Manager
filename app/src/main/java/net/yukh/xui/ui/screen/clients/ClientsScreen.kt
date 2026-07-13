@@ -219,6 +219,7 @@ fun ClientsScreen(
                         items(visible, key = { it.email.ifBlank { it.id.toString() } }) { client ->
                             ClientRow(
                                 client = client,
+                                speed = state.speedByClient[client.email],
                                 online = client.email in state.online,
                                 selected = client.email in state.selectedEmails,
                                 selectionMode = state.selectionMode,
@@ -374,6 +375,7 @@ fun ClientsScreen(
 @Composable
 private fun ClientRow(
     client: Client,
+    speed: Pair<Long, Long>?,
     online: Boolean,
     selected: Boolean,
     selectionMode: Boolean,
@@ -439,6 +441,13 @@ private fun ClientRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            if (speed != null && (speed.first > 0 || speed.second > 0)) {
+                Text(
+                    "↑ ${speed.first.formatBytes()}/s   ↓ ${speed.second.formatBytes()}/s",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
             Text(
                 "${tr("Expires")}: ${client.expiryTime.formatExpiryDays(LocalAppLanguage.current)}",

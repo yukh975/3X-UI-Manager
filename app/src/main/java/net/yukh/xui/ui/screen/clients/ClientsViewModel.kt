@@ -25,6 +25,7 @@ private const val POLL_INTERVAL_MS = 5_000L
 data class ClientsUiState(
     val items: List<Client> = emptyList(),
     val online: Set<String> = emptySet(),
+    val speedByClient: Map<String, Pair<Long, Long>> = emptyMap(),
     val searchQuery: String = "",
     val loading: Boolean = false,
     val refreshing: Boolean = false,
@@ -105,6 +106,10 @@ class ClientsViewModel @Inject constructor(
 
     private var pollJob: Job? = null
 
+    // Previous (up,down) totals per client email + timestamp, to derive live speed between polls.
+    private var prevTotals: Map<String, Pair<Long, Long>> = emptyMap()
+    private var prevTime: Long = 0L
+
     init {
         // Reload when the user switches to another panel.
         viewModelScope.launch {
@@ -132,6 +137,12 @@ class ClientsViewModel @Inject constructor(
     fun load(force: Boolean = false) {
         val current = _state.value
         if (current.refreshing) return
+        // A forced reload (e.g. panel switch) resets the speed baseline so the first
+        // sample after the switch isn't a bogus delta against the previous panel.
+        if (force) {
+            prevTotals = emptyMap()
+            prevTime = 0L
+        }
         val firstLoad = current.items.isEmpty() && current.error == null
         _state.update {
             it.copy(
@@ -146,9 +157,25 @@ class ClientsViewModel @Inject constructor(
 
             clients
                 .onSuccess { list ->
+                    val sorted = list.sortedBy { c -> c.email.lowercase() }
+                    val now = System.currentTimeMillis()
+                    val dt = (now - prevTime) / 1000.0
+                    val speeds = if (prevTime > 0 && dt > 0.5) {
+                        sorted.mapNotNull { c ->
+                            val prev = prevTotals[c.email] ?: return@mapNotNull null
+                            val up = (((c.up - prev.first).coerceAtLeast(0)) / dt).toLong()
+                            val down = (((c.down - prev.second).coerceAtLeast(0)) / dt).toLong()
+                            c.email to (up to down)
+                        }.toMap()
+                    } else {
+                        emptyMap()
+                    }
+                    prevTotals = sorted.associate { it.email to (it.up to it.down) }
+                    prevTime = now
                     _state.update {
                         it.copy(
-                            items = list.sortedBy { c -> c.email.lowercase() },
+                            items = sorted,
+                            speedByClient = speeds,
                             online = onlines.getOrNull()?.toSet().orEmpty(),
                             loading = false,
                             refreshing = false,
