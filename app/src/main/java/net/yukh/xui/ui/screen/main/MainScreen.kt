@@ -290,6 +290,7 @@ fun MainScreen(
             onComment = clientsVm::setEditorComment,
             onAdTag = clientsVm::setEditorAdTag,
             onRegenerateSecret = clientsVm::regenerateSecret,
+            onAllowedIps = clientsVm::setEditorAllowedIps,
             onExpiry = clientsVm::setEditorExpiry,
             onToggleInbound = clientsVm::toggleEditorInbound,
             onSave = clientsVm::saveEditor,

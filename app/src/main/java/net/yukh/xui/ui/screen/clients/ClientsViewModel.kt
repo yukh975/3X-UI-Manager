@@ -116,6 +116,7 @@ data class ClientEditorState(
     val comment: String = "",
     val secret: String = "",
     val adTag: String = "",
+    val allowedIps: String = "",
     val selectedInboundIds: Set<Int> = emptySet(),
     val availableInbounds: List<InboundSlim> = emptyList(),
     val availableGroups: List<String> = emptyList(),
@@ -129,6 +130,10 @@ data class ClientEditorState(
     /** A selected inbound is MTProto — show the secret / ad-tag fields. */
     val isMtproto: Boolean
         get() = availableInbounds.any { it.id in selectedInboundIds && it.protocol == "mtproto" }
+
+    /** A selected inbound is WireGuard — show the peer's allowed IPs. */
+    val isWireguard: Boolean
+        get() = availableInbounds.any { it.id in selectedInboundIds && it.protocol == "wireguard" }
 }
 
 @HiltViewModel
@@ -323,6 +328,7 @@ class ClientsViewModel @Inject constructor(
                     comment = client.comment,
                     secret = client.secret,
                     adTag = client.adTag,
+                    allowedIps = client.allowedIPs.joinToString(", "),
                     selectedInboundIds = client.inboundIds.toSet(),
                     availableGroups = existingGroups(),
                     inboundsLoading = true,
@@ -359,6 +365,7 @@ class ClientsViewModel @Inject constructor(
     fun setEditorComment(v: String) = updateEditor { it.copy(comment = v) }
     fun setEditorExpiry(ms: Long) = updateEditor { it.copy(expiryTime = ms) }
     fun setEditorAdTag(v: String) = updateEditor { it.copy(adTag = v.filter { c -> c.isDigit() || c in 'a'..'f' || c in 'A'..'F' }.take(32)) }
+    fun setEditorAllowedIps(v: String) = updateEditor { it.copy(allowedIps = v) }
 
     /** Regenerate the MTProto FakeTLS secret, keeping the fronting domain from
      *  the current secret (or cloudflare's if there isn't one yet). Format:
@@ -391,6 +398,11 @@ class ClientsViewModel @Inject constructor(
             comment = e.comment.trim(),
             secret = if (e.isMtproto) e.secret.trim() else base.secret,
             adTag = if (e.isMtproto) e.adTag.trim() else base.adTag,
+            allowedIPs = if (e.isWireguard) {
+                e.allowedIps.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            } else {
+                base.allowedIPs
+            },
         )
         _state.update { s -> s.editor?.let { s.copy(editor = it.copy(saving = true, error = null)) } ?: s }
         viewModelScope.launch {

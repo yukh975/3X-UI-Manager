@@ -60,6 +60,7 @@ fun ClientEditorScreen(
     onComment: (String) -> Unit,
     onAdTag: (String) -> Unit,
     onRegenerateSecret: () -> Unit,
+    onAllowedIps: (String) -> Unit,
     onExpiry: (Long) -> Unit,
     onToggleInbound: (Int) -> Unit,
     onSave: () -> Unit,
@@ -223,6 +224,17 @@ fun ClientEditorScreen(
                     label = { Text(tr("Ad-tag (sponsored channel, 32 hex)")) },
                     isError = state.adTag.isNotEmpty() && state.adTag.length != 32,
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            if (state.isWireguard) {
+                OutlinedTextField(
+                    value = state.allowedIps,
+                    onValueChange = onAllowedIps,
+                    label = { Text(tr("WireGuard allowed IPs")) },
+                    placeholder = { Text("10.0.0.2/32") },
+                    supportingText = { Text(tr("Comma-separated; leave empty to auto-assign.")) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
