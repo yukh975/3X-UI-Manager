@@ -8,6 +8,7 @@ import net.yukh.xui.data.api.dto.ClientImportRequest
 import net.yukh.xui.data.api.dto.ClientIpInfo
 import net.yukh.xui.data.api.dto.VlessEncResponse
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientCreatePayload
@@ -231,6 +232,14 @@ interface XuiApi {
 
     @POST("panel/api/setting/all")
     suspend fun getAllSettings(): ApiResponse<PanelSettings>
+
+    // Full panel settings as a raw object, for a read-modify-write round-trip
+    // (setting/update overwrites every field, so we must resend the whole thing).
+    @POST("panel/api/setting/all")
+    suspend fun getAllSettingsRaw(): ApiResponse<JsonObject>
+
+    @POST("panel/api/setting/update")
+    suspend fun updateSettings(@Body settings: JsonObject): ApiAck
 
     /** Returns the wrapped config as a JSON string in `obj` (parse twice). */
     @POST("panel/api/xray/")

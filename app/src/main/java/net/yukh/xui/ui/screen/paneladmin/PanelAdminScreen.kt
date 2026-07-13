@@ -59,7 +59,7 @@ import net.yukh.xui.ui.components.SectionTitle
 fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
-    LaunchedEffect(Unit) { vm.loadTokens() }
+    LaunchedEffect(Unit) { vm.loadTokens(); vm.loadSubscription() }
     LaunchedEffect(state.message) { state.message?.let { snackbar.showSnackbar(it); vm.dismissMessage() } }
     LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it); vm.dismissError() } }
 
@@ -114,6 +114,26 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
             }
             OutlinedButton(onClick = { showCreate = true }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
                 Text(tr("Create token"))
+            }
+
+            // ---- Panel ----
+            // ---- Subscription ----
+            SectionTitle(tr("Subscription"))
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr("Announcement shown as a banner on the subscription info page. Leave empty for none."),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = state.subAnnounce,
+                        onValueChange = vm::setSubAnnounce,
+                        label = { Text(tr("Announcement")) },
+                        enabled = state.subLoaded && !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedButton(onClick = vm::saveSubAnnounce, enabled = state.subLoaded && !state.busy, modifier = Modifier.fillMaxWidth()) {
+                        Text(tr("Save"))
+                    }
+                }
             }
 
             // ---- Panel ----

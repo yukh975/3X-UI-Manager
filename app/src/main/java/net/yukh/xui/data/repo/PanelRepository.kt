@@ -420,6 +420,14 @@ class PanelRepository @Inject constructor(
     suspend fun testRoute(domain: String, ip: String, port: String, network: String, inboundTag: String): Result<RouteTestResult> =
         authedData { it.routeTest(domain, ip, port, network, inboundTag) }
 
+    suspend fun getRawSettings(): Result<JsonObject> =
+        authedData { it.getAllSettingsRaw() }
+
+    /** Overwrites all panel settings — always pass a full object read from
+     *  [getRawSettings] with only the intended fields changed. */
+    suspend fun updateSettings(settings: JsonObject): Result<Unit> =
+        authedAck { it.updateSettings(settings) }
+
     // ---- Panel admin (settings) -------------------------------------------
 
     /** Change the admin username + password; old credentials must match. */

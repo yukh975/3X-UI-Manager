@@ -9,7 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.ApiToken
+import net.yukh.xui.data.json.putString
+import net.yukh.xui.data.json.string
 import net.yukh.xui.data.repo.PanelRepository
 
 data class PanelAdminUiState(
@@ -20,6 +23,9 @@ data class PanelAdminUiState(
     val newToken: ApiToken? = null,
     val message: String? = null,
     val error: String? = null,
+    // Subscription settings (round-tripped through the full AllSetting object).
+    val subLoaded: Boolean = false,
+    val subAnnounce: String = "",
 )
 
 /**
@@ -34,6 +40,37 @@ class PanelAdminViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(PanelAdminUiState())
     val state: StateFlow<PanelAdminUiState> = _state.asStateFlow()
+
+    // Full settings object, kept verbatim so a save only changes the edited field.
+    private var rawSettings: JsonObject? = null
+
+    fun loadSubscription() {
+        viewModelScope.launch {
+            repo.getRawSettings()
+                .onSuccess { obj ->
+                    rawSettings = obj
+                    _state.update { it.copy(subLoaded = true, subAnnounce = obj.string("subAnnounce")) }
+                }
+                .onFailure { e -> _state.update { it.copy(error = e.message ?: "Couldn't load settings") } }
+        }
+    }
+
+    fun setSubAnnounce(v: String) = _state.update { it.copy(subAnnounce = v) }
+
+    fun saveSubAnnounce() {
+        val raw = rawSettings ?: return
+        if (_state.value.busy) return
+        _state.update { it.copy(busy = true, error = null, message = null) }
+        viewModelScope.launch {
+            val updated = raw.putString("subAnnounce", _state.value.subAnnounce)
+            repo.updateSettings(updated)
+                .onSuccess {
+                    rawSettings = updated
+                    _state.update { it.copy(busy = false, message = "Subscription settings saved") }
+                }
+                .onFailure { e -> _state.update { it.copy(busy = false, error = e.message ?: "Couldn't save settings") } }
+        }
+    }
 
     fun loadTokens() {
         _state.update { it.copy(tokensLoading = true) }

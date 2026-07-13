@@ -129,6 +129,10 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Clients
     "Search email, ID, UUID…" to "Поиск: email, tg ID, UUID…",
+    "Announcement" to "Объявление",
+    "Announcement shown as a banner on the subscription info page. Leave empty for none." to "Текст-объявление, который показывается баннером на инфо-странице подписки. Пусто — без баннера.",
+    "Subscription settings saved" to "Настройки подписки сохранены",
+    "Inbound" to "Inbound",
     "Test" to "Тест",
     "Test route" to "Тест маршрута",
     "Domain or IP" to "Домен или IP",
