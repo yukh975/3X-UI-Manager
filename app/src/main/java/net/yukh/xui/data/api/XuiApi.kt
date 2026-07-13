@@ -24,6 +24,7 @@ import net.yukh.xui.data.api.dto.NodeIdsRequest
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
+import net.yukh.xui.data.api.dto.RouteTestResult
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.data.api.dto.TestOutboundResult
 import okhttp3.MultipartBody
@@ -250,6 +251,17 @@ interface XuiApi {
         @Field("outbound") outbound: String,
         @Field("mode") mode: String,
     ): ApiResponse<TestOutboundResult>
+
+    // Resolves which outbound a destination routes to against the live config.
+    // Empty port/network mean "any"; at least one of domain/ip must be set.
+    @FormUrlEncoded
+    @POST("panel/api/xray/routeTest")
+    suspend fun routeTest(
+        @Field("domain") domain: String,
+        @Field("ip") ip: String,
+        @Field("port") port: String,
+        @Field("network") network: String,
+    ): ApiResponse<RouteTestResult>
 
     // ---- Panel admin (settings) -------------------------------------------
 

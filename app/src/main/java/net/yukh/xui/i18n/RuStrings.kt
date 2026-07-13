@@ -129,6 +129,13 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Clients
     "Search email, ID, UUID…" to "Поиск: email, tg ID, UUID…",
+    "Test" to "Тест",
+    "Test route" to "Тест маршрута",
+    "Domain or IP" to "Домен или IP",
+    "Port (optional)" to "Порт (необязательно)",
+    "default outbound" to "outbound по умолчанию",
+    "via" to "через",
+    "No rule matched — uses the default outbound." to "Ни одно правило не сработало — используется outbound по умолчанию.",
     "No clients yet." to "Пока нет клиентов.",
     "Subscription" to "Подписка",
     "Auto-updating link for all configs" to "Авто-обновляемая ссылка на все конфиги",

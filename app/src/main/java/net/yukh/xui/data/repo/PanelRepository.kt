@@ -33,6 +33,7 @@ import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.NodeModel
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
+import net.yukh.xui.data.api.dto.RouteTestResult
 import net.yukh.xui.data.api.dto.ServerStatus
 import net.yukh.xui.data.api.dto.TestOutboundResult
 import net.yukh.xui.data.api.dto.XraySettingEnvelope
@@ -415,6 +416,9 @@ class PanelRepository @Inject constructor(
 
     suspend fun testOutbound(outbound: JsonObject, mode: String): Result<TestOutboundResult> =
         authedData { it.testOutbound(json.encodeToString(JsonObject.serializer(), outbound), mode) }
+
+    suspend fun testRoute(domain: String, ip: String, port: String, network: String): Result<RouteTestResult> =
+        authedData { it.routeTest(domain, ip, port, network) }
 
     // ---- Panel admin (settings) -------------------------------------------
 

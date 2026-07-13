@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -173,6 +175,73 @@ fun RoutingScreen(onClose: () -> Unit, vm: RoutingViewModel = hiltViewModel()) {
 }
 
 @Composable
+private fun RouteTestDialog(vm: RoutingViewModel, networkOptions: List<String>, onClose: () -> Unit) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    var dest by remember { mutableStateOf("") }
+    var network by remember { mutableStateOf("") }
+    var port by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = { vm.clearRouteTest(); onClose() },
+        title = { Text(tr("Test route")) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = dest,
+                    onValueChange = { dest = it },
+                    label = { Text(tr("Domain or IP")) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = port,
+                    onValueChange = { port = it.filter(Char::isDigit) },
+                    label = { Text(tr("Port (optional)")) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                LabeledDropdown(tr("Network"), network, networkOptions) { network = it }
+                when {
+                    state.routeTesting -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    state.routeTestError != null -> Text(
+                        "✗ ${state.routeTestError}",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    state.routeTestResult != null -> {
+                        val r = state.routeTestResult!!
+                        val target = if (r.matched && r.outboundTag.isNotBlank()) r.outboundTag else tr("default outbound")
+                        Column {
+                            Text("→ $target", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                            if (r.groupTags.isNotEmpty()) {
+                                Text(
+                                    "${tr("via")}: ${r.groupTags.joinToString(" → ")}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (!r.matched) {
+                                Text(
+                                    tr("No rule matched — uses the default outbound."),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { vm.testRoute(dest, network, port) },
+                enabled = dest.isNotBlank() && !state.routeTesting,
+            ) { Text(tr("Test")) }
+        },
+        dismissButton = { TextButton(onClick = { vm.clearRouteTest(); onClose() }) { Text(tr("Close")) } },
+    )
+}
+
+@Composable
 private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
     val routing = cfg.child("routing")
     val rules = routing.array("rules")
@@ -181,6 +250,7 @@ private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
     var pendingBal by remember { mutableStateOf<Int?>(null) }
     var showExport by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
+    var showRouteTest by remember { mutableStateOf(false) }
 
     fun setRules(items: List<kotlinx.serialization.json.JsonElement>) = vm.update(cfg.put("routing", routing.putArray("rules", items)))
     fun setBalancers(items: List<kotlinx.serialization.json.JsonElement>) = vm.update(cfg.put("routing", routing.putArray("balancers", items)))
@@ -191,6 +261,13 @@ private fun RoutingBody(cfg: JsonObject, vm: RoutingViewModel) {
     ) {
         LabeledDropdown(tr("Routing strategy"), routing.string("domainStrategy").ifBlank { "AsIs" }, ROUTING_DOMAIN_STRATEGY) {
             vm.update(cfg.put("routing", routing.putString("domainStrategy", it)))
+        }
+
+        OutlinedButton(onClick = { showRouteTest = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(tr("Test route"))
+        }
+        if (showRouteTest) {
+            RouteTestDialog(vm = vm, networkOptions = RULE_NETWORK, onClose = { showRouteTest = false })
         }
 
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

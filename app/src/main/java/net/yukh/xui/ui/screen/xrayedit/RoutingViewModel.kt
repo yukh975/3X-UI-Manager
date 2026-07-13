@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
+import net.yukh.xui.data.api.dto.RouteTestResult
 import net.yukh.xui.data.repo.PanelRepository
 
 data class RuleEdit(val index: Int, val isNew: Boolean, val draft: JsonObject)
@@ -26,6 +27,10 @@ data class RoutingUiState(
     val savedMessage: String? = null,
     val editingRule: RuleEdit? = null,
     val editingBalancer: BalEdit? = null,
+    // Route test (panel 3.5.0): probe which outbound a destination resolves to.
+    val routeTesting: Boolean = false,
+    val routeTestResult: RouteTestResult? = null,
+    val routeTestError: String? = null,
 )
 
 @HiltViewModel
@@ -67,6 +72,27 @@ class RoutingViewModel @Inject constructor(
                 .onFailure { e -> _state.update { it.copy(saving = false, error = e.message ?: "Save failed") } }
         }
     }
+
+    /** Probe the live routing for [dest] (a domain or IP). Tests the saved
+     *  config on the server, so unsaved edits aren't reflected until Save. */
+    fun testRoute(dest: String, network: String, port: String) {
+        val d = dest.trim()
+        if (d.isBlank() || _state.value.routeTesting) return
+        val isIp = d.none { it.isLetter() } && (d.contains('.') || d.contains(':'))
+        _state.update { it.copy(routeTesting = true, routeTestError = null, routeTestResult = null) }
+        viewModelScope.launch {
+            repo.testRoute(
+                domain = if (isIp) "" else d,
+                ip = if (isIp) d else "",
+                port = port.trim(),
+                network = network,
+            )
+                .onSuccess { r -> _state.update { it.copy(routeTesting = false, routeTestResult = r) } }
+                .onFailure { e -> _state.update { it.copy(routeTesting = false, routeTestError = e.message ?: "test failed") } }
+        }
+    }
+
+    fun clearRouteTest() = _state.update { it.copy(routeTestResult = null, routeTestError = null) }
 
     /** Show a one-off message in the snackbar (e.g. import result). */
     fun info(msg: String) = _state.update { it.copy(savedMessage = msg) }
