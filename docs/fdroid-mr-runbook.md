@@ -4,6 +4,31 @@ Operational notes for shepherding **3X-UI Manager** (`net.yukh.xui`) into the
 F-Droid catalog. Self-contained so it can be picked up from any machine (this
 file lives in the repo — clone it anywhere). No secrets are stored here.
 
+## 0.9.5 publish state (IN PROGRESS — 2026-07-13, resume from here)
+
+Publishing **0.9.5 (versionCode 90500)** to F-Droid — the first 0.9.x release there
+(0.8.10 and 0.9.0–0.9.4 stayed GitLab-only; F-Droid last saw 0.8.9). 0.9.5 is the
+user-approved **stable/latest** build. Sequence and what's left:
+
+1. ✅ 0.9.5 tagged on GitLab, `build:release` green, GitLab Release created, phone-tested OK.
+2. ⏳ **Build `fdroid.apk`** locally: `./gradlew :app:assembleFdroidRelease` (release keystore at
+   `~/.config/3x-ui-android-keystore/release.p12` + `release.properties`) → `app/build/outputs/apk/fdroid/release/`.
+3. ⬜ **Verify signing cert** SHA-256 == `668cdb5cd9deb1798e1b5a0ac126dba3b1b36b0da2062c64309aeb53cf8f964a`
+   (`apksigner verify --print-certs <apk>`) — must match `AllowedAPKSigningKeys` or F-Droid rejects it.
+4. ⬜ **Push to GitHub** (point of no return — F-Droid then sees the tag). Trigger the manual
+   `publish:github` job in the v0.9.5 pipeline (`POST /projects/19/jobs/<id>/play`): it creates the
+   GitHub Release `v0.9.5` + tag + uploads the standard APK.
+5. ⬜ **Attach `fdroid.apk`** (that exact asset name) to the GitHub Release `v0.9.5` — this is the
+   `Binaries:` URL `…/releases/download/v0.9.5/fdroid.apk` F-Droid byte-compares against.
+6. ⬜ **F-Droid auto-picks it up** (`UpdateCheckMode: Tags` + `AutoUpdateMode: Version`) on its next
+   `checkupdates` cycle (up to ~a day), builds from source, byte-matches `fdroid.apk`, ships our
+   dev-signed APK. No MR needed. After it lands, bump "Current release" below.
+
+**Needs on the resume machine:** clone `~/git/3X-UI-Manager` (GitLab `yukh/3X-UI-Manager` id 19), the
+release keystore dir above, `~/.gl-token` + `~/.gh-token`, and the GitLab SSH key. The gate stays:
+GitLab push-mirror (id 5) disabled + `publish:github` `when: manual` — nothing reaches GitHub/F-Droid
+except the deliberate steps 4–5.
+
 ## Status
 
 - **PUBLISHED: <https://f-droid.org/packages/net.yukh.xui>** — live since
