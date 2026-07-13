@@ -76,6 +76,10 @@ base {
 android {
     namespace = "net.yukh.xui"
     compileSdk = 35
+    // Pin build-tools to match compileSdk (and what CI installs). Without this
+    // AGP falls back to its bundled default (34.0.0), which the runner may not
+    // have, failing the release build with "Failed to install build-tools;34".
+    buildToolsVersion = "35.0.0"
 
     // Don't embed the Play-oriented dependency-metadata block in the APK's
     // signing block: F-Droid's scanner rejects it, and it isn't needed here.
