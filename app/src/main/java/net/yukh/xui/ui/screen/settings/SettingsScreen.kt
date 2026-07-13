@@ -137,19 +137,10 @@ fun SettingsScreen(
             // ---- Speed units ----
             Text(tr("Speed units"), style = MaterialTheme.typography.titleMedium)
             Card(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(tr("Show speeds in bits/s"), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            if (speedInBits) "Kbit/s · Mbit/s" else "KB/s · MB/s",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(checked = speedInBits, onCheckedChange = { vm.setSpeedInBits(it) })
+                Column {
+                    LanguageRow(tr("Bytes (KB/s)"), selected = !speedInBits) { vm.setSpeedInBits(false) }
+                    HorizontalDivider()
+                    LanguageRow(tr("Bits (Kbit/s)"), selected = speedInBits) { vm.setSpeedInBits(true) }
                 }
             }
 
@@ -313,15 +304,6 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text("© 2026 Yuriy Khachaturian (yukh.net)", style = MaterialTheme.typography.bodyMedium)
-                    val uriHandler = LocalUriHandler.current
-                    OutlinedButton(
-                        onClick = { uriHandler.openUri("https://github.com/yukh975/3X-UI-Manager") },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(tr("Star on GitHub"))
-                    }
                     // The GitLab (standard) build self-updates; the F-Droid build can't
                     // (F-Droid owns updates), so it shows where updates come from instead.
                     if (BuildConfig.IN_APP_UPDATER) {
@@ -334,6 +316,15 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                    val uriHandler = LocalUriHandler.current
+                    OutlinedButton(
+                        onClick = { uriHandler.openUri("https://github.com/yukh975/3X-UI-Manager") },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(tr("Star on GitHub"))
                     }
                 }
             }
