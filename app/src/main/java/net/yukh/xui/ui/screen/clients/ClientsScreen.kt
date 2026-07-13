@@ -167,7 +167,7 @@ fun ClientsScreen(
                         OutlinedTextField(
                             value = state.searchQuery,
                             onValueChange = vm::setSearchQuery,
-                            label = { Text(tr("Search by email"), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            label = { Text(tr("Search email, ID, UUID…"), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             singleLine = true,
                             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                             trailingIcon = {

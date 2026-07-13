@@ -58,18 +58,28 @@ data class ClientsUiState(
             .distinct()
             .sortedBy { it.lowercase() }
 
-    /** Items narrowed by the search query (case-insensitive email substring) and
-     *  the active status/group [filters]. */
+    /** Items narrowed by the search query (case-insensitive substring over email,
+     *  comment, sub ID, UUID, password, auth and Telegram ID) and the active
+     *  status/group [filters]. */
     val visibleItems: List<Client>
         get() {
             val q = searchQuery.trim()
             val now = System.currentTimeMillis()
             return items.filter { c ->
-                (q.isEmpty() || c.email.contains(q, ignoreCase = true)) &&
+                (q.isEmpty() || c.matchesSearch(q)) &&
                     c.matches(filters, now, online)
             }
         }
 }
+
+private fun Client.matchesSearch(q: String): Boolean =
+    email.contains(q, ignoreCase = true) ||
+        comment.contains(q, ignoreCase = true) ||
+        subId.contains(q, ignoreCase = true) ||
+        uuid.contains(q, ignoreCase = true) ||
+        password.contains(q, ignoreCase = true) ||
+        auth.contains(q, ignoreCase = true) ||
+        (tgId != 0L && tgId.toString().contains(q))
 
 /** Form state for creating or editing a client. Numeric inputs are kept as
  *  strings so partial/empty typing doesn't fight the user. */

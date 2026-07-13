@@ -128,7 +128,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Restarting…" to "Перезапуск…",
 
     // Clients
-    "Search by email" to "Поиск по email",
+    "Search email, ID, UUID…" to "Поиск: email, tg ID, UUID…",
     "No clients yet." to "Пока нет клиентов.",
     "Subscription" to "Подписка",
     "Auto-updating link for all configs" to "Авто-обновляемая ссылка на все конфиги",
