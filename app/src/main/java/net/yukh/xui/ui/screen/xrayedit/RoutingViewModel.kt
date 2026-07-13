@@ -31,8 +31,8 @@ data class RoutingUiState(
     val routeTesting: Boolean = false,
     val routeTestResult: RouteTestResult? = null,
     val routeTestError: String? = null,
-    // All inbound tags (local + node) for the route tester's inbound picker.
-    val inboundTags: List<String> = emptyList(),
+    // Inbounds for the route tester's picker: (tag sent to the API, remark shown).
+    val inboundOptions: List<Pair<String, String>> = emptyList(),
 )
 
 @HiltViewModel
@@ -49,11 +49,10 @@ class RoutingViewModel @Inject constructor(
             val inbounds = repo.listInbounds()
             repo.loadXrayConfig()
                 .onSuccess { (cfg, url) ->
-                    val tags = inbounds.getOrNull().orEmpty()
-                        .map { it.tag }
-                        .filter { it.isNotBlank() }
-                        .distinct()
-                    _state.update { it.copy(loading = false, available = true, config = cfg, testUrl = url, inboundTags = tags, dirty = false, error = null) }
+                    val opts = inbounds.getOrNull().orEmpty()
+                        .filter { it.tag.isNotBlank() }
+                        .map { it.tag to it.remark }
+                    _state.update { it.copy(loading = false, available = true, config = cfg, testUrl = url, inboundOptions = opts, dirty = false, error = null) }
                 }
                 .onFailure { e -> _state.update { it.copy(loading = false, available = false, error = e.message ?: "Xray config unavailable") } }
         }

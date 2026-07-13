@@ -168,7 +168,7 @@ fun RoutingScreen(onClose: () -> Unit, vm: RoutingViewModel = hiltViewModel()) {
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
                 !state.available -> SessionGate()
-                else -> RoutingBody(cfg, state.inboundTags, vm)
+                else -> RoutingBody(cfg, state.inboundOptions, vm)
             }
         }
     }
@@ -177,15 +177,18 @@ fun RoutingScreen(onClose: () -> Unit, vm: RoutingViewModel = hiltViewModel()) {
 @Composable
 private fun RouteTestDialog(
     vm: RoutingViewModel,
-    inboundTags: List<String>,
+    inboundOptions: List<Pair<String, String>>,
     networkOptions: List<String>,
     onClose: () -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     var dest by remember { mutableStateOf("") }
-    var inboundTag by remember(inboundTags) { mutableStateOf(inboundTags.firstOrNull() ?: "") }
+    var inboundTag by remember(inboundOptions) { mutableStateOf(inboundOptions.firstOrNull()?.first ?: "") }
     var network by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("") }
+    // Show the human remark (falling back to the tag) but send the tag.
+    fun labelFor(tag: String) = inboundOptions.firstOrNull { it.first == tag }?.second?.ifBlank { tag } ?: tag
+    val inboundLabels = inboundOptions.map { it.second.ifBlank { it.first } }
     AlertDialog(
         onDismissRequest = { vm.clearRouteTest(); onClose() },
         title = { Text(tr("Test route")) },
@@ -205,8 +208,10 @@ private fun RouteTestDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (inboundTags.isNotEmpty()) {
-                    LabeledDropdown(tr("Inbound"), inboundTag, inboundTags) { inboundTag = it }
+                if (inboundOptions.isNotEmpty()) {
+                    LabeledDropdown(tr("Inbound"), labelFor(inboundTag), inboundLabels) { picked ->
+                        inboundTag = inboundOptions.firstOrNull { it.second.ifBlank { it.first } == picked }?.first ?: picked
+                    }
                 }
                 LabeledDropdown(tr("Network"), network, networkOptions) { network = it }
                 when {
@@ -251,7 +256,7 @@ private fun RouteTestDialog(
 }
 
 @Composable
-private fun RoutingBody(cfg: JsonObject, inboundTags: List<String>, vm: RoutingViewModel) {
+private fun RoutingBody(cfg: JsonObject, inboundOptions: List<Pair<String, String>>, vm: RoutingViewModel) {
     val routing = cfg.child("routing")
     val rules = routing.array("rules")
     val balancers = routing.array("balancers")
@@ -276,7 +281,7 @@ private fun RoutingBody(cfg: JsonObject, inboundTags: List<String>, vm: RoutingV
             Text(tr("Test route"))
         }
         if (showRouteTest) {
-            RouteTestDialog(vm = vm, inboundTags = inboundTags, networkOptions = RULE_NETWORK, onClose = { showRouteTest = false })
+            RouteTestDialog(vm = vm, inboundOptions = inboundOptions, networkOptions = RULE_NETWORK, onClose = { showRouteTest = false })
         }
 
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
