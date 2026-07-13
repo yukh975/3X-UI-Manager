@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.9.5] — 2026-07-13
+
+### Fixed
+- **Clients screen showed "Unexpected response" and the dashboard client total showed "--".** A WireGuard client field (`allowedIPs`) was parsed as the wrong type, which broke parsing of the whole client list (the online count kept working — it comes from a separate endpoint). Regression since 0.9.2.
+
 ## [0.9.4] — 2026-07-13
 
 ### Changed
