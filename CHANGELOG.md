@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.9.3] — 2026-07-13
+
+### Added
+- **Speed units** — a toggle in Settings to show live speeds in bits/s (Kbit/s, Mbit/s) instead of bytes/s (KB/s). Applies to inbound and client speeds.
+
+### Fixed
+- **Route tester listed raw Xray tags** (e.g. `inbound-127.0.0.2:10000`). It now shows the inbound's remark (falling back to the tag when empty) while still probing by tag.
+
 ## [0.9.2] — 2026-07-13
 
 More panel 3.5.0 parity.
