@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.9.4] — 2026-07-13
+
+### Changed
+- **Speed units** are now picked from two explicit options — Bytes (KB/s) / Bits (Kbit/s) — instead of an on/off toggle.
+- **About:** "Check for updates" now sits above "Star on GitHub".
+
 ## [0.9.3] — 2026-07-13
 
 ### Added
