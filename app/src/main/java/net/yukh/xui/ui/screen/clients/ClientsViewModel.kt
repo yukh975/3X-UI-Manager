@@ -328,7 +328,7 @@ class ClientsViewModel @Inject constructor(
                     comment = client.comment,
                     secret = client.secret,
                     adTag = client.adTag,
-                    allowedIps = client.allowedIPs.joinToString(", "),
+                    allowedIps = client.allowedIPs,
                     selectedInboundIds = client.inboundIds.toSet(),
                     availableGroups = existingGroups(),
                     inboundsLoading = true,

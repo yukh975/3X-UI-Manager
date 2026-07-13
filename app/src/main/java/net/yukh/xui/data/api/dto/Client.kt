@@ -24,10 +24,13 @@ data class Client(
     val secret: String = "",
     val adTag: String = "",
     // WireGuard peer fields — kept so editing a WG client doesn't drop them.
+    // NOTE: /clients/list serializes allowedIPs as a comma-separated STRING
+    // (the wg_allowed_ips column), unlike the create/update payload which is an
+    // array — so it's a String here and split into a list in toModel().
     val privateKey: String = "",
     val publicKey: String = "",
     val preSharedKey: String = "",
-    val allowedIPs: List<String> = emptyList(),
+    val allowedIPs: String = "",
     val keepAlive: Int = 0,
     val enable: Boolean = true,
     val tgId: Long = 0,
@@ -64,7 +67,7 @@ data class Client(
         privateKey = privateKey,
         publicKey = publicKey,
         preSharedKey = preSharedKey,
-        allowedIPs = allowedIPs,
+        allowedIPs = allowedIPs.split(",").map { it.trim() }.filter { it.isNotEmpty() },
         keepAlive = keepAlive,
         security = security,
         flow = flow,
