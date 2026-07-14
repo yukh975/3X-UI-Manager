@@ -102,8 +102,9 @@ fun InboundsListScreen(
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("↑ ${ib.up.formatBytes()}  ↓ ${ib.down.formatBytes()}", style = MaterialTheme.typography.labelMedium)
                     speeds[ib.id]?.let { (up, down) ->
+                        val bits = LocalSpeedInBits.current
                         if (up > 0 || down > 0) Text(
-                            "↑ ${up.formatBytes()}/s  ↓ ${down.formatBytes()}/s",
+                            "↑ ${formatSpeed(up, bits)}  ↓ ${formatSpeed(down, bits)}",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )

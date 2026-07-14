@@ -147,6 +147,9 @@ val ruStrings: Map<String, String> = mapOf(
     // Self-update (GitLab releases)
     "Check for updates" to "Проверить обновления",
     "Star on GitHub" to "Поставить звезду на GitHub",
+    "Speed units" to "Единицы скорости",
+    "Bytes (KB/s)" to "Байты (КБ/с)",
+    "Bits (Kbit/s)" to "Биты (Кбит/с)",
     "Update available" to "Доступно обновление",
     "Open release page" to "Открыть страницу релиза",
     "Open the release page to download and reinstall the app." to

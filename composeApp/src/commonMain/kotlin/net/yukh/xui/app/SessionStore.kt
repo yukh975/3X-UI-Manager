@@ -33,6 +33,7 @@ expect class SessionStore() {
 private const val KEY_PROFILES = "xui.profiles"
 private const val KEY_ACTIVE = "xui.activeId"
 private const val KEY_LANG = "xui.lang"
+private const val KEY_SPEED_BITS = "xui.speedInBits"
 
 /** All saved profiles; migrates a pre-multi-profile single session once. */
 fun SessionStore.loadProfiles(): List<SavedSession> {
@@ -80,6 +81,10 @@ fun SessionStore.clearAll() { remove(KEY_PROFILES); remove(KEY_ACTIVE) }
 
 fun SessionStore.loadLang(): String? = getString(KEY_LANG)
 fun SessionStore.saveLang(lang: String) = putString(KEY_LANG, lang)
+
+/** Live-speed unit choice: true = bits/s, false (default) = bytes/s. */
+fun SessionStore.loadSpeedInBits(): Boolean = getString(KEY_SPEED_BITS) == "true"
+fun SessionStore.saveSpeedInBits(value: Boolean) = putString(KEY_SPEED_BITS, value.toString())
 
 // ---- encoding (composeApp has no kotlinx-serialization dependency) ----------
 // Fields joined by U+0001, profiles by U+0002 — control chars that never appear

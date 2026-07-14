@@ -41,6 +41,8 @@ fun MoreScreen(
     host: String,
     lang: String,
     onLang: (String) -> Unit,
+    speedInBits: Boolean,
+    onSpeedUnit: (Boolean) -> Unit,
     lock: AppLock,
     profiles: List<SavedSession>,
     activeId: String?,
@@ -106,6 +108,9 @@ fun MoreScreen(
                 Text(tr("Language"), style = MaterialTheme.typography.labelMedium)
                 LanguageRow(tr("English"), selected = lang == LANG_EN) { onLang(LANG_EN) }
                 LanguageRow(tr("Русский"), selected = lang == LANG_RU) { onLang(LANG_RU) }
+                Text(tr("Speed units"), style = MaterialTheme.typography.labelMedium)
+                LanguageRow(tr("Bytes (KB/s)"), selected = !speedInBits) { onSpeedUnit(false) }
+                LanguageRow(tr("Bits (Kbit/s)"), selected = speedInBits) { onSpeedUnit(true) }
             }
         }
 

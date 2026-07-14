@@ -84,6 +84,7 @@ fun App() {
             var error by remember { mutableStateOf<String?>(null) }
             var tab by remember { mutableStateOf(0) }
             var lang by remember { mutableStateOf(LANG_EN) }
+            var speedInBits by remember { mutableStateOf(false) }
             var status by remember { mutableStateOf<ServerStatus?>(null) }
             var inbounds by remember { mutableStateOf<List<InboundSlim>>(emptyList()) }
             var inboundSpeeds by remember { mutableStateOf<Map<Int, Pair<Long, Long>>>(emptyMap()) }
@@ -420,6 +421,7 @@ fun App() {
             // Auto-restore a saved session + language on first launch.
             LaunchedEffect(Unit) {
                 lang = store.loadLang() ?: LANG_EN
+                speedInBits = store.loadSpeedInBits()
                 if (!connected) {
                     profiles = store.loadProfiles()
                     store.activeProfile()?.let { saved ->
@@ -505,7 +507,7 @@ fun App() {
                 }
             }
 
-            CompositionLocalProvider(LocalAppLanguage provides lang) {
+            CompositionLocalProvider(LocalAppLanguage provides lang, LocalSpeedInBits provides speedInBits) {
                 // The lock only gates the signed-in UI. When not connected the
                 // Connect screen (no panel data) is shown without a passcode.
                 if (locked && connected) {
@@ -932,6 +934,8 @@ fun App() {
                                     host = baseUrl,
                                     lang = lang,
                                     onLang = { lang = it; store.saveLang(it) },
+                                    speedInBits = speedInBits,
+                                    onSpeedUnit = { speedInBits = it; store.saveSpeedInBits(it) },
                                     lock = lock,
                                     profiles = profiles,
                                     activeId = activeId,
