@@ -16,6 +16,7 @@ This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built
 
 - **[F-Droid](https://f-droid.org/packages/net.yukh.xui)** — recommended; reproducible build, auto-updates through the F-Droid client.
 - **[GitHub Releases](https://github.com/yukh975/3X-UI-Manager/releases/latest)** — signed APK (`standard` flavor, with in-app updates) + the reproducible `fdroid.apk`.
+- **[Obtainium](https://github.com/ImranR98/Obtainium)** — install and auto-update straight from GitHub Releases: add the app by its repo URL `https://github.com/yukh975/3X-UI-Manager` (filter APKs by `3x-ui-manager` to pick the `standard` flavor).
 - **iOS** — unsigned `.ipa` for sideloading (AltStore / Sideloadly), attached to each release.
 
 Requires a panel running **3x-ui v3.3.0 or newer** (API-token auth).

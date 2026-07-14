@@ -16,6 +16,7 @@
 
 - **[F-Droid](https://f-droid.org/packages/net.yukh.xui)** — рекомендуется; воспроизводимая сборка, обновления через клиент F-Droid.
 - **[GitHub Releases](https://github.com/yukh975/3X-UI-Manager/releases/latest)** — подписанный APK (флейвор `standard`, со встроенным обновлением) + воспроизводимый `fdroid.apk`.
+- **[Obtainium](https://github.com/ImranR98/Obtainium)** — установка и автообновление напрямую из GitHub Releases: добавьте приложение по URL репозитория `https://github.com/yukh975/3X-UI-Manager` (фильтр APK по `3x-ui-manager`, чтобы выбрать флейвор `standard`).
 - **iOS** — неподписанный `.ipa` для сайдлоада (AltStore / Sideloadly), приложен к каждому релизу.
 
 Нужна панель **3x-ui v3.3.0 или новее** (авторизация по API-токену).
