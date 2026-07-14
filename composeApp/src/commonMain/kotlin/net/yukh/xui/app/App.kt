@@ -768,6 +768,7 @@ fun App() {
                         onCancel = { showDnsX = false; editorError = null },
                     )
                 } else if (showRoutingX) {
+                    val testApi = api
                     RoutingXrayScreen(
                         configJson = xrayConfigJson,
                         loading = xrayLoading,
@@ -776,6 +777,14 @@ fun App() {
                         onConfigChange = { xrayConfigJson = it },
                         onSave = { saveXrayThen { showRoutingX = false } },
                         onCancel = { showRoutingX = false; editorError = null },
+                        inbounds = inbounds,
+                        onRouteTest = if (testApi != null) {
+                            { domain, ip, port, network, inboundTag ->
+                                testApi.routeTest(domain, ip, port, network, inboundTag).obj
+                            }
+                        } else {
+                            null
+                        },
                     )
                 } else if (showOutboundsX) {
                     val testApi = api

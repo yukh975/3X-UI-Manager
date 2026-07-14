@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -21,13 +22,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import net.yukh.xui.shared.dto.InboundSlim
+import net.yukh.xui.shared.dto.RouteTestResult
 import net.yukh.xui.shared.json.jsonGetObjectList
 import net.yukh.xui.shared.json.jsonGetString
 import net.yukh.xui.shared.json.jsonGetStrings
@@ -61,9 +66,12 @@ fun RoutingXrayScreen(
     onConfigChange: (String) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
+    inbounds: List<InboundSlim> = emptyList(),
+    onRouteTest: (suspend (String, String, String, String, String) -> RouteTestResult?)? = null,
 ) {
     var editRule by remember { mutableStateOf<Int?>(null) }
     var editBal by remember { mutableStateOf<Int?>(null) }
+    var showRouteTest by remember { mutableStateOf(false) }
 
     fun rules() = jsonGetObjectList(configJson, listOf("routing", "rules"))
     fun setRules(l: List<String>) = onConfigChange(jsonSetObjectList(configJson, listOf("routing", "rules"), l))
@@ -84,6 +92,12 @@ fun RoutingXrayScreen(
             XrayLabel(tr("Routing strategy"))
             XrayChips(ROUTING_STRATEGY, jsonGetString(configJson, listOf("routing", "domainStrategy")).ifBlank { "AsIs" }) {
                 onConfigChange(jsonPutString(configJson, listOf("routing", "domainStrategy"), it))
+            }
+
+            if (onRouteTest != null) {
+                OutlinedButton(onClick = { showRouteTest = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text(tr("Test route"))
+                }
             }
 
             // Compact icon buttons (⬆ import / ⬇ export) with the heading taking the
@@ -151,6 +165,92 @@ fun RoutingXrayScreen(
             onDismiss = { editBal = null },
         )
     }
+    if (showRouteTest && onRouteTest != null) {
+        RouteTestDialog(inbounds = inbounds, onRouteTest = onRouteTest, onDismiss = { showRouteTest = false })
+    }
+}
+
+@Composable
+private fun RouteTestDialog(
+    inbounds: List<InboundSlim>,
+    onRouteTest: suspend (String, String, String, String, String) -> RouteTestResult?,
+    onDismiss: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    // Show the human remark (falling back to the tag) but send the tag.
+    val inboundOptions = remember(inbounds) {
+        inbounds.filter { it.tag.isNotBlank() }.map { it.tag to it.remark.ifBlank { it.tag } }
+    }
+    var dest by remember { mutableStateOf("") }
+    var port by remember { mutableStateOf("") }
+    var network by remember { mutableStateOf("") }
+    var inboundTag by remember(inboundOptions) { mutableStateOf(inboundOptions.firstOrNull()?.first ?: "") }
+    var running by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<RouteTestResult?>(null) }
+    var failed by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(tr("Test route")) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                XrayField(dest, { dest = it }, tr("Domain or IP"))
+                XrayField(port, { port = it.filter(Char::isDigit) }, tr("Port (optional)"))
+                if (inboundOptions.isNotEmpty()) {
+                    XrayLabel(tr("Inbound"))
+                    val labels = inboundOptions.map { it.second }
+                    val selectedLabel = inboundOptions.firstOrNull { it.first == inboundTag }?.second ?: labels.firstOrNull().orEmpty()
+                    XrayChips(labels, selectedLabel) { picked ->
+                        inboundTag = inboundOptions.firstOrNull { it.second == picked }?.first ?: inboundTag
+                    }
+                }
+                XrayLabel(tr("Network"))
+                XrayChips(NETWORKS, network) { network = it }
+                when {
+                    running -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    failed -> Text(tr("Test request failed."), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    result != null -> {
+                        val r = result!!
+                        val target = if (r.matched && r.outboundTag.isNotBlank()) r.outboundTag else tr("default outbound")
+                        Column {
+                            Text("→ $target", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                            if (r.groupTags.isNotEmpty()) {
+                                Text(
+                                    "${tr("via")}: ${r.groupTags.joinToString(" → ")}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (!r.matched) {
+                                Text(
+                                    tr("No rule matched — uses the default outbound."),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = dest.isNotBlank() && !running,
+                onClick = {
+                    val d = dest.trim()
+                    val isIp = d.none { it.isLetter() } && (d.contains('.') || d.contains(':'))
+                    running = true; failed = false; result = null
+                    scope.launch {
+                        val r = runCatching {
+                            onRouteTest(if (isIp) "" else d, if (isIp) d else "", port.trim(), network, inboundTag)
+                        }.getOrNull()
+                        result = r; failed = r == null; running = false
+                    }
+                },
+            ) { Text(tr("Test")) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Close")) } },
+    )
 }
 
 /** A rule is enabled unless it carries `enabled:false` (panel v3.4.x strips
