@@ -135,6 +135,7 @@ fun ClientsListScreen(
     onBulkDisable: (List<String>) -> Unit = {},
     onBulkAdjust: (List<String>, Int, Long, String) -> Unit = { _, _, _, _ -> },
     onBulkDelete: (List<String>) -> Unit = {},
+    speeds: Map<String, Pair<Long, Long>> = emptyMap(),
 ) {
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(ClientFilter.ALL) }
@@ -256,6 +257,14 @@ fun ClientsListScreen(
                                 if (!selectionMode) Switch(checked = c.enable, onCheckedChange = { onToggle(c, it) })
                             }
                             Text("↑ ${c.up.formatBytes()}  ↓ ${c.down.formatBytes()}", style = MaterialTheme.typography.labelMedium)
+                            speeds[c.email]?.let { (up, down) ->
+                                val bits = LocalSpeedInBits.current
+                                if (up > 0 || down > 0) Text(
+                                    "↑ ${formatSpeed(up, bits)}  ↓ ${formatSpeed(down, bits)}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                     }
                 }

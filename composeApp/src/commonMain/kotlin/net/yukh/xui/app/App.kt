@@ -56,6 +56,7 @@ data class OnlineGroup(val server: String, val isMain: Boolean, val emails: List
  *  can be derived from the delta between polls (panel v3.4.0; mirrors Android). */
 private class SpeedTracker {
     var prevTotals: Map<Int, Pair<Long, Long>> = emptyMap()
+    var prevClientTotals: Map<String, Pair<Long, Long>> = emptyMap()
     var prevMark: TimeSource.Monotonic.ValueTimeMark? = null
 }
 
@@ -88,6 +89,7 @@ fun App() {
             var status by remember { mutableStateOf<ServerStatus?>(null) }
             var inbounds by remember { mutableStateOf<List<InboundSlim>>(emptyList()) }
             var inboundSpeeds by remember { mutableStateOf<Map<Int, Pair<Long, Long>>>(emptyMap()) }
+            var clientSpeeds by remember { mutableStateOf<Map<String, Pair<Long, Long>>>(emptyMap()) }
             val speedTracker = remember { SpeedTracker() }
             var vlessEncAuths by remember { mutableStateOf<List<VlessEncAuth>?>(null) }
             var vlessEncLoading by remember { mutableStateOf(false) }
@@ -260,14 +262,16 @@ fun App() {
                 val a = api ?: return
                 try {
                     a.serverStatus().let { if (it.success) status = it.obj }
+                    // Live up/down speed (bytes/s) from the delta between polls —
+                    // shared mark/dt so inbound and client speeds line up.
+                    val now = TimeSource.Monotonic.markNow()
+                    val prevMark = speedTracker.prevMark
+                    val dt = prevMark?.let { m -> (now - m).inWholeMilliseconds / 1000.0 } ?: 0.0
+                    val liveDelta = prevMark != null && dt > 0.5
                     a.inbounds().let {
                         if (it.success) {
                             val fresh = it.obj ?: emptyList()
-                            // Live up/down speed (bytes/s) from the delta between polls.
-                            val now = TimeSource.Monotonic.markNow()
-                            val prevMark = speedTracker.prevMark
-                            val dt = prevMark?.let { m -> (now - m).inWholeMilliseconds / 1000.0 } ?: 0.0
-                            if (prevMark != null && dt > 0.5) {
+                            if (liveDelta) {
                                 inboundSpeeds = fresh.mapNotNull { ib ->
                                     val p = speedTracker.prevTotals[ib.id] ?: return@mapNotNull null
                                     val up = ((ib.up - p.first).coerceAtLeast(0) / dt).toLong()
@@ -276,11 +280,25 @@ fun App() {
                                 }.toMap()
                             }
                             speedTracker.prevTotals = fresh.associate { ib -> ib.id to (ib.up to ib.down) }
-                            speedTracker.prevMark = now
                             inbounds = fresh
                         }
                     }
-                    a.clients().let { if (it.success) clients = it.obj ?: emptyList() }
+                    a.clients().let {
+                        if (it.success) {
+                            val fresh = it.obj ?: emptyList()
+                            if (liveDelta) {
+                                clientSpeeds = fresh.mapNotNull { c ->
+                                    val p = speedTracker.prevClientTotals[c.email] ?: return@mapNotNull null
+                                    val up = ((c.up - p.first).coerceAtLeast(0) / dt).toLong()
+                                    val down = ((c.down - p.second).coerceAtLeast(0) / dt).toLong()
+                                    c.email to (up to down)
+                                }.toMap()
+                            }
+                            speedTracker.prevClientTotals = fresh.associate { c -> c.email to (c.up to c.down) }
+                            clients = fresh
+                        }
+                    }
+                    speedTracker.prevMark = now
                     a.nodes().let { if (it.success) nodes = it.obj ?: emptyList() }
                     a.onlines().let { if (it.success) onlines = it.obj ?: emptyList() }
                     error = null
@@ -444,8 +462,10 @@ fun App() {
                 inbounds = emptyList(); clients = emptyList(); nodes = emptyList()
                 onlines = emptyList(); onlineGroups = emptyList()
                 inboundSpeeds = emptyMap()
+                clientSpeeds = emptyMap()
                 speedTracker.prevMark = null
                 speedTracker.prevTotals = emptyMap()
+                speedTracker.prevClientTotals = emptyMap()
                 error = null
             }
 
@@ -874,6 +894,7 @@ fun App() {
                                 )
                                 2 -> ClientsListScreen(
                                     clients,
+                                    speeds = clientSpeeds,
                                     onlineEmails = onlines.toSet(),
                                     onAdd = { editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); editingClientNew = true; editingClient = Client() },
                                     onEdit = { c -> editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); editingClientNew = false; editingClient = c },
