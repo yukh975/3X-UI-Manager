@@ -23,6 +23,10 @@ import io.ktor.http.parameters
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.ApiResponse
 import net.yukh.xui.shared.dto.ApiToken
@@ -357,6 +361,25 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
 
     suspend fun restartPanel(): ApiAck =
         client.post("$base/panel/api/setting/restartPanel") { auth() }.body()
+
+    // ---- Subscription announcement (0.9.2 parity) --------------------------
+    // setting/update replaces ALL settings, so read the full object, patch only
+    // subAnnounce, and send it back (mirrors Android's rawSettings approach).
+    private suspend fun getRawSettings(): JsonObject? =
+        client.post("$base/panel/api/setting/all") { auth() }.body<ApiResponse<JsonObject>>().obj
+
+    suspend fun getSubAnnounce(): String =
+        getRawSettings()?.get("subAnnounce")?.jsonPrimitive?.contentOrNull ?: ""
+
+    suspend fun updateSubAnnounce(value: String): ApiAck {
+        val all = getRawSettings() ?: JsonObject(emptyMap())
+        val patched = JsonObject(all.toMutableMap().apply { put("subAnnounce", JsonPrimitive(value)) })
+        return client.post("$base/panel/api/setting/update") {
+            auth()
+            contentType(ContentType.Application.Json)
+            setBody(patched)
+        }.body()
+    }
 
     suspend fun listApiTokens(): ApiResponse<List<ApiToken>> =
         client.get("$base/panel/api/setting/apiTokens") { auth() }.body()

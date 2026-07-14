@@ -297,6 +297,13 @@ val ruStrings: Map<String, String> = mapOf(
     "Delete" to "Удалить",
     "Create" to "Создать",
     "Panel" to "Панель",
+    "Subscription" to "Подписка",
+    "Announcement shown on the subscription page. HTML is allowed; leave blank to hide it." to
+        "Объявление вверху страницы подписки. Разрешён HTML; оставьте пустым, чтобы скрыть.",
+    "Announcement" to "Объявление",
+    "Save announcement" to "Сохранить объявление",
+    "Announcement saved" to "Объявление сохранено",
+    "Couldn't save announcement" to "Не удалось сохранить объявление",
     "Restart panel" to "Перезапустить панель",
     "Restart panel?" to "Перезапустить панель?",
     "The panel restarts and the app reconnects in a few seconds." to

@@ -17,6 +17,7 @@ data class PanelSubSettings(
     val subDomain: String = "",
     val subCertFile: String = "",
     val subKeyFile: String = "",
+    val subAnnounce: String = "",
 ) {
     /**
      * Build the subscription URL for a client, replicating the panel's

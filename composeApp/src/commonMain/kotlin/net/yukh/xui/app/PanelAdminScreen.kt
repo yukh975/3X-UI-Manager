@@ -64,6 +64,9 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
     var showCreds by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<ApiToken?>(null) }
 
+    var subAnnounce by remember { mutableStateOf("") }
+    var subLoaded by remember { mutableStateOf(false) }
+
     suspend fun reload() {
         loading = true
         runCatching { api.listApiTokens() }
@@ -71,6 +74,10 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
         loading = false
     }
     LaunchedEffect(Unit) { reload() }
+    LaunchedEffect(Unit) {
+        runCatching { api.getSubAnnounce() }.onSuccess { subAnnounce = it }
+        subLoaded = true
+    }
 
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -132,6 +139,35 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
             }
             OutlinedButton(onClick = { showCreate = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                 Text(tr("Create token"))
+            }
+
+            // ---- Subscription ----
+            Text(tr("Subscription"), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr("Announcement shown on the subscription page. HTML is allowed; leave blank to hide it."),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = subAnnounce,
+                        onValueChange = { subAnnounce = it },
+                        label = { Text(tr("Announcement")) },
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Button(
+                        onClick = {
+                            busy = true
+                            scope.launch {
+                                val r = runCatching { api.updateSubAnnounce(subAnnounce) }.getOrNull()
+                                message = if (r?.success == true) tr(lang, "Announcement saved")
+                                else tr(lang, "Couldn't save announcement")
+                                busy = false
+                            }
+                        },
+                        enabled = !busy && subLoaded,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(tr("Save announcement")) }
+                }
             }
 
             // ---- Panel ----
