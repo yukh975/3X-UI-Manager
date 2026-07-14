@@ -164,6 +164,16 @@ data class Client(
     val security: String = "",
     val password: String = "",
     val auth: String = "",
+    val secret: String = "",
+    val adTag: String = "",
+    val privateKey: String = "",
+    val publicKey: String = "",
+    val preSharedKey: String = "",
+    // /clients/list serializes allowedIPs as a comma-separated STRING (the
+    // wg_allowed_ips column), unlike the create/update body which is an array.
+    // Declaring it List<String> here breaks parsing of the whole client list.
+    val allowedIPs: String = "",
+    val keepAlive: Int = 0,
     val enable: Boolean = true,
     val tgId: Long = 0,
     val limitIp: Int = 0,
@@ -184,6 +194,10 @@ data class Client(
 
     fun toModel(): ClientModel = ClientModel(
         id = uuid, email = email, password = password, auth = auth, security = security,
+        secret = secret, adTag = adTag,
+        privateKey = privateKey, publicKey = publicKey, preSharedKey = preSharedKey,
+        allowedIPs = allowedIPs.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+        keepAlive = keepAlive,
         flow = flow, limitIp = limitIp, totalGB = totalGB, expiryTime = expiryTime,
         enable = enable, tgId = tgId, subId = subId, group = group, comment = comment,
         reset = reset, createdAt = createdAt, updatedAt = updatedAt,
@@ -196,6 +210,13 @@ data class ClientModel(
     val email: String = "",
     val password: String = "",
     val auth: String = "",
+    val secret: String = "",
+    val adTag: String = "",
+    val privateKey: String = "",
+    val publicKey: String = "",
+    val preSharedKey: String = "",
+    val allowedIPs: List<String> = emptyList(),
+    val keepAlive: Int = 0,
     val security: String = "auto",
     val flow: String = "",
     val limitIp: Int = 0,

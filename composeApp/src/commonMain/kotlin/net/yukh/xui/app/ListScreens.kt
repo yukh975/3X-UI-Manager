@@ -149,8 +149,16 @@ fun ClientsListScreen(
 
     val groups = remember(items) { items.mapNotNull { it.group.ifBlank { null } }.distinct().sorted() }
     fun depleted(c: Client) = c.quota > 0 && (c.up + c.down) >= c.quota
+    fun matches(c: Client, q: String): Boolean {
+        if (q.isBlank()) return true
+        val fields = listOf(
+            c.email, c.uuid, c.subId, c.comment, c.password, c.auth,
+            c.tgId.takeIf { it != 0L }?.toString().orEmpty(),
+        )
+        return fields.any { it.contains(q, ignoreCase = true) }
+    }
     val filtered = items.filter { c ->
-        (query.isBlank() || c.email.contains(query, ignoreCase = true)) &&
+        matches(c, query) &&
             (group == null || c.group == group) &&
             when (filter) {
                 ClientFilter.ALL -> true
@@ -197,7 +205,7 @@ fun ClientsListScreen(
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            label = { Text(tr("Search by email"), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            label = { Text(tr("Search clients"), maxLines = 1, overflow = TextOverflow.Ellipsis) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         )

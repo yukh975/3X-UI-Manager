@@ -80,18 +80,37 @@ fun ClientEditorScreen(
     var tgId by remember { mutableStateOf(if (source.tgId != 0L) source.tgId.toString() else "") }
     var group by remember { mutableStateOf(source.group) }
     var comment by remember { mutableStateOf(source.comment) }
+    var secret by remember { mutableStateOf(source.secret) }
+    var adTag by remember { mutableStateOf(source.adTag) }
+    var allowedIps by remember { mutableStateOf(source.allowedIPs) }
+
+    // Show protocol-specific fields when a selected inbound is MTProto / WireGuard.
+    val selectedProtocols = availableInbounds.filter { it.id in selectedInbounds }.map { it.protocol.lowercase() }
+    val isMtproto = "mtproto" in selectedProtocols
+    val isWireguard = "wireguard" in selectedProtocols
 
     val canSave = !saving && email.isNotBlank() && (!isNew || selectedInbounds.isNotEmpty())
-    fun build(): ClientModel = source.toModel().copy(
-        email = email.trim(),
-        enable = enable,
-        totalGB = totalGb.trim().replace(',', '.').toDoubleOrNull()?.let { (it * GBC).toLong() } ?: 0L,
-        limitIp = limitIp.toIntOrNull() ?: 0,
-        reset = reset.toIntOrNull() ?: 0,
-        tgId = tgId.toLongOrNull() ?: 0L,
-        group = group.trim(),
-        comment = comment.trim(),
-    )
+    fun build(): ClientModel {
+        val base = source.toModel().copy(
+            email = email.trim(),
+            enable = enable,
+            totalGB = totalGb.trim().replace(',', '.').toDoubleOrNull()?.let { (it * GBC).toLong() } ?: 0L,
+            limitIp = limitIp.toIntOrNull() ?: 0,
+            reset = reset.toIntOrNull() ?: 0,
+            tgId = tgId.toLongOrNull() ?: 0L,
+            group = group.trim(),
+            comment = comment.trim(),
+        )
+        return base.copy(
+            secret = if (isMtproto) secret.trim() else base.secret,
+            adTag = if (isMtproto) adTag.trim() else base.adTag,
+            allowedIPs = if (isWireguard) {
+                allowedIps.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            } else {
+                base.allowedIPs
+            },
+        )
+    }
 
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -142,6 +161,41 @@ fun ClientEditorScreen(
                     })
                     Text(ib.remark.ifBlank { "inbound #${ib.id}" } + "  ·  ${ib.protocol.uppercase()}:${ib.port}")
                 }
+            }
+
+            if (isMtproto) {
+                Text(tr("MTProto"), style = MaterialTheme.typography.labelMedium)
+                OutlinedTextField(
+                    value = secret,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(tr("MTProto secret")) },
+                    trailingIcon = {
+                        TextButton(onClick = {
+                            val domain = mtprotoSecretDomain(secret).ifBlank { "www.cloudflare.com" }
+                            secret = "ee" + randomHex(16) + domain.encodeToByteArray().toHex()
+                        }) { Text(tr("Regenerate")) }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = adTag,
+                    onValueChange = { v -> adTag = v.filter { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }.take(32) },
+                    label = { Text(tr("Ad-tag (sponsored channel, 32 hex)")) },
+                    isError = adTag.isNotEmpty() && adTag.length != 32,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            if (isWireguard) {
+                OutlinedTextField(
+                    value = allowedIps,
+                    onValueChange = { allowedIps = it },
+                    label = { Text(tr("WireGuard allowed IPs")) },
+                    supportingText = { Text(tr("Comma-separated; leave empty to auto-assign.")) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             if (!isNew) {
@@ -241,6 +295,34 @@ private fun gbStr(bytes: Long): String = when {
     bytes <= 0L -> ""
     bytes % 1_073_741_824L == 0L -> (bytes / 1_073_741_824L).toString()
     else -> ((bytes * 100 / 1_073_741_824L) / 100.0).toString()
+}
+
+private fun ByteArray.toHex(): String {
+    val digits = "0123456789abcdef"
+    val sb = StringBuilder(size * 2)
+    for (b in this) {
+        val v = b.toInt() and 0xFF
+        sb.append(digits[v ushr 4])
+        sb.append(digits[v and 0xF])
+    }
+    return sb.toString()
+}
+
+private fun randomHex(bytes: Int): String {
+    val b = ByteArray(bytes)
+    kotlin.random.Random.nextBytes(b)
+    return b.toHex()
+}
+
+/** Fronting domain encoded in a FakeTLS secret ("ee" + 16 bytes + domain hex),
+ *  or "" if the secret is empty/malformed. */
+private fun mtprotoSecretDomain(secret: String): String {
+    var s = secret
+    if (s.startsWith("ee") || s.startsWith("dd")) s = s.substring(2)
+    if (s.length <= 32) return ""
+    return runCatching {
+        s.substring(32).chunked(2).map { (it.toInt(16) and 0xFF).toByte() }.toByteArray().decodeToString()
+    }.getOrDefault("")
 }
 
 @Composable
