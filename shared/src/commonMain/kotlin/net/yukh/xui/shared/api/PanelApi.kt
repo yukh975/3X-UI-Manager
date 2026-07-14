@@ -50,7 +50,9 @@ import net.yukh.xui.shared.dto.NodeIdsRequest
 import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.PanelSubSettings
 import net.yukh.xui.shared.dto.PanelUpdateInfo
+import net.yukh.xui.shared.dto.RouteTestResult
 import net.yukh.xui.shared.dto.ServerStatus
+import net.yukh.xui.shared.dto.TestOutboundResult
 import net.yukh.xui.shared.dto.VlessEncResponse
 
 /** Platform HTTP engine (Darwin on iOS, OkHttp on JVM). When [allowInsecure] is
@@ -293,6 +295,37 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
             formParameters = parameters {
                 append("xraySetting", xraySetting)
                 append("outboundTestUrl", outboundTestUrl)
+            },
+        ) { auth() }.body()
+
+    // Probe one outbound; the panel supplies the test URL server-side (SSRF-safe).
+    // mode: "tcp" (dial only), "http" (request through xray), "real" (real delay).
+    suspend fun testOutbound(outbound: String, mode: String): ApiResponse<TestOutboundResult> =
+        client.submitForm(
+            url = "$base/panel/api/xray/testOutbound",
+            formParameters = parameters {
+                append("outbound", outbound)
+                append("mode", mode)
+            },
+        ) { auth() }.body()
+
+    // Resolve which outbound a destination routes to against the live config.
+    // Empty port/network mean "any"; at least one of domain/ip must be set.
+    suspend fun routeTest(
+        domain: String,
+        ip: String,
+        port: String,
+        network: String,
+        inboundTag: String,
+    ): ApiResponse<RouteTestResult> =
+        client.submitForm(
+            url = "$base/panel/api/xray/routeTest",
+            formParameters = parameters {
+                append("domain", domain)
+                append("ip", ip)
+                append("port", port)
+                append("network", network)
+                append("inboundTag", inboundTag)
             },
         ) { auth() }.body()
 

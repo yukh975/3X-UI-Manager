@@ -778,6 +778,7 @@ fun App() {
                         onCancel = { showRoutingX = false; editorError = null },
                     )
                 } else if (showOutboundsX) {
+                    val testApi = api
                     OutboundsXrayScreen(
                         configJson = xrayConfigJson,
                         loading = xrayLoading,
@@ -786,6 +787,11 @@ fun App() {
                         onConfigChange = { xrayConfigJson = it },
                         onSave = { saveXrayThen { showOutboundsX = false } },
                         onCancel = { showOutboundsX = false; editorError = null },
+                        onTestOutbound = if (testApi != null) {
+                            { ob, mode -> testApi.testOutbound(ob, mode).obj }
+                        } else {
+                            null
+                        },
                     )
                 } else if (showPanelAdmin && api != null) {
                     PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })

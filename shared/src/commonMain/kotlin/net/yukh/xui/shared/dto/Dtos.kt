@@ -235,6 +235,50 @@ data class ClientModel(
 @Serializable
 data class ClientCreatePayload(val client: ClientModel, val inboundIds: List<Int>)
 
+// ---- Outbound connectivity test (POST /panel/api/xray/testOutbound) -------
+
+@Serializable
+data class TestOutboundResult(
+    val tag: String = "",
+    val success: Boolean = false,
+    val delay: Long = 0,
+    val error: String = "",
+    val mode: String = "",
+    val httpStatus: Int = 0,
+    val connectMs: Long = 0,
+    val tlsMs: Long = 0,
+    val ttfbMs: Long = 0,
+    val endpoints: List<TestEndpointResult> = emptyList(),
+    val egress: TestEgressResult? = null,
+)
+
+@Serializable
+data class TestEndpointResult(
+    val address: String = "",
+    val success: Boolean = false,
+    val delay: Long = 0,
+    val error: String = "",
+)
+
+@Serializable
+data class TestEgressResult(
+    val ipv4: String = "",
+    val ipv6: String = "",
+    val country: String = "",
+    val warp: String = "",
+)
+
+// ---- Route test (POST /panel/api/xray/routeTest) -------------------------
+// matched=false → no rule matched, traffic uses the default (first) outbound
+// and outboundTag is empty. groupTags lists the balancer chain, if any.
+
+@Serializable
+data class RouteTestResult(
+    val matched: Boolean = false,
+    val outboundTag: String = "",
+    val groupTags: List<String> = emptyList(),
+)
+
 // ---- Nodes (GET /panel/api/nodes/list) -----------------------------------
 
 @Serializable

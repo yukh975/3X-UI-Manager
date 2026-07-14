@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -23,18 +24,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
+import kotlinx.coroutines.launch
 import net.yukh.xui.shared.dto.BLACKHOLE_RESPONSE_TYPE
 import net.yukh.xui.shared.dto.FORMED_PROTOCOLS
 import net.yukh.xui.shared.dto.FREEDOM_DOMAIN_STRATEGY
 import net.yukh.xui.shared.dto.OUTBOUND_PROTOCOLS
 import net.yukh.xui.shared.dto.PROXY_PROTOCOLS
 import net.yukh.xui.shared.dto.SS_METHODS
+import net.yukh.xui.shared.dto.TestOutboundResult
 import net.yukh.xui.shared.dto.VLESS_FLOW
 import net.yukh.xui.shared.dto.VMESS_SECURITY
 import net.yukh.xui.shared.dto.defaultOutbound
@@ -48,6 +52,7 @@ import net.yukh.xui.shared.json.jsonGetString
 import net.yukh.xui.shared.json.jsonGetStringMap
 import net.yukh.xui.shared.json.jsonPutString
 import net.yukh.xui.shared.json.jsonPutStringMap
+import net.yukh.xui.shared.json.jsonRemove
 import net.yukh.xui.shared.json.jsonSetObjectList
 
 private val NETWORKS = listOf("tcp", "ws", "grpc", "httpupgrade", "xhttp", "kcp")
@@ -65,10 +70,12 @@ fun OutboundsXrayScreen(
     onConfigChange: (String) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
+    onTestOutbound: (suspend (String, String) -> TestOutboundResult?)? = null,
 ) {
     var editing by remember { mutableStateOf<Int?>(null) } // index, -1 = new
     var showAdd by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
+    var testing by remember { mutableStateOf<Int?>(null) }
 
     fun list() = jsonGetObjectList(configJson, listOf("outbounds"))
     fun setList(l: List<String>) = onConfigChange(jsonSetObjectList(configJson, listOf("outbounds"), l))
@@ -122,6 +129,7 @@ fun OutboundsXrayScreen(
                         Row(Modifier.fillMaxWidth(), Arrangement.End) {
                             if (i > 0) TextButton(onClick = { val l = list().toMutableList(); l.add(i - 1, l.removeAt(i)); setList(l) }) { Text("↑") }
                             if (i < outs.size - 1) TextButton(onClick = { val l = list().toMutableList(); l.add(i + 1, l.removeAt(i)); setList(l) }) { Text("↓") }
+                            if (onTestOutbound != null) TextButton(onClick = { testing = i }) { Text(tr("Test")) }
                             TextButton(onClick = { editing = i }) { Text(tr("Edit")) }
                             TextButton(onClick = { setList(list().filterIndexed { j, _ -> j != i }) }) { Text(tr("Delete"), color = MaterialTheme.colorScheme.error) }
                         }
@@ -149,6 +157,70 @@ fun OutboundsXrayScreen(
             onDismiss = { showImport = false },
         )
     }
+    testing?.let { idx ->
+        val ob = list().getOrNull(idx)
+        if (ob == null || onTestOutbound == null) {
+            testing = null
+        } else {
+            TestOutboundDialog(ob, onTestOutbound) { testing = null }
+        }
+    }
+}
+
+@Composable
+private fun TestOutboundDialog(
+    outboundJson: String,
+    onTest: suspend (String, String) -> TestOutboundResult?,
+    onDismiss: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    var mode by remember { mutableStateOf("tcp") }
+    var running by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<TestOutboundResult?>(null) }
+    var failed by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(tr("Test outbound")) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                XrayChips(listOf("tcp", "http", "real"), mode) { mode = it }
+                if (running) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text(tr("Testing…"))
+                    }
+                }
+                result?.let { r ->
+                    if (r.success) {
+                        Text("✓ ${r.delay} ms", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+                        r.egress?.let { e ->
+                            val ip = e.ipv4.ifBlank { e.ipv6 }
+                            if (ip.isNotBlank()) {
+                                val country = if (e.country.isNotBlank()) " · ${e.country}" else ""
+                                val warp = if (e.warp.isNotBlank() && e.warp != "off") "  · WARP ${e.warp}" else ""
+                                Text("$ip$country$warp", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    } else {
+                        Text("✗ ${r.error.ifBlank { tr("Failed") }}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                if (failed && result == null) {
+                    Text(tr("Test request failed."), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = !running, onClick = {
+                running = true; failed = false; result = null
+                scope.launch {
+                    val r = runCatching { onTest(outboundJson, mode) }.getOrNull()
+                    result = r; failed = r == null; running = false
+                }
+            }) { Text(tr("Run test")) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Close")) } },
+    )
 }
 
 @Composable
@@ -166,6 +238,16 @@ private fun OutboundEditor(initial: String, saving: Boolean, onCancel: () -> Uni
             XrayField(jsonGetString(obj, listOf("tag")), { obj = jsonPutString(obj, listOf("tag"), it) }, tr("Tag"))
             XrayLabel(tr("Protocol"))
             XrayChips(OUTBOUND_PROTOCOLS, protocol) { p -> obj = defaultOutbound(p, jsonGetString(obj, listOf("tag"))) }
+
+            // Top-level target resolution (panel 3.5.0). Freedom/WireGuard carry
+            // their own settings.domainStrategy control, so skip them here.
+            if (protocol != "freedom" && protocol != "wireguard") {
+                XrayLabel(tr("Target Strategy"))
+                XrayChips(FREEDOM_DOMAIN_STRATEGY, jsonGetString(obj, listOf("targetStrategy")).ifBlank { "AsIs" }) { v ->
+                    obj = if (v == "AsIs") jsonRemove(obj, listOf("targetStrategy"))
+                    else jsonPutString(obj, listOf("targetStrategy"), v)
+                }
+            }
 
             if (protocol in FORMED_PROTOCOLS && !raw) {
                 ProtocolForm(protocol, obj) { obj = it }
