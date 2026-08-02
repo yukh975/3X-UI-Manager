@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.10.1] — 2026-08-02
+
+### Added
+- **Email (SMTP) sender settings** in Panel admin — set the From address and sender name used in the panel's notification emails, so a relay whose login isn't a bare email address still sends a valid From (fixes strict receivers like Gmail rejecting it). Requires panel v3.6.0.
+- **Outbound-down alert threshold** in Panel admin → Notifications — how many consecutive failed probes before an "outbound down" alert fires (1 = alert on the first failure), to quiet false alerts from a flaky outbound. Requires panel v3.6.0.
+- **Subscription status in the share sheet** — a client's share sheet now shows the live status the subscriber's own app sees (online + used/total), read from the subscription server. Shown when reachable, hidden otherwise. Requires panel v3.6.0.
+
 ## [0.9.5] — 2026-07-13
 
 ### Fixed
