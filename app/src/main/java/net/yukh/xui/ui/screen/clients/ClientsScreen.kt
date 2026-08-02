@@ -261,6 +261,7 @@ fun ClientsScreen(
             error = state.linksError,
             subUrl = state.selectedSubUrl,
             subChecked = state.subUrlChecked,
+            subInfo = state.selectedSubInfo,
             sheetState = sheetState,
             onDismiss = vm::closeShareSheet,
             onEdit = { vm.openEditEditor(selectedEmail) },

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.yukh.xui.data.api.dto.SubInfo
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.qr.qrImageBitmap
 
@@ -65,6 +67,7 @@ fun ClientShareSheet(
     error: String?,
     subUrl: String?,
     subChecked: Boolean,
+    subInfo: SubInfo?,
     sheetState: SheetState,
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
@@ -105,7 +108,10 @@ fun ClientShareSheet(
             ) {
                 when {
                     !subChecked -> LoadingBlock()
-                    subUrl != null -> QrAndLink(content = subUrl, context = context)
+                    subUrl != null -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        QrAndLink(content = subUrl, context = context)
+                        if (subInfo != null) SubStatusRow(subInfo)
+                    }
                     else -> Text(
                         tr(
                             "No subscription URL. On panel v3.3.0+ the app reads the " +
@@ -326,6 +332,51 @@ private fun QrCard(content: String) {
             contentDescription = tr("QR code"),
             modifier = Modifier.size(220.dp),
         )
+    }
+}
+
+/** Customer's-eye subscription status from the sub server's `?format=info`
+ *  (panel v3.6.0+): the live online state + usage the subscriber's own app sees. */
+@Composable
+private fun SubStatusRow(info: SubInfo) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            tr("As the subscriber sees it"),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(
+                        color = if (info.isOnline) Color(0xFF34C759)
+                        else MaterialTheme.colorScheme.outline,
+                        shape = CircleShape,
+                    ),
+            )
+            Text(
+                if (info.isOnline) tr("Online") else tr("Offline"),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        val usage = listOfNotNull(
+            info.used.takeIf { it.isNotBlank() },
+            info.total.takeIf { it.isNotBlank() }?.let { "${tr("of")} $it" },
+        ).joinToString(" ")
+        if (usage.isNotBlank()) {
+            Text(
+                usage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

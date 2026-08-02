@@ -27,6 +27,7 @@ import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.RouteTestResult
 import net.yukh.xui.data.api.dto.ServerStatus
+import net.yukh.xui.data.api.dto.SubInfo
 import net.yukh.xui.data.api.dto.TestOutboundResult
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -40,6 +41,7 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Streaming
+import retrofit2.http.Url
 
 interface XuiApi {
 
@@ -240,6 +242,13 @@ interface XuiApi {
 
     @POST("panel/api/setting/update")
     suspend fun updateSettings(@Body settings: JsonObject): ApiAck
+
+    // Subscription server's live-status snapshot (panel v3.6.0+). Takes the full
+    // absolute sub URL + "?format=info"; the sub server may live on a different
+    // host/port than the panel API, so this is an absolute @Url, not a base path.
+    // Returns a bare object (no {success,obj} envelope) unlike the panel API.
+    @GET
+    suspend fun subInfo(@Url url: String): SubInfo
 
     /** Returns the wrapped config as a JSON string in `obj` (parse twice). */
     @POST("panel/api/xray/")

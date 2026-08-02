@@ -35,6 +35,7 @@ import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.RouteTestResult
 import net.yukh.xui.data.api.dto.ServerStatus
+import net.yukh.xui.data.api.dto.SubInfo
 import net.yukh.xui.data.api.dto.TestOutboundResult
 import net.yukh.xui.data.api.dto.XraySettingEnvelope
 import net.yukh.xui.data.prefs.ConnectionAuth
@@ -289,6 +290,24 @@ class PanelRepository @Inject constructor(
             .getOrNull()
             ?.also { cachedSettings = it }
         return settings?.subscriptionUrl(host, client.subId)
+    }
+
+    /**
+     * Best-effort customer's-eye subscription status from the sub server's
+     * `?format=info` (panel v3.6.0+): the live snapshot a subscriber's own app
+     * sees when it refreshes the link. Returns null on any failure — the sub
+     * server may sit on a port the phone can't reach, or the panel may predate
+     * the endpoint — so the share sheet just omits the readout instead of erroring.
+     */
+    suspend fun getSubscriptionInfo(client: Client): SubInfo? {
+        val subUrl = getSubscriptionUrl(client) ?: return null
+        val current = api ?: return null
+        val separator = if (subUrl.contains('?')) '&' else '?'
+        return try {
+            current.subInfo("$subUrl${separator}format=info")
+        } catch (_: Exception) {
+            null
+        }
     }
 
     suspend fun deleteClient(email: String): Result<Unit> =

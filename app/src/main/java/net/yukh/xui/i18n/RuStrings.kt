@@ -109,6 +109,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Disk" to "Диск",
     "Online (tap)" to "Онлайн (нажми)",
     "Online" to "Онлайн",
+    "Offline" to "Офлайн",
+    "As the subscriber sees it" to "Как видит подписчик",
     "Net ↑ / ↓ per s" to "Сеть ↑ / ↓ в сек",
     "Connections" to "Соединения",
     "Refreshing…" to "Обновление…",
@@ -634,6 +636,16 @@ val ruStrings: Map<String, String> = mapOf(
     "Delete token?" to "Удалить токен?",
     "Apps using" to "Приложения, использующие",
     "will stop working. This can't be undone." to "перестанут работать. Отменить нельзя.",
+    "Email (SMTP)" to "Почта (SMTP)",
+    "Address shown in the From header of panel emails. Leave empty to use the SMTP username." to
+        "Адрес в заголовке From писем панели. Оставьте пустым, чтобы использовать логин SMTP.",
+    "From address" to "Адрес отправителя",
+    "Sender name" to "Имя отправителя",
+    "Email settings saved" to "Настройки почты сохранены",
+    "Consecutive failed probes before an \"outbound down\" alert fires. 1 = alert on the first failure." to
+        "Сколько подряд неудачных проверок до оповещения «outbound недоступен». 1 = оповещать при первой неудаче.",
+    "Outbound-down threshold" to "Порог оповещения outbound",
+    "Notification settings saved" to "Настройки уведомлений сохранены",
     "Panel" to "Панель",
     "Restart the panel service. The app's connection drops for a few seconds while it comes back." to
         "Перезапустить службу панели. Подключение приложения прервётся на несколько секунд, пока она поднимется.",

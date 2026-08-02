@@ -136,6 +136,57 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
                 }
             }
 
+            // ---- Email (SMTP) ----
+            SectionTitle(tr("Email (SMTP)"))
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr("Address shown in the From header of panel emails. Leave empty to use the SMTP username."),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = state.smtpFrom,
+                        onValueChange = vm::setSmtpFrom,
+                        label = { Text(tr("From address")) },
+                        placeholder = { Text("panel@example.com") },
+                        singleLine = true,
+                        enabled = state.subLoaded && !state.busy,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = state.smtpFromName,
+                        onValueChange = vm::setSmtpFromName,
+                        label = { Text(tr("Sender name")) },
+                        singleLine = true,
+                        enabled = state.subLoaded && !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedButton(onClick = vm::saveEmail, enabled = state.subLoaded && !state.busy, modifier = Modifier.fillMaxWidth()) {
+                        Text(tr("Save"))
+                    }
+                }
+            }
+
+            // ---- Notifications ----
+            SectionTitle(tr("Notifications"))
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr("Consecutive failed probes before an \"outbound down\" alert fires. 1 = alert on the first failure."),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = state.outboundDownThreshold,
+                        onValueChange = vm::setOutboundDownThreshold,
+                        label = { Text(tr("Outbound-down threshold")) },
+                        singleLine = true,
+                        enabled = state.subLoaded && !state.busy,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedButton(onClick = vm::saveNotifications, enabled = state.subLoaded && !state.busy, modifier = Modifier.fillMaxWidth()) {
+                        Text(tr("Save"))
+                    }
+                }
+            }
+
             // ---- Panel ----
             SectionTitle(tr("Panel"))
             Card(modifier = Modifier.fillMaxWidth()) {

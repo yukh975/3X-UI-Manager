@@ -17,6 +17,7 @@ import net.yukh.xui.data.api.dto.Client
 import net.yukh.xui.data.api.dto.ClientIpInfo
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.InboundSlim
+import net.yukh.xui.data.api.dto.SubInfo
 import net.yukh.xui.data.repo.PanelRepository
 
 private const val BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0
@@ -37,6 +38,8 @@ data class ClientsUiState(
     val linksError: String? = null,
     val selectedSubUrl: String? = null,
     val subUrlChecked: Boolean = false,
+    /** Customer's-eye subscription status (sub server `?format=info`, best-effort). */
+    val selectedSubInfo: SubInfo? = null,
     val filters: ClientFilters = ClientFilters(),
     // Multi-select / bulk actions
     val selectionMode: Boolean = false,
@@ -241,6 +244,7 @@ class ClientsViewModel @Inject constructor(
                 linksError = null,
                 selectedSubUrl = null,
                 subUrlChecked = false,
+                selectedSubInfo = null,
             )
         }
         viewModelScope.launch {
@@ -258,6 +262,14 @@ class ClientsViewModel @Inject constructor(
             val subUrl = client?.let { repo.getSubscriptionUrl(it) }
             _state.update { it.copy(selectedSubUrl = subUrl, subUrlChecked = true) }
         }
+        // Customer's-eye live status (v3.6.0 sub server) — best-effort, silent on
+        // failure so setups where the sub port isn't reachable just omit it.
+        viewModelScope.launch {
+            val info = client?.let { repo.getSubscriptionInfo(it) }
+            if (info != null && _state.value.selectedClientEmail == email) {
+                _state.update { it.copy(selectedSubInfo = info) }
+            }
+        }
     }
 
     fun closeShareSheet() {
@@ -269,6 +281,7 @@ class ClientsViewModel @Inject constructor(
                 linksError = null,
                 selectedSubUrl = null,
                 subUrlChecked = false,
+                selectedSubInfo = null,
             )
         }
     }

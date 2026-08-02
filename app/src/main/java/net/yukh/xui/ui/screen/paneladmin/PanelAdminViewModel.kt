@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.ApiToken
+import net.yukh.xui.data.json.int
+import net.yukh.xui.data.json.putInt
 import net.yukh.xui.data.json.putString
 import net.yukh.xui.data.json.string
 import net.yukh.xui.data.repo.PanelRepository
@@ -23,9 +25,16 @@ data class PanelAdminUiState(
     val newToken: ApiToken? = null,
     val message: String? = null,
     val error: String? = null,
-    // Subscription settings (round-tripped through the full AllSetting object).
+    // Panel settings (round-tripped through the full AllSetting object). The
+    // whole group loads together with the first getRawSettings call.
     val subLoaded: Boolean = false,
     val subAnnounce: String = "",
+    // Email / SMTP From header (panel v3.6.0).
+    val smtpFrom: String = "",
+    val smtpFromName: String = "",
+    // Notifications: consecutive failed probes before an outbound.down alert
+    // (panel v3.6.0). Kept as text so the field can be cleared while typing.
+    val outboundDownThreshold: String = "3",
 )
 
 /**
@@ -49,7 +58,15 @@ class PanelAdminViewModel @Inject constructor(
             repo.getRawSettings()
                 .onSuccess { obj ->
                     rawSettings = obj
-                    _state.update { it.copy(subLoaded = true, subAnnounce = obj.string("subAnnounce")) }
+                    _state.update {
+                        it.copy(
+                            subLoaded = true,
+                            subAnnounce = obj.string("subAnnounce"),
+                            smtpFrom = obj.string("smtpFrom"),
+                            smtpFromName = obj.string("smtpFromName"),
+                            outboundDownThreshold = (obj.int("outboundDownThreshold") ?: 3).toString(),
+                        )
+                    }
                 }
                 .onFailure { e -> _state.update { it.copy(error = e.message ?: "Couldn't load settings") } }
         }
@@ -67,6 +84,48 @@ class PanelAdminViewModel @Inject constructor(
                 .onSuccess {
                     rawSettings = updated
                     _state.update { it.copy(busy = false, message = "Subscription settings saved") }
+                }
+                .onFailure { e -> _state.update { it.copy(busy = false, error = e.message ?: "Couldn't save settings") } }
+        }
+    }
+
+    fun setSmtpFrom(v: String) = _state.update { it.copy(smtpFrom = v) }
+
+    fun setSmtpFromName(v: String) = _state.update { it.copy(smtpFromName = v) }
+
+    fun saveEmail() {
+        val raw = rawSettings ?: return
+        if (_state.value.busy) return
+        _state.update { it.copy(busy = true, error = null, message = null) }
+        viewModelScope.launch {
+            val updated = raw
+                .putString("smtpFrom", _state.value.smtpFrom.trim())
+                .putString("smtpFromName", _state.value.smtpFromName.trim())
+            repo.updateSettings(updated)
+                .onSuccess {
+                    rawSettings = updated
+                    _state.update { it.copy(busy = false, message = "Email settings saved") }
+                }
+                .onFailure { e -> _state.update { it.copy(busy = false, error = e.message ?: "Couldn't save settings") } }
+        }
+    }
+
+    fun setOutboundDownThreshold(v: String) =
+        _state.update { it.copy(outboundDownThreshold = v.filter { c -> c.isDigit() }.take(3)) }
+
+    fun saveNotifications() {
+        val raw = rawSettings ?: return
+        if (_state.value.busy) return
+        _state.update { it.copy(busy = true, error = null, message = null) }
+        viewModelScope.launch {
+            val threshold = (_state.value.outboundDownThreshold.toIntOrNull() ?: 3).coerceIn(1, 100)
+            val updated = raw.putInt("outboundDownThreshold", threshold)
+            repo.updateSettings(updated)
+                .onSuccess {
+                    rawSettings = updated
+                    _state.update {
+                        it.copy(busy = false, outboundDownThreshold = threshold.toString(), message = "Notification settings saved")
+                    }
                 }
                 .onFailure { e -> _state.update { it.copy(busy = false, error = e.message ?: "Couldn't save settings") } }
         }
