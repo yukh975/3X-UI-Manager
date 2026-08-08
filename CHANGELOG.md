@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.10.3] — 2026-08-08
+
+### Added
+- **Changelog page** in About — browse the full release history in the app, instead of only seeing the notes for the version you happen to be updating to. Works offline; no network access is used to show it.
+
 ## [0.10.2] — 2026-08-08
 
 ### Fixed

@@ -73,6 +73,16 @@ base {
     archivesName.set("3x-ui-manager")
 }
 
+// Bundle the changelog into the APK for the in-app history page. It is copied,
+// not fetched: the page must work offline, and the F-Droid build never contacts
+// our infrastructure. A copy is deterministic, so reproducible builds are safe.
+val changelogAssetsDir = layout.buildDirectory.dir("generated/changelog/assets")
+val copyChangelogs = tasks.register<Copy>("copyChangelogs") {
+    from(rootProject.file("CHANGELOG.md")) { rename { "changelog-en.md" } }
+    from(rootProject.file("CHANGELOG.ru.md")) { rename { "changelog-ru.md" } }
+    into(changelogAssetsDir)
+}
+
 android {
     namespace = "net.yukh.xui"
     compileSdk = 35
@@ -80,6 +90,10 @@ android {
     // AGP falls back to its bundled default (34.0.0), which the runner may not
     // have, failing the release build with "Failed to install build-tools;34".
     buildToolsVersion = "35.0.0"
+
+    // The generated dir is registered as an asset source and preBuild depends on
+    // the copy, so the changelog is always in place before assets are merged.
+    sourceSets.getByName("main").assets.srcDir(changelogAssetsDir)
 
     // Don't embed the Play-oriented dependency-metadata block in the APK's
     // signing block: F-Droid's scanner rejects it, and it isn't needed here.
@@ -92,8 +106,8 @@ android {
         applicationId = "net.yukh.xui"
         minSdk = 24
         targetSdk = 35
-        versionCode = 100200
-        versionName = "0.10.2"
+        versionCode = 100300
+        versionName = "0.10.3"
         // GitLab tag pipeline overrides the literals above from the tag. These
         // lines don't match F-Droid's versionCode/versionName scanner (no bare
         // literal), so the values above remain what it reads.
@@ -170,6 +184,9 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Asset merging must see the copied files, so hook the task into preBuild.
+    tasks.named("preBuild") { dependsOn(copyChangelogs) }
 
     packaging {
         resources {

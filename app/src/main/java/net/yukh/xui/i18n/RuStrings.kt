@@ -560,6 +560,8 @@ val ruStrings: Map<String, String> = mapOf(
             "на экране подключения (напр. https://host:2096/sub/).",
     "Collapse" to "Свернуть",
     "Expand" to "Развернуть",
+    "Changelog" to "История изменений",
+    "No changelog available." to "История изменений недоступна.",
     "Copy" to "Копировать",
     "Share" to "Поделиться",
     "QR code" to "QR-код",

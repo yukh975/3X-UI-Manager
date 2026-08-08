@@ -1,0 +1,1 @@
+Added: a Changelog page in About — browse the full release history in the app, not just the notes for the version you are updating to. Works offline.

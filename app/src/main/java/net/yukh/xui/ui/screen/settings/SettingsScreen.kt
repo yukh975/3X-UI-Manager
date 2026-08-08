@@ -78,6 +78,7 @@ fun SettingsScreen(
     var hasPasscode by remember { mutableStateOf(vm.hasPasscode()) }
     var biometric by remember { mutableStateOf(vm.biometricEnabled()) }
     var showSetPasscode by remember { mutableStateOf(false) }
+    var showChangelog by remember { mutableStateOf(false) }
     val biometricAvailable = remember { BiometricAuth.canAuthenticate(context) }
 
     var alerts by remember { mutableStateOf(vm.alertsEnabled()) }
@@ -317,6 +318,9 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    OutlinedButton(onClick = { showChangelog = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(tr("Changelog"))
+                    }
                     val uriHandler = LocalUriHandler.current
                     OutlinedButton(
                         onClick = { uriHandler.openUri("https://github.com/yukh975/3X-UI-Manager") },
@@ -329,6 +333,10 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showChangelog) {
+        ChangelogDialog(onClose = { showChangelog = false })
     }
 
     if (showSetPasscode) {
