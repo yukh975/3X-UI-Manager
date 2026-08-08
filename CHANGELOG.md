@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [Unreleased]
+
+### Fixed
+- **Clients created in the app now get a proper subscription ID.** The app left the subscription id empty, so the panel filled it with a raw UUID — the subscription link carried a UUID-shaped id instead of the short id the panel's own web UI generates. The app now mints it in the panel's format (16 lowercase letters/digits). Existing clients are unaffected. Reported in #3.
+
 ## [0.10.1] — 2026-08-02
 
 ### Added

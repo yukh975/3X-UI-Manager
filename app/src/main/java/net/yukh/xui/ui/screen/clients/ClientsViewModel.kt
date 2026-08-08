@@ -92,6 +92,19 @@ private fun randomHex(bytes: Int): String {
     return b.toHex()
 }
 
+/**
+ * A subscription id in the panel's own format: 16 lowercase letters/digits,
+ * matching the web UI's `RandomUtil.randomLowerAndNum(16)`. Sent on create so
+ * an app-made client gets the same kind of subId as a panel-made one — left
+ * empty, the panel falls back to a raw `uuid.NewString()`, which puts a
+ * UUID-shaped id in the subscription URL (reported as GitHub issue #3).
+ */
+private fun randomSubId(len: Int = 16): String {
+    val alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
+    val rnd = java.security.SecureRandom()
+    return buildString(len) { repeat(len) { append(alphabet[rnd.nextInt(alphabet.length)]) } }
+}
+
 /** The fronting domain encoded in a FakeTLS secret ("ee"+16 bytes+domain hex),
  *  or "" if the secret is empty/malformed. */
 private fun mtprotoSecretDomain(secret: String): String {
@@ -416,6 +429,10 @@ class ClientsViewModel @Inject constructor(
             } else {
                 base.allowedIPs
             },
+            // Mint the subscription id ourselves on create, in the panel's own
+            // 16-char format. Sending it empty makes the panel fall back to a
+            // uuid, which is what put a UUID-shaped id in the subscription URL.
+            subId = if (e.isNew) randomSubId() else base.subId,
         )
         _state.update { s -> s.editor?.let { s.copy(editor = it.copy(saving = true, error = null)) } ?: s }
         viewModelScope.launch {
