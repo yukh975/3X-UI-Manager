@@ -44,7 +44,8 @@ class AppSettingsStore @Inject constructor(
     private companion object {
         const val FILE = "xui_app_settings"
         const val KEY_LANG = "language"
-        const val DEFAULT_LANG = "en"
+        /** Empty = follow the device language (see i18n.LANG_SYSTEM). */
+        const val DEFAULT_LANG = ""
         const val KEY_ALERTS = "alerts.enabled"
         const val KEY_ALERT_EXPIRY_DAYS = "alerts.expiryDays"
         const val KEY_ALERT_TRAFFIC_PCT = "alerts.trafficPct"

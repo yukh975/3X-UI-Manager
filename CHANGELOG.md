@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.10.6] — 2026-08-08
+
+### Added
+- **App language now follows the device by default.** A new "System default" option sits above English and Русский, so a Russian phone gets a Russian app straight after install — and switching the device language switches the app, without a restart. An explicit choice still overrides it.
+
+### Changed
+- The About button now reads **"Project on GitHub"** instead of asking for a star.
+
 ## [0.10.5] — 2026-08-08
 
 ### Changed

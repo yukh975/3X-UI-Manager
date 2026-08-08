@@ -7,6 +7,8 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import net.yukh.xui.data.prefs.AppSettingsStore
 import net.yukh.xui.work.AlertScheduler
+import net.yukh.xui.i18n.resolveLanguage
+import java.util.Locale
 import net.yukh.xui.work.Notifier
 
 @HiltAndroidApp
@@ -27,7 +29,7 @@ class XuiApp : Application(), Configuration.Provider {
         super.onCreate()
         // (Re-)create channels on every start — also refreshes their names
         // after a language switch.
-        Notifier.ensureChannels(this, settings.getLanguage())
+        Notifier.ensureChannels(this, resolveLanguage(settings.getLanguage(), Locale.getDefault().language))
         // Re-assert the periodic poll after reboots/updates (KEEP policy).
         if (settings.getAlertsEnabled()) AlertScheduler.ensureScheduled(this)
     }

@@ -16,7 +16,8 @@ class SettingsViewModel @Inject constructor(
     private val settings: AppSettingsStore,
     private val speedUnitState: SpeedUnitState,
 ) : ViewModel() {
-    val language: StateFlow<String> = languageState.language
+    /** The stored preference — may be LANG_SYSTEM (follow the device). */
+    val language: StateFlow<String> = languageState.preference
     fun setLanguage(lang: String) = languageState.set(lang)
 
     val speedInBits: StateFlow<Boolean> = speedUnitState.inBits

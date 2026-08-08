@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import net.yukh.xui.BuildConfig
 import net.yukh.xui.data.prefs.AppSettingsStore
 import net.yukh.xui.i18n.LANG_RU
+import net.yukh.xui.i18n.resolveLanguage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,7 +59,7 @@ class UpdateViewModel @Inject constructor(
     /** Swap the English release body for the changelog section in the UI language,
      *  and un-wrap its 80-col hard breaks so the dialog doesn't break mid-sentence. */
     private suspend fun localized(release: AppRelease): AppRelease {
-        val russian = settings.getLanguage() == LANG_RU
+        val russian = resolveLanguage(settings.getLanguage(), java.util.Locale.getDefault().language) == LANG_RU
         val notes = UpdateChecker.localizedNotes(release.version, russian) ?: release.notes
         return release.copy(notes = UpdateChecker.reflowNotes(notes))
     }

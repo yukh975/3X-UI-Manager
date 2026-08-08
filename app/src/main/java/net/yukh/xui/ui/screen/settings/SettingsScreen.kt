@@ -21,7 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.BuildConfig
 import net.yukh.xui.i18n.LANG_EN
 import net.yukh.xui.i18n.LANG_RU
+import net.yukh.xui.i18n.LANG_SYSTEM
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.security.BiometricAuth
 import net.yukh.xui.work.AlertScheduler
@@ -130,6 +131,10 @@ fun SettingsScreen(
             Text(tr("Language"), style = MaterialTheme.typography.titleMedium)
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column {
+                    LanguageRow(tr("System default"), selected = lang == LANG_SYSTEM) {
+                        vm.setLanguage(LANG_SYSTEM)
+                    }
+                    HorizontalDivider()
                     LanguageRow("English", selected = lang == LANG_EN) { vm.setLanguage(LANG_EN) }
                     HorizontalDivider()
                     LanguageRow("Русский", selected = lang == LANG_RU) { vm.setLanguage(LANG_RU) }
@@ -327,9 +332,9 @@ fun SettingsScreen(
                         onClick = { uriHandler.openUri("https://github.com/yukh975/3X-UI-Manager") },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(tr("Star on GitHub"))
+                        Text(tr("Project on GitHub"))
                     }
                 }
             }

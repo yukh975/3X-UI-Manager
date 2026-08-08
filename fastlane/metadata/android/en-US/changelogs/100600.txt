@@ -1,0 +1,1 @@
+Added: the app language now follows the device by default — a new "System default" option, so a Russian phone gets a Russian app straight after install. Changed: the About button now reads "Project on GitHub".

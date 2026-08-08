@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -17,6 +18,7 @@ import javax.inject.Inject
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.i18n.LanguageState
 import net.yukh.xui.i18n.LocalAppLanguage
+import net.yukh.xui.i18n.resolveLanguage
 import net.yukh.xui.security.LockState
 import net.yukh.xui.ui.navigation.AppNav
 import net.yukh.xui.ui.screen.lock.LockScreen
@@ -60,7 +62,12 @@ class MainActivity : FragmentActivity() {
         )
 
         setContent {
-            val lang by languageState.language.collectAsStateWithLifecycle()
+            val langPref by languageState.preference.collectAsStateWithLifecycle()
+            // Resolving against LocalConfiguration (not a one-off read) is what
+            // makes "follow the system" follow it: changing the device language
+            // recomposes this and the whole tree switches over.
+            val systemLanguage = LocalConfiguration.current.locales[0].language
+            val lang = resolveLanguage(langPref, systemLanguage)
             val speedInBits by speedUnitState.inBits.collectAsStateWithLifecycle()
             CompositionLocalProvider(
                 LocalAppLanguage provides lang,
