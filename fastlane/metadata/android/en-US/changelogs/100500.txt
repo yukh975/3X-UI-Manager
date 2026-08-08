@@ -1,0 +1,1 @@
+Changed: the bottom navigation now shows icons only, with the current tab captioned underneath — labels no longer wrap with an enlarged system font. Fixed: the oldest entry on the Changelog page is reachable again.

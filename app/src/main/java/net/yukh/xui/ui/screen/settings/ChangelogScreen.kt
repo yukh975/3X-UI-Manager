@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,8 +39,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import net.yukh.xui.i18n.LocalAppLanguage
 import net.yukh.xui.i18n.tr
 
@@ -49,19 +46,19 @@ import net.yukh.xui.i18n.tr
  * The app's release history, read from the changelog bundled in the APK. Opened
  * from About — the update prompt only ever shows the one version you're moving
  * to, and there was no way to look back at what changed before that.
+ *
+ * Rendered as a full-screen overlay in the activity window, like the other
+ * full-screen screens here: a Compose Dialog window doesn't reliably receive
+ * system-bar insets, so the last card ended up under the navigation bar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChangelogDialog(onClose: () -> Unit) {
+fun ChangelogScreen(onClose: () -> Unit) {
     val context = LocalContext.current
     val lang = LocalAppLanguage.current
     val releases = remember(lang) { Changelog.load(context, lang) }
 
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Surface(modifier = Modifier.fillMaxSize()) {
+    Surface(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 topBar = {
                     TopAppBar(
@@ -83,9 +80,10 @@ fun ChangelogDialog(onClose: () -> Unit) {
                     }
                 } else {
                     LazyColumn(
-                        // Without this the last release card sits under Android's
-                        // navigation bar and can't be tapped open.
-                        modifier = Modifier.fillMaxSize().padding(padding).navigationBarsPadding(),
+                        // Scaffold's padding carries the navigation-bar inset here
+                        // (the activity window is edge-to-edge), which is what keeps
+                        // the last release card clear of the system buttons.
+                        modifier = Modifier.fillMaxSize().padding(padding),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -97,7 +95,6 @@ fun ChangelogDialog(onClose: () -> Unit) {
                 }
             }
         }
-    }
 }
 
 @Composable

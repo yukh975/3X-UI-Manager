@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.10.5] — 2026-08-08
+
+### Changed
+- **Bottom navigation shows icons only**, with the current tab's name captioned underneath. With an enlarged system font the per-tab labels wrapped onto two lines and pushed the bar out of shape.
+
+### Fixed
+- **Changelog page:** the oldest release really is reachable now — the page is drawn as a full screen instead of a dialog, so it gets the system-bar insets it needs (the earlier attempt at this didn't take effect).
+
 ## [0.10.4] — 2026-08-08
 
 ### Fixed
