@@ -1,0 +1,1 @@
+Fixed: on the Changelog page the last release sat under Android's navigation bar and could not be tapped open.

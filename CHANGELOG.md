@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.10.4] — 2026-08-08
+
+### Fixed
+- **Changelog page:** the last release in the list sat under Android's navigation bar and couldn't be tapped open.
+
 ## [0.10.3] — 2026-08-08
 
 ### Added
