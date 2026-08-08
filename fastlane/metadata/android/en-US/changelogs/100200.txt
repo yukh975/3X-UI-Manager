@@ -1,0 +1,1 @@
+Fixed: clients created in the app now get a proper subscription ID. The app left it empty, so the panel filled in a raw UUID and the subscription link carried a UUID-shaped id instead of the short one the panel's web UI generates. Existing clients are unaffected.
