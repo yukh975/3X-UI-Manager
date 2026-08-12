@@ -8,6 +8,9 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [0.10.6] — 2026-08-08
 
+### Fixed
+- **F-Droid builds verify again** (#4). The reference binary published for the catalog is now built from a clean checkout of the tag, so it matches F-Droid's own build byte for byte; the previous one was built incrementally and failed verification. F-Droid users get updates again — this release also carries everything from 0.10.2–0.10.5, which were test builds: the subscription-id fix (#3), the Changelog page, and the reworked bottom navigation.
+
 ### Added
 - **App language now follows the device by default.** A new "System default" option sits above English and Русский, so a Russian phone gets a Russian app straight after install — and switching the device language switches the app, without a restart. An explicit choice still overrides it.
 
