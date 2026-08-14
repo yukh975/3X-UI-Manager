@@ -44,6 +44,7 @@ fun AppNav(vm: AppNavViewModel = hiltViewModel()) {
             val updateVm: UpdateViewModel = hiltViewModel()
             BackHandler { showSettings = false }
             SettingsScreen(
+                showAbout = true,
                 onClose = { showSettings = false },
                 onCheckUpdates = { updateVm.checkNow() },
                 showAppLock = false,

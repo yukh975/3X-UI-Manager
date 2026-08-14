@@ -1,0 +1,1 @@
+Changed: Settings and About are now separate menu items, and About lists our other projects — the 3x-ui manual, Currency Converter and netadm.pro.

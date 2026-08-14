@@ -67,6 +67,8 @@ fun SettingsScreen(
     onClose: () -> Unit,
     onCheckUpdates: () -> Unit = {},
     showAppLock: Boolean = true,
+    /** Pre-sign-in there is no ⋮ menu; show a way into About from Settings. */
+    showAbout: Boolean = false,
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val lang by vm.language.collectAsStateWithLifecycle()
@@ -81,7 +83,7 @@ fun SettingsScreen(
     var hasPasscode by remember { mutableStateOf(vm.hasPasscode()) }
     var biometric by remember { mutableStateOf(vm.biometricEnabled()) }
     var showSetPasscode by remember { mutableStateOf(false) }
-    var showChangelog by remember { mutableStateOf(false) }
+    var showAboutScreen by remember { mutableStateOf(false) }
     val biometricAvailable = remember { BiometricAuth.canAuthenticate(context) }
 
     var alerts by remember { mutableStateOf(vm.alertsEnabled()) }
@@ -298,62 +300,18 @@ fun SettingsScreen(
                 }
             }
 
-            // ---- About ----
-            Text(tr("About"), style = MaterialTheme.typography.titleMedium)
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text("3X-UI Manager", style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        "${tr("Version")}: $appVersion",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text("© 2026 Yuriy Khachaturian (yukh.net)", style = MaterialTheme.typography.bodyMedium)
-                    // The GitLab (standard) build self-updates; the F-Droid build can't
-                    // (F-Droid owns updates), so it shows where updates come from instead.
-                    if (BuildConfig.IN_APP_UPDATER) {
-                        OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
-                            Text(tr("Check for updates"))
-                        }
-                    } else {
-                        Text(
-                            tr("Installed from F-Droid — updates come through the F-Droid catalog."),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    OutlinedButton(onClick = { showChangelog = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(tr("Changelog"))
-                    }
-                    val manualUri = LocalUriHandler.current
-                    OutlinedButton(
-                        onClick = { manualUri.openUri("https://github.com/yukh975/3X-UI-Manual") },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(tr("Panel manual"))
-                    }
-                    val uriHandler = LocalUriHandler.current
-                    OutlinedButton(
-                        onClick = { uriHandler.openUri("https://github.com/yukh975/3X-UI-Manager") },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(tr("Project on GitHub"))
-                    }
+            // Before sign-in there is no ⋮ menu, so About stays reachable from here.
+            if (showAbout) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    SettingRow(title = tr("About"), onClick = { showAboutScreen = true })
                 }
             }
         }
     }
 
-    if (showChangelog) {
-        BackHandler(onBack = { showChangelog = false })
-        ChangelogScreen(onClose = { showChangelog = false })
+    if (showAboutScreen) {
+        BackHandler(onBack = { showAboutScreen = false })
+        AboutScreen(onClose = { showAboutScreen = false }, onCheckUpdates = onCheckUpdates)
     }
 
     if (showSetPasscode) {

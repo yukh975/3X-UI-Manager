@@ -198,7 +198,12 @@ val ruStrings: Map<String, String> = mapOf(
     // Self-update (GitLab releases)
     "Check for updates" to "Проверить обновления",
     "Project on GitHub" to "Проект на GitHub",
-    "Panel manual" to "Руководство по панели",
+    "Our projects" to "Наши проекты",
+    "3x-ui manual" to "Руководство по 3x-ui",
+    "Documentation for the panel this app manages" to "Документация по панели, которой управляет это приложение",
+    "Currency Converter" to "Конвертер валют",
+    "Exchange rates for Android, on F-Droid" to "Курсы валют для Android, есть в F-Droid",
+    "Tools for network and system administrators" to "Инструменты для сетевых и системных администраторов",
     "Installed from F-Droid — updates come through the F-Droid catalog." to "Установлена версия из F-Droid — обновления приходят через каталог F-Droid.",
     "Update available" to "Доступно обновление",
     "Later" to "Позже",

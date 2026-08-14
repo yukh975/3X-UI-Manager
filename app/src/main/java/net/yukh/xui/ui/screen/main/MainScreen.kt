@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Security
@@ -80,6 +81,7 @@ import net.yukh.xui.ui.screen.nodes.NodesViewModel
 import net.yukh.xui.ui.screen.outbounds.OutboundsScreen
 import net.yukh.xui.ui.screen.paneladmin.PanelAdminScreen
 import net.yukh.xui.ui.screen.profiles.ProfileSwitcherSheet
+import net.yukh.xui.ui.screen.settings.AboutScreen
 import net.yukh.xui.ui.screen.settings.SettingsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
 import net.yukh.xui.ui.screen.xrayedit.DnsScreen
@@ -132,6 +134,7 @@ fun MainScreen(
     var showBackup by rememberSaveable { mutableStateOf(false) }
     var showPanelAdmin by rememberSaveable { mutableStateOf(false) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showAbout by rememberSaveable { mutableStateOf(false) }
     var showProfiles by rememberSaveable { mutableStateOf(false) }
     var showAddPanel by rememberSaveable { mutableStateOf(false) }
 
@@ -229,6 +232,11 @@ fun MainScreen(
                             text = { Text(tr("Settings")) },
                             leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
                             onClick = { menuOpen = false; showSettings = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("About")) },
+                            leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                            onClick = { menuOpen = false; showAbout = true },
                         )
                     }
                 },
@@ -396,6 +404,11 @@ fun MainScreen(
     if (showSettings) {
         BackHandler(onBack = { showSettings = false })
         SettingsScreen(onClose = { showSettings = false }, onCheckUpdates = { updateVm.checkNow() })
+    }
+
+    if (showAbout) {
+        BackHandler(onBack = { showAbout = false })
+        AboutScreen(onClose = { showAbout = false }, onCheckUpdates = { updateVm.checkNow() })
     }
 
     UpdateDialogHost(updateVm)

@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.10.8] — 2026-08-13
+
+### Changed
+- **Settings and About are now separate menu items.** About moved out of the Settings screen into its own entry in the ⋮ menu, so neither screen is a grab bag; before you sign in it is still reachable from Settings.
+- **About lists our other projects** — the 3x-ui manual, Currency Converter (on F-Droid) and netadm.pro, tools for network and system administrators — each with a one-line description.
+
 ## [0.10.7] — 2026-08-13
 
 ### Added
