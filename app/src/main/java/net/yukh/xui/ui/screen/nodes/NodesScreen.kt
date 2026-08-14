@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.Node
 import net.yukh.xui.data.repo.ServerTraffic
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.PanelFeatureUnsupported
 import net.yukh.xui.ui.format.formatBytes
 import net.yukh.xui.ui.format.formatPercent
 import net.yukh.xui.ui.format.formatUptime
@@ -88,6 +89,9 @@ fun NodesScreen(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) { Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center) }
+
+                    state.unsupported -> PanelFeatureUnsupported(tr("Nodes"))
+
 
                     state.items.isEmpty() -> Column(
                         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 40.dp),

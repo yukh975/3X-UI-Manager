@@ -198,6 +198,7 @@ val ruStrings: Map<String, String> = mapOf(
     // Self-update (GitLab releases)
     "Check for updates" to "Проверить обновления",
     "Project on GitHub" to "Проект на GitHub",
+    "Panel manual" to "Руководство по панели",
     "Installed from F-Droid — updates come through the F-Droid catalog." to "Установлена версия из F-Droid — обновления приходят через каталог F-Droid.",
     "Update available" to "Доступно обновление",
     "Later" to "Позже",
@@ -463,7 +464,6 @@ val ruStrings: Map<String, String> = mapOf(
     "Listen IP (blank = all)" to "Listen IP (пусто = все)",
     "Path" to "Путь",
     "Host" to "Host",
-    "Service name" to "Service name",
     "SNI (server name)" to "SNI (имя сервера)",
     "Dest (target)" to "Dest (назначение)",
     "Server names (comma-separated)" to "Server names (через запятую)",
@@ -482,7 +482,6 @@ val ruStrings: Map<String, String> = mapOf(
     "VLESS encryption key" to "Ключ VLESS encryption",
     "Key generation" to "Генерация ключа",
     "Decryption" to "Decryption",
-    "Encryption" to "Encryption",
     "Insert decryption" to "Вставить decryption",
     "No keys returned." to "Ключи не получены.",
     "Decryption goes on this inbound; encryption goes to the clients." to
@@ -613,6 +612,33 @@ val ruStrings: Map<String, String> = mapOf(
     "Restored — Xray restarted" to "Восстановлено — Xray перезапущен",
     "Backup failed" to "Не удалось сделать бэкап",
     "Restore failed" to "Не удалось восстановить",
+
+    // Outbound subscriptions (panel "Subscriptions" on the Outbounds page)
+    "Outbound subscriptions" to "Подписки на исходящие",
+    "Your panel version doesn't support this yet. Update the panel to the latest version to use it." to
+        "Ваша версия панели это ещё не поддерживает. Обновите панель до последней версии, чтобы пользоваться этим разделом.",
+    "No subscriptions yet." to "Пока нет подписок.",
+    "Add a subscription URL and the panel will keep its servers available as outbounds." to
+        "Добавьте ссылку на подписку — панель будет держать её серверы доступными как исходящие.",
+    "Add subscription" to "Добавить подписку",
+    "Edit subscription" to "Изменить подписку",
+    "Delete this subscription?" to "Удалить эту подписку?",
+    "Subscription URL" to "Ссылка на подписку",
+    "Tag prefix" to "Префикс тегов",
+    "Update interval, min" to "Интервал обновления, мин",
+    "Before manual outbounds" to "Перед ручными исходящими",
+    "Allow insecure TLS" to "Не проверять TLS-сертификат",
+    "Preview" to "Предпросмотр",
+    "No outbounds found at this URL." to "По этой ссылке исходящих не найдено.",
+    "Found" to "Найдено",
+    "Refresh all" to "Обновить все",
+    "Refresh now" to "Обновить сейчас",
+    "Last fetch" to "Последняя загрузка",
+    "never" to "никогда",
+    "Every" to "Каждые",
+    "min" to "мин",
+    "Saved — restart Xray to apply" to "Сохранено — перезапустите Xray, чтобы применить",
+    "Xray is restarting…" to "Xray перезапускается…",
 
     // Panel admin (account / API tokens / restart)
     "Panel admin" to "Администрирование панели",

@@ -96,6 +96,12 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
                         state.tokensLoading -> Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) {
                             CircularProgressIndicator(modifier = Modifier.size(22.dp))
                         }
+                        state.tokensUnsupported -> Text(
+                            tr("Your panel version doesn't support this yet. Update the panel to the latest version to use it."),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(16.dp),
+                        )
                         state.tokens.isEmpty() -> Text(
                             tr("No API tokens yet."),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

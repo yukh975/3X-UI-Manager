@@ -16,9 +16,12 @@ import net.yukh.xui.data.json.putInt
 import net.yukh.xui.data.json.putString
 import net.yukh.xui.data.json.string
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.isUnsupportedByPanel
 
 data class PanelAdminUiState(
     val tokensLoading: Boolean = true,
+    /** The panel predates API tokens (the endpoint 404s). */
+    val tokensUnsupported: Boolean = false,
     val tokens: List<ApiToken> = emptyList(),
     val busy: Boolean = false,
     /** A freshly created token — its plaintext value is shown once for copying. */
@@ -136,7 +139,15 @@ class PanelAdminViewModel @Inject constructor(
         viewModelScope.launch {
             repo.listApiTokens()
                 .onSuccess { rows -> _state.update { it.copy(tokensLoading = false, tokens = rows) } }
-                .onFailure { e -> _state.update { it.copy(tokensLoading = false, error = e.message ?: "Couldn't load tokens") } }
+                .onFailure { e ->
+                    _state.update {
+                        it.copy(
+                            tokensLoading = false,
+                            tokensUnsupported = e.isUnsupportedByPanel(),
+                            error = if (e.isUnsupportedByPanel()) null else e.message ?: "Couldn't load tokens",
+                        )
+                    }
+                }
         }
     }
 

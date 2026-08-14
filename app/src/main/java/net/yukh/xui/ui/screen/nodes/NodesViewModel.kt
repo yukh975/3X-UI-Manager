@@ -16,12 +16,15 @@ import net.yukh.xui.data.json.array
 import net.yukh.xui.data.json.asObject
 import net.yukh.xui.data.json.string
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.isUnsupportedByPanel
 import net.yukh.xui.data.repo.ServerTraffic
 import net.yukh.xui.ui.screen.xrayedit.loadXrayConfig
 
 data class NodesUiState(
     val items: List<Node> = emptyList(),
     val loading: Boolean = false,
+    /** The panel is older than multi-panel nodes (the endpoint 404s). */
+    val unsupported: Boolean = false,
     val refreshing: Boolean = false,
     val error: String? = null,
     val transientMessage: String? = null,
@@ -90,7 +93,13 @@ class NodesViewModel @Inject constructor(
                     _state.update { it.copy(items = list.sortedBy { n -> n.id }, loading = false, refreshing = false, error = null) }
                 }
                 .onFailure { e ->
-                    _state.update { it.copy(loading = false, refreshing = false, error = e.message) }
+                    _state.update {
+                        it.copy(
+                            loading = false, refreshing = false,
+                            unsupported = e.isUnsupportedByPanel(),
+                            error = if (e.isUnsupportedByPanel()) null else e.message,
+                        )
+                    }
                 }
         }
         // Latest version (to flag outdated nodes). Fetched once; cheap to skip if known.

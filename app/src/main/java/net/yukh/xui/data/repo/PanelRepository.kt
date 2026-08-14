@@ -31,6 +31,7 @@ import net.yukh.xui.data.api.dto.VlessEncAuth
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.NodeModel
+import net.yukh.xui.data.api.dto.OutboundSubscription
 import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.RouteTestResult
@@ -447,6 +448,48 @@ class PanelRepository @Inject constructor(
     suspend fun updateSettings(settings: JsonObject): Result<Unit> =
         authedAck { it.updateSettings(settings) }
 
+
+    // ---- Outbound subscriptions -------------------------------------------
+
+    suspend fun listOutboundSubs(): Result<List<OutboundSubscription>> =
+        authedData { it.listOutboundSubs() }
+
+    suspend fun createOutboundSub(sub: OutboundSubscription): Result<Unit> =
+        authedAck {
+            it.createOutboundSub(
+                url = sub.url.trim(), remark = sub.remark.trim(), tagPrefix = sub.tagPrefix.trim(),
+                enabled = sub.enabled, updateInterval = sub.updateInterval, prepend = sub.prepend,
+                allowPrivate = sub.allowPrivate, allowInsecure = sub.allowInsecure,
+            )
+        }
+
+    suspend fun updateOutboundSub(sub: OutboundSubscription): Result<Unit> =
+        authedAck {
+            it.updateOutboundSub(
+                id = sub.id,
+                url = sub.url.trim(), remark = sub.remark.trim(), tagPrefix = sub.tagPrefix.trim(),
+                enabled = sub.enabled, updateInterval = sub.updateInterval, prepend = sub.prepend,
+                allowPrivate = sub.allowPrivate, allowInsecure = sub.allowInsecure,
+            )
+        }
+
+    suspend fun deleteOutboundSub(id: Int): Result<Unit> = authedAck { it.deleteOutboundSub(id) }
+
+    /** Re-fetch now; the result is the outbound list the subscription yielded. */
+    suspend fun refreshOutboundSub(id: Int): Result<List<JsonObject>> =
+        authedData { it.refreshOutboundSub(id) }
+
+    suspend fun moveOutboundSub(id: Int, up: Boolean): Result<Unit> =
+        authedAck { it.moveOutboundSub(id, if (up) "up" else "down") }
+
+    /** Fetch + parse a URL without saving, so the user can see what it yields. */
+    suspend fun previewOutboundSub(
+        url: String,
+        allowPrivate: Boolean,
+        allowInsecure: Boolean,
+    ): Result<List<JsonObject>> =
+        authedData { it.parseOutboundSub(url.trim(), allowPrivate, allowInsecure) }
+
     // ---- Panel admin (settings) -------------------------------------------
 
     /** Change the admin username + password; old credentials must match. */
@@ -598,6 +641,14 @@ data class ServerTraffic(
      *  [bytes] mixes this-month and all-time counters and should be flagged. */
     val allMonthly: Boolean,
 )
+
+/** True when the panel answered 404 — i.e. this build of the panel predates the
+ *  feature. Screens use it to say "update your panel" instead of showing a raw
+ *  error, since a missing endpoint is a version gap, not a failure. */
+fun Throwable?.isUnsupportedByPanel(): Boolean =
+    this is PanelError.Http && code == 404
+
+fun Result<*>.isUnsupportedByPanel(): Boolean = exceptionOrNull().isUnsupportedByPanel()
 
 sealed class PanelError(message: String) : RuntimeException(message) {
     data object NotConnected : PanelError("Not connected to a panel")

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.RouteTestResult
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.isUnsupportedByPanel
 
 data class RuleEdit(val index: Int, val isNew: Boolean, val draft: JsonObject)
 data class BalEdit(val index: Int, val isNew: Boolean, val draft: JsonObject)
@@ -19,6 +20,8 @@ data class BalEdit(val index: Int, val isNew: Boolean, val draft: JsonObject)
 data class RoutingUiState(
     val loading: Boolean = true,
     val available: Boolean = false,
+    /** The panel is older than this feature (its endpoint 404s). */
+    val unsupported: Boolean = false,
     val config: JsonObject = JsonObject(emptyMap()),
     val testUrl: String = "https://www.google.com/generate_204",
     val dirty: Boolean = false,
@@ -33,6 +36,9 @@ data class RoutingUiState(
     val routeTestError: String? = null,
     // Inbounds for the route tester's picker: (tag sent to the API, remark shown).
     val inboundOptions: List<Pair<String, String>> = emptyList(),
+    /** Tags of outbounds injected from outbound subscriptions — selectable in
+     *  rules and balancers even though they aren't in the editable config. */
+    val subscriptionOutboundTags: List<String> = emptyList(),
 )
 
 @HiltViewModel
@@ -48,13 +54,19 @@ class RoutingViewModel @Inject constructor(
         viewModelScope.launch {
             val inbounds = repo.listInbounds()
             repo.loadXrayConfig()
-                .onSuccess { (cfg, url) ->
+                .onSuccess { load ->
                     val opts = inbounds.getOrNull().orEmpty()
                         .filter { it.tag.isNotBlank() }
                         .map { it.tag to it.remark }
-                    _state.update { it.copy(loading = false, available = true, config = cfg, testUrl = url, inboundOptions = opts, dirty = false, error = null) }
+                    _state.update {
+                        it.copy(
+                            loading = false, available = true, config = load.config, testUrl = load.testUrl,
+                            inboundOptions = opts, subscriptionOutboundTags = load.subscriptionOutboundTags,
+                            dirty = false, error = null,
+                        )
+                    }
                 }
-                .onFailure { e -> _state.update { it.copy(loading = false, available = false, error = e.message ?: "Xray config unavailable") } }
+                .onFailure { e -> _state.update { it.copy(loading = false, available = false, unsupported = e.isUnsupportedByPanel(), error = e.message ?: "Xray config unavailable") } }
         }
     }
 

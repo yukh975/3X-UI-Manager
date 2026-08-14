@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.isUnsupportedByPanel
 
 /** A DNS server being edited (index -1 = new). */
 data class ServerEdit(val index: Int, val isNew: Boolean, val draft: JsonObject)
@@ -18,6 +19,8 @@ data class ServerEdit(val index: Int, val isNew: Boolean, val draft: JsonObject)
 data class DnsUiState(
     val loading: Boolean = true,
     val available: Boolean = false,
+    /** The panel is older than this feature (its endpoint 404s). */
+    val unsupported: Boolean = false,
     val config: JsonObject = JsonObject(emptyMap()),
     val testUrl: String = "https://www.google.com/generate_204",
     val dirty: Boolean = false,
@@ -42,7 +45,7 @@ class DnsViewModel @Inject constructor(
                 .onSuccess { (cfg, url) ->
                     _state.update { it.copy(loading = false, available = true, config = cfg, testUrl = url, dirty = false, error = null) }
                 }
-                .onFailure { e -> _state.update { it.copy(loading = false, available = false, error = e.message ?: "Xray config unavailable") } }
+                .onFailure { e -> _state.update { it.copy(loading = false, available = false, unsupported = e.isUnsupportedByPanel(), error = e.message ?: "Xray config unavailable") } }
         }
     }
 

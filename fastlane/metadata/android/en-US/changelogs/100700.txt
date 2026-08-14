@@ -1,0 +1,1 @@
+Added: outbound subscriptions (#6) — add, preview, refresh, reorder and delete the panel's remote outbound lists from the app; imported outbounds are testable and usable in routing rules. Added: a link to the panel manual in About. Changed: a feature your panel is too old for now explains that instead of failing.

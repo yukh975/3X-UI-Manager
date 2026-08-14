@@ -66,6 +66,7 @@ import net.yukh.xui.data.json.string
 import net.yukh.xui.data.json.strings
 import net.yukh.xui.data.json.parseCsv
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.PanelFeatureUnsupported
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.components.ExportJsonDialog
 import net.yukh.xui.ui.components.Field
@@ -119,7 +120,7 @@ fun RoutingScreen(onClose: () -> Unit, vm: RoutingViewModel = hiltViewModel()) {
     if (rule != null) {
         RuleEditor(
             draft = rule.draft, isNew = rule.isNew,
-            outboundTags = cfg.outboundTags(), balancerTags = cfg.tagList("balancers"),
+            outboundTags = cfg.outboundTags() + state.subscriptionOutboundTags, balancerTags = cfg.tagList("balancers"),
             inboundTags = cfg.array("inbounds").map { it.asObject().string("tag") }.filter { it.isNotBlank() },
             onChange = vm::updateRuleDraft, onCancel = vm::closeRule,
             onDone = {
@@ -136,7 +137,7 @@ fun RoutingScreen(onClose: () -> Unit, vm: RoutingViewModel = hiltViewModel()) {
     val bal = state.editingBalancer
     if (bal != null) {
         BalancerEditor(
-            draft = bal.draft, isNew = bal.isNew, outboundTags = cfg.outboundTags(),
+            draft = bal.draft, isNew = bal.isNew, outboundTags = cfg.outboundTags() + state.subscriptionOutboundTags,
             onChange = vm::updateBalDraft, onCancel = vm::closeBalancer,
             onDone = {
                 val routing = cfg.child("routing")
@@ -167,6 +168,8 @@ fun RoutingScreen(onClose: () -> Unit, vm: RoutingViewModel = hiltViewModel()) {
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+                state.unsupported -> PanelFeatureUnsupported(tr("Routing"))
+
                 !state.available -> SessionGate()
                 else -> RoutingBody(cfg, state.inboundOptions, vm)
             }

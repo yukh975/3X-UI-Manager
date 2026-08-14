@@ -38,6 +38,7 @@ import net.yukh.xui.data.json.putBool
 import net.yukh.xui.data.json.putString
 import net.yukh.xui.data.json.string
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.PanelFeatureUnsupported
 import net.yukh.xui.ui.components.Field
 import net.yukh.xui.ui.components.LabeledDropdown
 import net.yukh.xui.ui.components.SectionTitle
@@ -76,6 +77,8 @@ fun GeneralScreen(onClose: () -> Unit, vm: GeneralViewModel = hiltViewModel()) {
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+                state.unsupported -> PanelFeatureUnsupported(tr("General / Logs"))
+
                 !state.available -> SessionGate()
                 else -> {
                     val cfg = state.config

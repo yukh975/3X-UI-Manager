@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.PanelFeatureUnsupported
 import net.yukh.xui.ui.components.ConfirmDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,6 +87,9 @@ fun XrayConfigScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+
+                state.unsupported -> PanelFeatureUnsupported(tr("Xray config"))
+
 
                 !state.available -> Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp),

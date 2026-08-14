@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -326,6 +327,15 @@ fun SettingsScreen(
                     }
                     OutlinedButton(onClick = { showChangelog = true }, modifier = Modifier.fillMaxWidth()) {
                         Text(tr("Changelog"))
+                    }
+                    val manualUri = LocalUriHandler.current
+                    OutlinedButton(
+                        onClick = { manualUri.openUri("https://github.com/yukh975/3X-UI-Manual") },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(tr("Panel manual"))
                     }
                     val uriHandler = LocalUriHandler.current
                     OutlinedButton(

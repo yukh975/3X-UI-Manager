@@ -64,6 +64,7 @@ import net.yukh.xui.data.json.putStrings
 import net.yukh.xui.data.json.string
 import net.yukh.xui.data.json.strings
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.PanelFeatureUnsupported
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.components.ExportJsonDialog
 import net.yukh.xui.ui.components.Field
@@ -148,6 +149,8 @@ fun DnsScreen(onClose: () -> Unit, vm: DnsViewModel = hiltViewModel()) {
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+                state.unsupported -> PanelFeatureUnsupported(tr("DNS"))
+
                 !state.available -> SessionGate()
                 else -> DnsBody(state.config, vm)
             }

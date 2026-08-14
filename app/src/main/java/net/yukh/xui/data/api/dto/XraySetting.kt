@@ -13,4 +13,8 @@ import kotlinx.serialization.json.JsonElement
 data class XraySettingEnvelope(
     val xraySetting: JsonElement = kotlinx.serialization.json.JsonObject(emptyMap()),
     val outboundTestUrl: String = "https://www.google.com/generate_204",
+    /** Outbounds injected at runtime from outbound subscriptions. They are not
+     *  part of the editable template — the panel merges them on config
+     *  generation — so the app lists them read-only. Absent on older panels. */
+    val subscriptionOutbounds: List<kotlinx.serialization.json.JsonObject> = emptyList(),
 )

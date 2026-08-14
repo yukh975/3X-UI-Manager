@@ -11,10 +11,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.isUnsupportedByPanel
 
 data class GeneralUiState(
     val loading: Boolean = true,
     val available: Boolean = false,
+    /** The panel is older than this feature (its endpoint 404s). */
+    val unsupported: Boolean = false,
     val config: JsonObject = JsonObject(emptyMap()),
     val testUrl: String = "https://www.google.com/generate_204",
     val dirty: Boolean = false,
@@ -41,7 +44,8 @@ class GeneralViewModel @Inject constructor(
                     }
                 }
                 .onFailure { e ->
-                    _state.update { it.copy(loading = false, available = false, error = e.message ?: "Xray config unavailable") }
+                    _state.update {
+                        it.copy(loading = false, available = false, unsupported = e.isUnsupportedByPanel(), error = e.message ?: "Xray config unavailable") }
                 }
         }
     }

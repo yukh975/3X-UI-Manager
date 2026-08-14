@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.10.7] — 2026-08-13
+
+### Added
+- **Panel manual link** in About — opens the project's user manual for the panel.
+- **Outbound subscriptions** (#6) — manage the panel's remote outbound lists from the app: add a subscription URL, preview what it yields before saving, set the tag prefix, refresh interval and whether its servers come before your manual outbounds, then enable, refresh, reorder or delete it. Outbounds imported from a subscription are listed on the Outbounds screen and can be tested and targeted by routing rules and balancers, the same as manual ones — they are edited through the subscription rather than directly, which is how the panel works.
+
+### Changed
+- **A feature your panel is too old for now says so.** Instead of an error or a missing screen, the section explains that the panel version doesn't support it yet and suggests updating.
+
+### Fixed
+- Several UI labels were translated twice with different wording, and the later copy silently won — "Move up/down" and "Enabled" among them. Two others had lost their Russian translation entirely this way.
+
 ## [0.10.6] — 2026-08-08
 
 ### Fixed

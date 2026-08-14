@@ -27,6 +27,7 @@ import net.yukh.xui.data.api.dto.PanelSettings
 import net.yukh.xui.data.api.dto.PanelUpdateInfo
 import net.yukh.xui.data.api.dto.RouteTestResult
 import net.yukh.xui.data.api.dto.ServerStatus
+import net.yukh.xui.data.api.dto.OutboundSubscription
 import net.yukh.xui.data.api.dto.SubInfo
 import net.yukh.xui.data.api.dto.TestOutboundResult
 import okhttp3.MultipartBody
@@ -239,6 +240,63 @@ interface XuiApi {
     // (setting/update overwrites every field, so we must resend the whole thing).
     @POST("panel/api/setting/all")
     suspend fun getAllSettingsRaw(): ApiResponse<JsonObject>
+
+
+    // ---- Outbound subscriptions (panel v3.3.1+) --------------------------
+    // Remote outbound lists the panel fetches and merges into the Xray config.
+    // The handlers read form fields (c.PostForm), not JSON, so these are
+    // @FormUrlEncoded; booleans arrive as the "true"/"false" the panel compares.
+
+    @GET("panel/api/xray/outbound-subs")
+    suspend fun listOutboundSubs(): ApiResponse<List<OutboundSubscription>>
+
+    @FormUrlEncoded
+    @POST("panel/api/xray/outbound-subs")
+    suspend fun createOutboundSub(
+        @Field("url") url: String,
+        @Field("remark") remark: String,
+        @Field("tagPrefix") tagPrefix: String,
+        @Field("enabled") enabled: Boolean,
+        @Field("updateInterval") updateInterval: Int,
+        @Field("prepend") prepend: Boolean,
+        @Field("allowPrivate") allowPrivate: Boolean,
+        @Field("allowInsecure") allowInsecure: Boolean,
+    ): ApiAck
+
+    @FormUrlEncoded
+    @POST("panel/api/xray/outbound-subs/{id}")
+    suspend fun updateOutboundSub(
+        @Path("id") id: Int,
+        @Field("url") url: String,
+        @Field("remark") remark: String,
+        @Field("tagPrefix") tagPrefix: String,
+        @Field("enabled") enabled: Boolean,
+        @Field("updateInterval") updateInterval: Int,
+        @Field("prepend") prepend: Boolean,
+        @Field("allowPrivate") allowPrivate: Boolean,
+        @Field("allowInsecure") allowInsecure: Boolean,
+    ): ApiAck
+
+    // POST alias for DELETE — the panel offers it for clients that can't send DELETE.
+    @POST("panel/api/xray/outbound-subs/{id}/del")
+    suspend fun deleteOutboundSub(@Path("id") id: Int): ApiAck
+
+    // Returns the freshly fetched outbounds; the panel also flags xray for restart.
+    @POST("panel/api/xray/outbound-subs/{id}/refresh")
+    suspend fun refreshOutboundSub(@Path("id") id: Int): ApiResponse<List<JsonObject>>
+
+    @FormUrlEncoded
+    @POST("panel/api/xray/outbound-subs/{id}/move")
+    suspend fun moveOutboundSub(@Path("id") id: Int, @Field("dir") dir: String): ApiAck
+
+    // Fetch + parse a URL without saving anything, to preview what it yields.
+    @FormUrlEncoded
+    @POST("panel/api/xray/outbound-subs/parse")
+    suspend fun parseOutboundSub(
+        @Field("url") url: String,
+        @Field("allowPrivate") allowPrivate: Boolean,
+        @Field("allowInsecure") allowInsecure: Boolean,
+    ): ApiResponse<List<JsonObject>>
 
     @POST("panel/api/setting/update")
     suspend fun updateSettings(@Body settings: JsonObject): ApiAck

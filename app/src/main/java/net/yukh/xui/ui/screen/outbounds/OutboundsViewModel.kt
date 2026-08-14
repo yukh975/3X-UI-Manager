@@ -19,6 +19,7 @@ import net.yukh.xui.data.json.array
 import net.yukh.xui.data.json.asObject
 import net.yukh.xui.data.json.putArray
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.isUnsupportedByPanel
 
 private val prettyJson = Json { prettyPrint = true; isLenient = true }
 
@@ -28,7 +29,12 @@ data class EditingOutbound(val index: Int, val isNew: Boolean, val draft: JsonOb
 data class OutboundsUiState(
     val loading: Boolean = true,
     val available: Boolean = false,
+    /** The panel is older than this feature (its endpoint 404s). */
+    val unsupported: Boolean = false,
     val outbounds: List<JsonObject> = emptyList(),
+    /** Read-only outbounds the panel injects from outbound subscriptions —
+     *  they aren't part of the editable template, so they can't be saved back. */
+    val subscriptionOutbounds: List<JsonObject> = emptyList(),
     val dirty: Boolean = false,
     val saving: Boolean = false,
     val error: String? = null,
@@ -39,6 +45,10 @@ data class OutboundsUiState(
     val testMode: String = "tcp",
     val testResults: Map<Int, TestOutboundResult> = emptyMap(),
     val testing: Set<Int> = emptySet(),
+    // Same, for the subscription-injected outbounds (kept apart so the indices
+    // of the editable list stay meaningful).
+    val subTestResults: Map<Int, TestOutboundResult> = emptyMap(),
+    val subTesting: Set<Int> = emptySet(),
 )
 
 @HiltViewModel
@@ -64,13 +74,14 @@ class OutboundsViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             loading = false, available = true, outbounds = list, dirty = false, error = null,
+                            subscriptionOutbounds = env.subscriptionOutbounds,
                             testResults = emptyMap(), testing = emptySet(),
                         )
                     }
                 }
                 .onFailure { e ->
                     _state.update {
-                        it.copy(loading = false, available = false, error = e.message ?: "Xray config unavailable")
+                        it.copy(loading = false, available = false, unsupported = e.isUnsupportedByPanel(), error = e.message ?: "Xray config unavailable")
                     }
                 }
         }
@@ -79,6 +90,29 @@ class OutboundsViewModel @Inject constructor(
     // ---- outbound connectivity test (panel 3.5.0) -------------------------
 
     fun setTestMode(mode: String) = _state.update { it.copy(testMode = mode) }
+
+    /** Test an outbound injected by a subscription. They can't be edited (the
+     *  panel regenerates them on each refresh), but they are testable and
+     *  routable just like the manual ones. */
+    fun testSubscriptionOutbound(index: Int) {
+        val ob = _state.value.subscriptionOutbounds.getOrNull(index) ?: return
+        val mode = _state.value.testMode
+        _state.update { it.copy(subTesting = it.subTesting + index) }
+        viewModelScope.launch {
+            repo.testOutbound(ob, mode)
+                .onSuccess { r ->
+                    _state.update { it.copy(subTestResults = it.subTestResults + (index to r), subTesting = it.subTesting - index) }
+                }
+                .onFailure { e ->
+                    _state.update {
+                        it.copy(
+                            subTestResults = it.subTestResults + (index to TestOutboundResult(success = false, error = e.message ?: "test failed")),
+                            subTesting = it.subTesting - index,
+                        )
+                    }
+                }
+        }
+    }
 
     fun testOutbound(index: Int) {
         val ob = _state.value.outbounds.getOrNull(index) ?: return

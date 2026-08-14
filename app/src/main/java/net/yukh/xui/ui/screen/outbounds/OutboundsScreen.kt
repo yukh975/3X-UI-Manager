@@ -1,6 +1,7 @@
 package net.yukh.xui.ui.screen.outbounds
 
 import androidx.compose.foundation.clickable
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DropdownMenu
@@ -43,10 +45,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,6 +65,7 @@ import net.yukh.xui.data.api.dto.outboundTag
 import net.yukh.xui.data.json.asObject
 import net.yukh.xui.data.parse.parseVlessLink
 import net.yukh.xui.i18n.tr
+import net.yukh.xui.ui.components.PanelFeatureUnsupported
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.components.ExportJsonDialog
 import net.yukh.xui.ui.components.ImportJsonDialog
@@ -132,6 +137,7 @@ fun OutboundsScreen(
     var linkError by remember { mutableStateOf<String?>(null) }
     val invalidLink = tr("Not a valid vless:// link")
     var outboundsMenu by remember { mutableStateOf(false) }
+    var showSubs by rememberSaveable { mutableStateOf(false) }
     var exportJson by remember { mutableStateOf<String?>(null) }
     var showImportJson by remember { mutableStateOf(false) }
     Scaffold(
@@ -160,6 +166,10 @@ fun OutboundsScreen(
                                 Icon(Icons.Filled.MoreVert, contentDescription = tr("More"))
                             }
                             DropdownMenu(expanded = outboundsMenu, onDismissRequest = { outboundsMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(tr("Outbound subscriptions")) },
+                                    onClick = { outboundsMenu = false; showSubs = true },
+                                )
                                 DropdownMenuItem(
                                     text = { Text(tr("Import from vless:// link")) },
                                     onClick = { outboundsMenu = false; showImport = true },
@@ -194,6 +204,9 @@ fun OutboundsScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+
+                state.unsupported -> PanelFeatureUnsupported(tr("Outbounds"))
+
 
                 !state.available -> Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -235,6 +248,32 @@ fun OutboundsScreen(
                             onDelete = { pendingDelete = index },
                         )
                     }
+
+                    if (state.subscriptionOutbounds.isNotEmpty()) {
+                        item {
+                            Column(Modifier.padding(top = 12.dp, bottom = 2.dp)) {
+                                Text(
+                                    tr("From outbound subscriptions"),
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                Text(
+                                    tr("Fetched by the panel and merged into the config — testable and usable in routing, but edited through the subscription, not here."),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        itemsIndexed(state.subscriptionOutbounds) { index, ob ->
+                            SubscriptionOutboundRow(
+                                tag = ob.outboundTag(),
+                                protocol = ob.outboundProtocol(),
+                                address = ob.outboundAddressSummary(),
+                                testing = index in state.subTesting,
+                                result = state.subTestResults[index],
+                                onTest = { vm.testSubscriptionOutbound(index) },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -267,6 +306,11 @@ fun OutboundsScreen(
             },
             onDismiss = { showImportJson = false },
         )
+    }
+
+    if (showSubs) {
+        BackHandler(onBack = { showSubs = false })
+        OutboundSubsScreen(onClose = { showSubs = false })
     }
 
     if (showImport) {
@@ -349,26 +393,7 @@ private fun OutboundRow(
                 if (index == 0) {
                     Text(tr("default route"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 }
-                if (result != null) {
-                    val line = if (result.success) {
-                        buildString {
-                            append("⚡ ${result.delay} ms")
-                            result.egress?.let { e ->
-                                val ip = e.ipv4.ifBlank { e.ipv6 }
-                                if (ip.isNotBlank()) append("  ·  $ip")
-                                if (e.country.isNotBlank()) append("  ·  ${e.country}")
-                                if (e.warp.isNotBlank() && e.warp != "off") append("  ·  WARP")
-                            }
-                        }
-                    } else {
-                        "✗ ${result.error.ifBlank { tr("unreachable") }}"
-                    }
-                    Text(
-                        line,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (result.success) Color(0xFF34C759) else MaterialTheme.colorScheme.error,
-                    )
-                }
+                result?.let { TestResultLine(it) }
             }
             if (testing) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -386,4 +411,66 @@ private fun OutboundRow(
             }
         }
     }
+}
+
+/** An outbound injected by a subscription: same identity/test affordances as a
+ *  manual one, minus the edit/reorder/delete actions the panel doesn't allow. */
+@Composable
+private fun SubscriptionOutboundRow(
+    tag: String,
+    protocol: String,
+    address: String,
+    testing: Boolean,
+    result: TestOutboundResult?,
+    onTest: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(tag.ifBlank { "—" }, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    listOfNotNull(protocol.takeIf { it.isNotBlank() }, address.takeIf { it.isNotBlank() }).joinToString(" · "),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                result?.let { TestResultLine(it) }
+            }
+            if (testing) {
+                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                TextButton(onClick = onTest) { Text(tr("Test")) }
+            }
+        }
+    }
+}
+
+/** Delay / egress / error line under an outbound after a connectivity test. */
+@Composable
+private fun TestResultLine(result: TestOutboundResult) {
+    val line = if (result.success) {
+        buildString {
+            append("⚡ ${result.delay} ms")
+            result.egress?.let { e ->
+                val ip = e.ipv4.ifBlank { e.ipv6 }
+                if (ip.isNotBlank()) append("  ·  $ip")
+                if (e.country.isNotBlank()) append("  ·  ${e.country}")
+                if (e.warp.isNotBlank() && e.warp != "off") append("  ·  WARP")
+            }
+        }
+    } else {
+        "✗ ${result.error.ifBlank { tr("unreachable") }}"
+    }
+    Text(
+        line,
+        style = MaterialTheme.typography.labelMedium,
+        color = if (result.success) Color(0xFF34C759) else MaterialTheme.colorScheme.error,
+    )
 }

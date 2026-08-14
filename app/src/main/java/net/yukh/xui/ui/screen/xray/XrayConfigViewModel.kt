@@ -12,12 +12,15 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.isUnsupportedByPanel
 
 private val prettyJson = Json { prettyPrint = true; isLenient = true }
 
 data class XrayConfigUiState(
     val loading: Boolean = true,
     val available: Boolean = false,
+    /** The panel is older than this feature (its endpoint 404s). */
+    val unsupported: Boolean = false,
     val configText: String = "",
     val testUrl: String = "https://www.google.com/generate_204",
     val saving: Boolean = false,
@@ -53,6 +56,7 @@ class XrayConfigViewModel @Inject constructor(
                         it.copy(
                             loading = false,
                             available = false,
+                            unsupported = e.isUnsupportedByPanel(),
                             error = e.message ?: "Xray config unavailable",
                         )
                     }
