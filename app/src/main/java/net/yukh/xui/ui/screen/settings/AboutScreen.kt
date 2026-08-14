@@ -34,6 +34,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -86,7 +91,20 @@ fun AboutScreen(onClose: () -> Unit, onCheckUpdates: () -> Unit = {}) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text("© 2026 Yuriy Khachaturian (yukh.net)", style = MaterialTheme.typography.bodyMedium)
+                    val linkColor = MaterialTheme.colorScheme.primary
+                    Text(
+                        buildAnnotatedString {
+                            append("© 2026 Yuriy Khachaturian (")
+                            withLink(
+                                LinkAnnotation.Url(
+                                    "https://yukh.net",
+                                    TextLinkStyles(SpanStyle(color = linkColor)),
+                                ),
+                            ) { append("yukh.net") }
+                            append(")")
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                     // The GitLab (standard) build self-updates; the F-Droid build can't
                     // (F-Droid owns updates), so it shows where updates come from instead.
                     if (BuildConfig.IN_APP_UPDATER) {
