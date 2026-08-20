@@ -105,13 +105,14 @@ interface gives you:
 | Item | Requirement |
 |---|---|
 | Android | 7.0 or newer (API 24) |
-| 3x-ui panel | **v3.4.1 or newer** — the app works through an API token, which arrived in 3.3.0, and its set of endpoints targets 3.4.1 |
+| 3x-ui panel | **v3.3.0 or newer** — that is the version from which the panel accepts API-token auth. Some capabilities arrived later and are unavailable on an old panel |
 | Access | the phone must be able to reach the panel's address (directly, over a VPN, or through a reverse proxy) |
 
-The newer the panel, the more sections are available: some features arrived in
-3.5.0 and 3.6.0 — see [section 17](#17-panel-version-compatibility). When the
-panel is older than a given feature needs, the app does not hide the section: it
-says inside it that your panel version doesn't support this yet and suggests
+**Keeping the panel on its latest version is recommended** — that way every
+section of the app is available, along with the panel's own fixes. What is tied
+to which version is listed in [section 17](#17-panel-version-compatibility). When
+the panel is older than a given feature needs, the app does not hide the section:
+it says inside it that your panel version doesn't support this yet and suggests
 updating.
 
 ### 1.3. What the app does not do
@@ -710,16 +711,21 @@ for your own panel.
 
 ## 17. Panel version compatibility
 
-The minimum panel is **3.4.1**. Some capabilities arrived later:
+**The minimum panel is 3.3.0**: that is where the panel starts accepting the
+API-token auth the whole app is built on. It will work against that version, but
+some capabilities arrived in later panel releases:
 
 | Capability | Panel needed |
 |---|---|
-| The core work: dashboard, inbounds, clients, nodes, Xray config | 3.4.1 |
-| Live per-client speed, outbound test, Target Strategy, route test | 3.5.0 |
-| Subscription announcement, MTProto and WireGuard client fields | 3.5.0 |
-| SMTP sender settings, outbound-down alert threshold | 3.6.0 |
-| "As the subscriber sees it" subscription status | 3.6.0 |
-| Write-only node tokens, day-of-month traffic reset | 3.6.0 |
+| API-token sign-in, dashboard, inbounds, clients, subscriptions, Xray config | 3.3.0 |
+| Outbound subscriptions | 3.3.1 |
+| Nodes and mTLS, client IP log, client export and import, live inbound speed, online split by server | 3.4.0 |
+| Bulk client actions, VLESS encryption key generation | 3.4.1 |
+| Live per-client speed, outbound test, Target Strategy, route test, subscription announcement, MTProto and WireGuard client fields | 3.5.0 |
+| SMTP sender settings, outbound-down alert threshold, "as the subscriber sees it" status, write-only node tokens, day-of-month traffic reset | 3.6.0 |
+
+**The recommendation is simple: run the latest panel.** Then every section of the
+app is available, and you get the panel's own fixes along the way.
 
 If the panel is older than a section needs, the app **does not hide it** — it
 shows an explanation instead: your panel version doesn't support this, update the
