@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import net.yukh.xui.shared.dto.Client
+import net.yukh.xui.shared.secureRandomIndex
 import net.yukh.xui.shared.dto.ClientIpInfo
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundSlim
@@ -102,6 +103,10 @@ fun ClientEditorScreen(
             comment = comment.trim(),
         )
         return base.copy(
+            // Mint the subscription id ourselves on create, in the panel's own
+            // 16-char format. Sending it empty makes the panel fall back to a
+            // uuid, which is what put a UUID-shaped id in the subscription URL.
+            subId = if (isNew) randomSubId() else base.subId,
             secret = if (isMtproto) secret.trim() else base.secret,
             adTag = if (isMtproto) adTag.trim() else base.adTag,
             allowedIPs = if (isWireguard) {
@@ -361,4 +366,16 @@ private fun LinkActions(content: String) {
             Text(tr("Share"))
         }
     }
+}
+
+/**
+ * A subscription id in the panel's own format: 16 lowercase letters/digits,
+ * matching the web UI's `RandomUtil.randomLowerAndNum(16)`. Sent on create so
+ * an app-made client gets the same kind of subId as a panel-made one — left
+ * empty, the panel falls back to a raw `uuid.NewString()`, which puts a
+ * UUID-shaped id in the subscription URL (reported as GitHub issue #3).
+ */
+private fun randomSubId(len: Int = 16): String {
+    val alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
+    return buildString(len) { repeat(len) { append(alphabet[secureRandomIndex(alphabet.length)]) } }
 }
