@@ -1,11 +1,16 @@
 package net.yukh.xui.app
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,15 +24,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlin.time.TimeSource
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.AppUpdate
+import net.yukh.xui.shared.systemLanguage
 import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.UpdateChecker
@@ -47,7 +56,6 @@ import net.yukh.xui.shared.dto.TrafficSummary
 import net.yukh.xui.shared.dto.VlessEncAuth
 import net.yukh.xui.shared.dto.parseXrayObj
 import net.yukh.xui.shared.dto.trafficByNode
-import kotlin.time.TimeSource
 
 /** One server's currently-online clients, for the grouped online view. */
 data class OnlineGroup(val server: String, val isMain: Boolean, val emails: List<String>)
@@ -84,7 +92,10 @@ fun App() {
             var refreshing by remember { mutableStateOf(false) }
             var error by remember { mutableStateOf<String?>(null) }
             var tab by remember { mutableStateOf(0) }
-            var lang by remember { mutableStateOf(LANG_EN) }
+            var langPref by remember { mutableStateOf(LANG_SYSTEM) }
+            // Recomputed on every recomposition, so a device-language change
+            // reaches the UI without an explicit restart.
+            val lang = resolveLanguage(langPref, systemLanguage())
             var speedInBits by remember { mutableStateOf(false) }
             var status by remember { mutableStateOf<ServerStatus?>(null) }
             var inbounds by remember { mutableStateOf<List<InboundSlim>>(emptyList()) }
@@ -438,7 +449,7 @@ fun App() {
 
             // Auto-restore a saved session + language on first launch.
             LaunchedEffect(Unit) {
-                lang = store.loadLang() ?: LANG_EN
+                langPref = store.loadLang() ?: LANG_SYSTEM
                 speedInBits = store.loadSpeedInBits()
                 if (!connected) {
                     profiles = store.loadProfiles()
@@ -538,8 +549,8 @@ fun App() {
                     )
                 } else if (!connected && showConnectSettings) {
                     ConnectSettingsScreen(
-                        lang = lang,
-                        onLang = { lang = it; store.saveLang(it) },
+                        lang = langPref,
+                        onLang = { langPref = it; store.saveLang(it) },
                         onCheckUpdates = { checkUpdatesManual() },
                         onClose = { showConnectSettings = false },
                     )
@@ -830,13 +841,36 @@ fun App() {
                     val traffic = trafficByNode(inbounds)
                     Scaffold(
                         bottomBar = {
-                            NavigationBar {
-                                tabs.forEachIndexed { i, label ->
-                                    NavigationBarItem(
-                                        selected = tab == i,
-                                        onClick = { tab = i },
-                                        icon = { Text(icons[i]) },
-                                        label = { Text(tr(label), maxLines = 1, softWrap = false) },
+                            // Icons only, with a single centred caption for the selected
+                            // tab. A per-item label wrapped onto two lines (and pushed the
+                            // row out of shape) on devices with an enlarged system font.
+                            Surface(tonalElevation = 3.dp) {
+                                Column(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .navigationBarsPadding()
+                                        .padding(vertical = 6.dp),
+                                ) {
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceAround,
+                                    ) {
+                                        tabs.forEachIndexed { i, label ->
+                                            IconButton(onClick = { tab = i }) {
+                                                Text(
+                                                    icons[i],
+                                                    color = if (tab == i) MaterialTheme.colorScheme.primary
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Text(
+                                        tr(tabs[tab]),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary,
                                     )
                                 }
                             }
@@ -968,8 +1002,8 @@ fun App() {
                                 )
                                 else -> MoreScreen(
                                     host = baseUrl,
-                                    lang = lang,
-                                    onLang = { lang = it; store.saveLang(it) },
+                                    lang = langPref,
+                                    onLang = { langPref = it; store.saveLang(it) },
                                     speedInBits = speedInBits,
                                     onSpeedUnit = { speedInBits = it; store.saveSpeedInBits(it) },
                                     lock = lock,

@@ -52,6 +52,7 @@ fun ConnectSettingsScreen(
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(tr("Language"), style = MaterialTheme.typography.titleMedium)
+                LangRow(tr("System default"), lang == LANG_SYSTEM) { onLang(LANG_SYSTEM) }
                 LangRow(tr("English"), lang == LANG_EN) { onLang(LANG_EN) }
                 LangRow(tr("Русский"), lang == LANG_RU) { onLang(LANG_RU) }
             }

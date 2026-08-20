@@ -14,6 +14,20 @@ import androidx.compose.runtime.compositionLocalOf
 const val LANG_EN = "en"
 const val LANG_RU = "ru"
 
+/** The stored preference meaning "follow the device language" — the default,
+ *  so a Russian phone gets a Russian app without visiting Settings first. */
+const val LANG_SYSTEM = ""
+
+/**
+ * Resolve a stored preference to the language the UI actually renders in.
+ * An explicit choice wins; otherwise the device language decides, and anything
+ * we don't translate falls back to English.
+ */
+fun resolveLanguage(preference: String, systemLanguage: String): String = when (preference) {
+    LANG_RU, LANG_EN -> preference
+    else -> if (systemLanguage == LANG_RU) LANG_RU else LANG_EN
+}
+
 val LocalAppLanguage = compositionLocalOf { LANG_EN }
 
 @Composable
@@ -28,6 +42,7 @@ fun tr(lang: String, en: String): String =
 val ruStrings: Map<String, String> = mapOf(
     // Tabs (Inbounds stays untranslated by project rule)
     "Dashboard" to "Дашборд",
+    "System default" to "Как в системе",
     "Clients" to "Клиенты",
     "Nodes" to "Узлы",
     "More" to "Ещё",
@@ -146,7 +161,7 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Self-update (GitLab releases)
     "Check for updates" to "Проверить обновления",
-    "Star on GitHub" to "Поставить звезду на GitHub",
+    "Project on GitHub" to "Проект на GitHub",
     "Speed units" to "Единицы скорости",
     "Bytes (KB/s)" to "Байты (КБ/с)",
     "Bits (Kbit/s)" to "Биты (Кбит/с)",

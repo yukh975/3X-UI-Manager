@@ -106,6 +106,7 @@ fun MoreScreen(
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(tr("Settings"), style = MaterialTheme.typography.titleMedium)
                 Text(tr("Language"), style = MaterialTheme.typography.labelMedium)
+                LanguageRow(tr("System default"), selected = lang == LANG_SYSTEM) { onLang(LANG_SYSTEM) }
                 LanguageRow(tr("English"), selected = lang == LANG_EN) { onLang(LANG_EN) }
                 LanguageRow(tr("Русский"), selected = lang == LANG_RU) { onLang(LANG_RU) }
                 Text(tr("Speed units"), style = MaterialTheme.typography.labelMedium)
@@ -198,7 +199,7 @@ fun MoreScreen(
                     onClick = { platformOpenUrl("https://github.com/yukh975/3X-UI-Manager") },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(tr("Star on GitHub"))
+                    Text(tr("Project on GitHub"))
                 }
             }
         }
