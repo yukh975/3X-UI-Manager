@@ -123,7 +123,7 @@ fun AboutScreen(host: String, onCheckUpdates: () -> Unit, onClose: () -> Unit) {
                         )
                         HorizontalDivider()
                         ProjectRow(
-                            icon = "🖧",
+                            icon = "🧰",
                             title = "netadm.pro",
                             subtitle = tr("Tools for network and system administrators"),
                             url = "https://netadm.pro",
