@@ -8,7 +8,7 @@ This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![Platform: Android 7+](https://img.shields.io/badge/Android-7%2B-3DDC84?logo=android&logoColor=white) ![Made with Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)
 
-🇷🇺 [Версия на русском](README.ru.md) · 📝 [Changelog](CHANGELOG.md)
+🇷🇺 [Версия на русском](README.ru.md) · 📖 [User manual](docs/3X-UI-MANAGER.en.md) · 📝 [Changelog](CHANGELOG.md)
 
 ---
 
@@ -20,6 +20,18 @@ This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built
 - **iOS** — unsigned `.ipa` for sideloading (AltStore / Sideloadly), attached to each release.
 
 Requires a panel running **3x-ui v3.3.0 or newer** (API-token auth).
+
+---
+
+## Documentation
+
+A full user manual, written from this app's source — installing, connecting with
+an API token, every screen, alerts, privacy, and troubleshooting.
+
+| Manual | Language | Format |
+| --- | --- | --- |
+| **[3X-UI-MANAGER.en.md](docs/3X-UI-MANAGER.en.md)** · [PDF](docs/pdf/3X-UI-MANAGER.en.pdf) | 🇬🇧 English | Markdown + PDF |
+| **[3X-UI-MANAGER.ru.md](docs/3X-UI-MANAGER.ru.md)** · [PDF](docs/pdf/3X-UI-MANAGER.ru.pdf) | 🇷🇺 Русский | Markdown + PDF |
 
 ---
 

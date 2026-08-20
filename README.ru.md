@@ -8,7 +8,7 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![Platform: Android 7+](https://img.shields.io/badge/Android-7%2B-3DDC84?logo=android&logoColor=white) ![Made with Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)
 
-🇬🇧 [English version](README.md) · 📝 [Список изменений](CHANGELOG.ru.md)
+🇬🇧 [English version](README.md) · 📖 [Руководство пользователя](docs/3X-UI-MANAGER.ru.md) · 📝 [Список изменений](CHANGELOG.ru.md)
 
 ---
 
@@ -20,6 +20,19 @@
 - **iOS** — неподписанный `.ipa` для сайдлоада (AltStore / Sideloadly), приложен к каждому релизу.
 
 Нужна панель **3x-ui v3.3.0 или новее** (авторизация по API-токену).
+
+---
+
+## Документация
+
+Подробное руководство пользователя, написанное по исходному коду приложения:
+установка, подключение по API-токену, разбор каждого экрана, оповещения,
+приватность и решение проблем.
+
+| Руководство | Язык | Формат |
+| --- | --- | --- |
+| **[3X-UI-MANAGER.ru.md](docs/3X-UI-MANAGER.ru.md)** · [PDF](docs/pdf/3X-UI-MANAGER.ru.pdf) | 🇷🇺 Русский | Markdown + PDF |
+| **[3X-UI-MANAGER.en.md](docs/3X-UI-MANAGER.en.md)** · [PDF](docs/pdf/3X-UI-MANAGER.en.pdf) | 🇬🇧 English | Markdown + PDF |
 
 ---
 
