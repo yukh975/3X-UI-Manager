@@ -38,6 +38,5 @@ release.properties
 Thumbs.db
 
 # internal / AI working files — kept out of the app repo
-/docs/
 /CLAUDE.md
 /fdroid-publishing.md
