@@ -71,6 +71,7 @@ fun OutboundsXrayScreen(
     onSave: () -> Unit,
     onCancel: () -> Unit,
     onTestOutbound: (suspend (String, String) -> TestOutboundResult?)? = null,
+    onOutboundSubs: () -> Unit,
 ) {
     var editing by remember { mutableStateOf<Int?>(null) } // index, -1 = new
     var showAdd by remember { mutableStateOf(false) }
@@ -138,6 +139,7 @@ fun OutboundsXrayScreen(
             }
             OutlinedButton(onClick = { showAdd = true }, modifier = Modifier.fillMaxWidth()) { Text(tr("Add outbound")) }
             OutlinedButton(onClick = { showImport = true }, modifier = Modifier.fillMaxWidth()) { Text(tr("Import from vless:// link")) }
+            OutlinedButton(onClick = onOutboundSubs, modifier = Modifier.fillMaxWidth()) { Text(tr("Outbound subscriptions")) }
         }
     }
 

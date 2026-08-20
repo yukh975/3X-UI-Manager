@@ -48,6 +48,7 @@ import net.yukh.xui.shared.dto.MtlsTrustCaRequest
 import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeIdsRequest
 import net.yukh.xui.shared.dto.NodeModel
+import net.yukh.xui.shared.dto.OutboundSubscription
 import net.yukh.xui.shared.dto.PanelSubSettings
 import net.yukh.xui.shared.dto.PanelUpdateInfo
 import net.yukh.xui.shared.dto.RouteTestResult
@@ -77,6 +78,11 @@ internal val sharedJson = Json {
 /** Thrown when the panel rejects our token mid-session (HTTP 401) — it was
  *  deleted or disabled in the panel. The app drops back to the Connect screen. */
 class AuthExpiredException : Exception("Authentication is no longer valid")
+
+/** Thrown when the connected panel predates a feature the app offers — its
+ *  endpoint answers 404. The screen says which feature is missing instead of
+ *  hiding itself, which would just look like a broken app. */
+class PanelFeatureUnsupportedException : Exception("The panel does not support this feature")
 
 /** A downloaded panel DB backup: raw bytes + the panel-chosen filename
  *  (x-ui.db for SQLite, x-ui.dump for PostgreSQL). */
@@ -424,6 +430,62 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
         val separator = if (subUrl.contains('?')) '&' else '?'
         return client.get("$subUrl${separator}format=info").body()
     }
+
+    // ---- Outbound subscriptions (panel v3.3.1+) ----------------------------
+    // Remote outbound lists the panel fetches on a timer and merges into the
+    // Xray config. The handlers read form fields (c.PostForm), not JSON, so
+    // these submit forms; booleans go as the "true"/"false" the panel compares.
+
+    suspend fun listOutboundSubs(): ApiResponse<List<OutboundSubscription>> {
+        val resp = client.get("$base/panel/api/xray/outbound-subs") { auth() }
+        if (resp.status == HttpStatusCode.NotFound) throw PanelFeatureUnsupportedException()
+        return resp.body()
+    }
+
+    private fun subForm(sub: OutboundSubscription) = parameters {
+        append("url", sub.url.trim())
+        append("remark", sub.remark)
+        append("tagPrefix", sub.tagPrefix)
+        append("enabled", sub.enabled.toString())
+        append("updateInterval", sub.updateInterval.toString())
+        append("prepend", sub.prepend.toString())
+        append("allowPrivate", sub.allowPrivate.toString())
+        append("allowInsecure", sub.allowInsecure.toString())
+    }
+
+    suspend fun createOutboundSub(sub: OutboundSubscription): ApiAck =
+        client.submitForm("$base/panel/api/xray/outbound-subs", subForm(sub)) { auth() }.body()
+
+    suspend fun updateOutboundSub(sub: OutboundSubscription): ApiAck =
+        client.submitForm("$base/panel/api/xray/outbound-subs/${sub.id}", subForm(sub)) { auth() }.body()
+
+    suspend fun deleteOutboundSub(id: Int): ApiAck =
+        client.post("$base/panel/api/xray/outbound-subs/$id/del") { auth() }.body()
+
+    /** Returns the freshly fetched outbounds; the panel also flags xray for restart. */
+    suspend fun refreshOutboundSub(id: Int): ApiResponse<List<JsonObject>> =
+        client.post("$base/panel/api/xray/outbound-subs/$id/refresh") { auth() }.body()
+
+    suspend fun moveOutboundSub(id: Int, up: Boolean): ApiAck =
+        client.submitForm(
+            url = "$base/panel/api/xray/outbound-subs/$id/move",
+            formParameters = parameters { append("dir", if (up) "up" else "down") },
+        ) { auth() }.body()
+
+    /** Fetch + parse a URL without saving anything, to preview what it yields. */
+    suspend fun parseOutboundSub(
+        url: String,
+        allowPrivate: Boolean,
+        allowInsecure: Boolean,
+    ): ApiResponse<List<JsonObject>> =
+        client.submitForm(
+            url = "$base/panel/api/xray/outbound-subs/parse",
+            formParameters = parameters {
+                append("url", url.trim())
+                append("allowPrivate", allowPrivate.toString())
+                append("allowInsecure", allowInsecure.toString())
+            },
+        ) { auth() }.body()
 
     suspend fun listApiTokens(): ApiResponse<List<ApiToken>> =
         client.get("$base/panel/api/setting/apiTokens") { auth() }.body()

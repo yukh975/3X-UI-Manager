@@ -125,6 +125,7 @@ fun App() {
             var showPanelAdmin by remember { mutableStateOf(false) }
             var showMtls by remember { mutableStateOf(false) }
             var showAbout by remember { mutableStateOf(false) }
+            var showOutboundSubs by remember { mutableStateOf(false) }
             var clientSubInfo by remember { mutableStateOf<SubInfo?>(null) }
             // Pre-sign-in settings, reached from the Connect screen's gear.
             var showConnectSettings by remember { mutableStateOf(false) }
@@ -813,6 +814,8 @@ fun App() {
                             null
                         },
                     )
+                } else if (showOutboundSubs && api != null) {
+                    OutboundSubsScreen(api = api!!, lang = lang, onClose = { showOutboundSubs = false })
                 } else if (showOutboundsX) {
                     val testApi = api
                     OutboundsXrayScreen(
@@ -828,6 +831,7 @@ fun App() {
                         } else {
                             null
                         },
+                        onOutboundSubs = { showOutboundSubs = true },
                     )
                 } else if (showPanelAdmin && api != null) {
                     PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })
