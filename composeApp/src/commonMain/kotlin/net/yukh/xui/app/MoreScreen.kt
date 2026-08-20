@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun MoreScreen(
-    host: String,
     lang: String,
     onLang: (String) -> Unit,
     speedInBits: Boolean,
@@ -57,7 +56,7 @@ fun MoreScreen(
     onPanelAdmin: () -> Unit,
     onNodeMtls: () -> Unit,
     onBackup: () -> Unit,
-    onCheckUpdates: () -> Unit,
+    onAbout: () -> Unit,
 ) {
     var hasCode by remember { mutableStateOf(lock.hasPasscode()) }
     var bioOn by remember { mutableStateOf(lock.biometryEnabled()) }
@@ -175,34 +174,7 @@ fun MoreScreen(
         NavCard(tr("Backup / restore"), onBackup)
 
         // ---- About ----
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(tr("About"), style = MaterialTheme.typography.titleMedium)
-                Text("${tr("Application")}: 3X-UI Manager", style = MaterialTheme.typography.bodyMedium)
-                Text("${tr("Version")}: ${appVersionName()}", style = MaterialTheme.typography.bodyMedium)
-                if (host.isNotBlank()) {
-                    Text(
-                        "${tr("Panel URL:")} $host",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Text(
-                    "© 2026 Yuriy Khachaturian (yukh.net)",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
-                    Text(tr("Check for updates"))
-                }
-                OutlinedButton(
-                    onClick = { platformOpenUrl("https://github.com/yukh975/3X-UI-Manager") },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(tr("Project on GitHub"))
-                }
-            }
-        }
+        NavCard(tr("About"), onAbout)
 
     }
 

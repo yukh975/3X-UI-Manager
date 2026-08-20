@@ -123,6 +123,7 @@ fun App() {
             var showBackup by remember { mutableStateOf(false) }
             var showPanelAdmin by remember { mutableStateOf(false) }
             var showMtls by remember { mutableStateOf(false) }
+            var showAbout by remember { mutableStateOf(false) }
             // Pre-sign-in settings, reached from the Connect screen's gear.
             var showConnectSettings by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
@@ -547,11 +548,17 @@ fun App() {
                         onUnlock = { code -> if (lock.check(code)) { locked = false; true } else false },
                         onBiometric = { lock.authenticate("Unlock 3X-UI Manager") { ok -> if (ok) locked = false } },
                     )
+                } else if (showAbout) {
+                    AboutScreen(
+                        host = if (connected) baseUrl else "",
+                        onCheckUpdates = { checkUpdatesManual() },
+                        onClose = { showAbout = false },
+                    )
                 } else if (!connected && showConnectSettings) {
                     ConnectSettingsScreen(
                         lang = langPref,
                         onLang = { langPref = it; store.saveLang(it) },
-                        onCheckUpdates = { checkUpdatesManual() },
+                        onAbout = { showAbout = true },
                         onClose = { showConnectSettings = false },
                     )
                 } else if (!connected) {
@@ -1001,7 +1008,6 @@ fun App() {
                                     },
                                 )
                                 else -> MoreScreen(
-                                    host = baseUrl,
                                     lang = langPref,
                                     onLang = { langPref = it; store.saveLang(it) },
                                     speedInBits = speedInBits,
@@ -1020,7 +1026,7 @@ fun App() {
                                     onPanelAdmin = { showPanelAdmin = true },
                                     onNodeMtls = { showMtls = true },
                                     onBackup = { showBackup = true },
-                                    onCheckUpdates = { checkUpdatesManual() },
+                                    onAbout = { showAbout = true },
                                 )
                             }
                         }

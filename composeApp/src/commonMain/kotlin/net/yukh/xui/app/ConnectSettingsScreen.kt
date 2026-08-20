@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 fun ConnectSettingsScreen(
     lang: String,
     onLang: (String) -> Unit,
-    onCheckUpdates: () -> Unit,
+    onAbout: () -> Unit,
     onClose: () -> Unit,
 ) {
     Column(
@@ -62,20 +62,20 @@ fun ConnectSettingsScreen(
         PanelAlertsCard()
 
         // ---- About ----
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(tr("About"), style = MaterialTheme.typography.titleMedium)
-                Text("${tr("Application")}: 3X-UI Manager", style = MaterialTheme.typography.bodyMedium)
-                Text("${tr("Version")}: ${appVersionName()}", style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    "© 2026 Yuriy Khachaturian (yukh.net)",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
-                    Text(tr("Check for updates"))
-                }
-            }
+        NavRow(tr("About"), onAbout)
+    }
+}
+
+@Composable
+private fun NavRow(label: String, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(label, style = MaterialTheme.typography.titleMedium)
+            Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

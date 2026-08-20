@@ -6,6 +6,59 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// The app's own CHANGELOG, compiled into the binary rather than fetched: the
+// history page has to work offline and must never contact our infrastructure.
+// Emitted as chunked string literals because a single Kotlin/JVM string
+// constant tops out at 64 KB.
+val changelogSourceDir = layout.buildDirectory.dir("generated/changelog/kotlin")
+
+val generateChangelogSource = tasks.register("generateChangelogSource") {
+    val en = rootProject.file("CHANGELOG.md")
+    val ru = rootProject.file("CHANGELOG.ru.md")
+    inputs.files(en, ru)
+    outputs.dir(changelogSourceDir)
+    doLast {
+        fun chunks(file: File): String {
+            if (!file.exists()) return "emptyList()"
+            val parts = mutableListOf<StringBuilder>()
+            var cur = StringBuilder()
+            file.readText().lineSequence().forEach { line ->
+                if (cur.length > 2000) { parts.add(cur); cur = StringBuilder() }
+                cur.append(line).append('\n')
+            }
+            parts.add(cur)
+            return parts.joinToString(",\n        ", prefix = "listOf(\n        ", postfix = ",\n    )") { part ->
+                val escaped = part.toString()
+                    .replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("$", "\${'$'}")
+                    .replace("\n", "\\n")
+                "\"" + escaped + "\""
+            }
+        }
+        val out = changelogSourceDir.get().file("ChangelogSource.kt").asFile
+        out.parentFile.mkdirs()
+        out.writeText(
+            buildString {
+                appendLine("package net.yukh.xui.app")
+                appendLine()
+                appendLine("internal object ChangelogSource {")
+                appendLine("    val en: String get() = EN.joinToString(\"\")")
+                appendLine("    val ru: String get() = RU.joinToString(\"\")")
+                appendLine()
+                appendLine("    private val EN: List<String> = " + chunks(en))
+                appendLine()
+                appendLine("    private val RU: List<String> = " + chunks(ru))
+                appendLine("}")
+            },
+        )
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+    dependsOn(generateChangelogSource)
+}
+
 kotlin {
     iosX64()
     iosArm64()
@@ -20,6 +73,9 @@ kotlin {
     }
 
     sourceSets {
+        commonMain {
+            kotlin.srcDir(changelogSourceDir)
+        }
         commonMain.dependencies {
             implementation(project(":shared"))
             implementation(compose.runtime)
