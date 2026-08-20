@@ -35,6 +35,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.dto.ApiToken
@@ -65,7 +71,13 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
     var deleteTarget by remember { mutableStateOf<ApiToken?>(null) }
 
     var subAnnounce by remember { mutableStateOf("") }
+    var smtpFrom by remember { mutableStateOf("") }
+    var smtpFromName by remember { mutableStateOf("") }
+    var outboundDownThreshold by remember { mutableStateOf("3") }
     var subLoaded by remember { mutableStateOf(false) }
+    // The whole settings object, kept verbatim so a save only changes the
+    // fields this screen edits.
+    var rawSettings by remember { mutableStateOf<JsonObject?>(null) }
 
     suspend fun reload() {
         loading = true
@@ -75,8 +87,29 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
     }
     LaunchedEffect(Unit) { reload() }
     LaunchedEffect(Unit) {
-        runCatching { api.getSubAnnounce() }.onSuccess { subAnnounce = it }
+        runCatching { api.getRawSettings() }.getOrNull()?.let { all ->
+            rawSettings = all
+            subAnnounce = all.str("subAnnounce")
+            smtpFrom = all.str("smtpFrom")
+            smtpFromName = all.str("smtpFromName")
+            outboundDownThreshold = (all.int("outboundDownThreshold") ?: 3).toString()
+        }
         subLoaded = true
+    }
+
+    fun saveSettings(patch: Map<String, JsonElement>, ok: String, fail: String) {
+        val all = rawSettings ?: return
+        busy = true
+        scope.launch {
+            val r = runCatching { api.updateSettings(all, patch) }.getOrNull()
+            if (r?.success == true) {
+                rawSettings = JsonObject(all.toMutableMap().apply { putAll(patch) })
+                message = tr(lang, ok)
+            } else {
+                message = tr(lang, fail)
+            }
+            busy = false
+        }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -156,17 +189,87 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                     )
                     Button(
                         onClick = {
-                            busy = true
-                            scope.launch {
-                                val r = runCatching { api.updateSubAnnounce(subAnnounce) }.getOrNull()
-                                message = if (r?.success == true) tr(lang, "Announcement saved")
-                                else tr(lang, "Couldn't save announcement")
-                                busy = false
-                            }
+                            saveSettings(
+                                mapOf("subAnnounce" to JsonPrimitive(subAnnounce)),
+                                "Announcement saved",
+                                "Couldn't save announcement",
+                            )
                         },
                         enabled = !busy && subLoaded,
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(tr("Save announcement")) }
+                }
+            }
+
+            // ---- Email (panel v3.6.0) ----
+            Text(tr("Email (SMTP)"), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr("Address shown in the From header of panel emails. Leave empty to use the SMTP username."),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = smtpFrom,
+                        onValueChange = { smtpFrom = it },
+                        label = { Text(tr("From address")) },
+                        placeholder = { Text("panel@example.com") },
+                        singleLine = true,
+                        enabled = subLoaded && !busy,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = smtpFromName,
+                        onValueChange = { smtpFromName = it },
+                        label = { Text(tr("Sender name")) },
+                        singleLine = true,
+                        enabled = subLoaded && !busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Button(
+                        onClick = {
+                            saveSettings(
+                                mapOf(
+                                    "smtpFrom" to JsonPrimitive(smtpFrom.trim()),
+                                    "smtpFromName" to JsonPrimitive(smtpFromName.trim()),
+                                ),
+                                "Email settings saved",
+                                "Couldn't save settings",
+                            )
+                        },
+                        enabled = !busy && subLoaded,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(tr("Save email settings")) }
+                }
+            }
+
+            // ---- Notifications (panel v3.6.0) ----
+            Text(tr("Notifications"), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr("Consecutive failed probes before an \"outbound down\" alert fires. 1 = alert on the first failure."),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = outboundDownThreshold,
+                        onValueChange = { outboundDownThreshold = it.filter(Char::isDigit).take(3) },
+                        label = { Text(tr("Outbound-down threshold")) },
+                        singleLine = true,
+                        enabled = subLoaded && !busy,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Button(
+                        onClick = {
+                            val threshold = (outboundDownThreshold.toIntOrNull() ?: 3).coerceIn(1, 100)
+                            outboundDownThreshold = threshold.toString()
+                            saveSettings(
+                                mapOf("outboundDownThreshold" to JsonPrimitive(threshold)),
+                                "Notification settings saved",
+                                "Couldn't save settings",
+                            )
+                        },
+                        enabled = !busy && subLoaded,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(tr("Save notification settings")) }
                 }
             }
 
@@ -294,3 +397,9 @@ private fun ConfirmDialog(title: String, body: String, confirm: String, onConfir
         dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
 }
+
+private fun JsonObject.str(key: String): String =
+    this[key]?.jsonPrimitive?.contentOrNull.orEmpty()
+
+private fun JsonObject.int(key: String): Int? =
+    this[key]?.jsonPrimitive?.intOrNull

@@ -41,6 +41,7 @@ import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.UpdateChecker
 import net.yukh.xui.shared.dto.BulkAdjustRequest
+import net.yukh.xui.shared.dto.SubInfo
 import net.yukh.xui.shared.dto.BulkDelRequest
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientCreatePayload
@@ -124,6 +125,7 @@ fun App() {
             var showPanelAdmin by remember { mutableStateOf(false) }
             var showMtls by remember { mutableStateOf(false) }
             var showAbout by remember { mutableStateOf(false) }
+            var clientSubInfo by remember { mutableStateOf<SubInfo?>(null) }
             // Pre-sign-in settings, reached from the Connect screen's gear.
             var showConnectSettings by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
@@ -585,6 +587,7 @@ fun App() {
                         links = clientLinks,
                         linksLoading = clientLinksLoading,
                         subUrl = clientSubUrl,
+                        subInfo = clientSubInfo,
                         onShowLinks = {
                             scope.launch {
                                 clientLinksLoading = true
@@ -601,6 +604,12 @@ fun App() {
                                     if (c != null && s?.success == true && s.obj != null)
                                         s.obj!!.subscriptionUrl(PanelSubSettings.hostOf(baseUrl), c.subId)
                                     else null
+                                // The customer's-eye status (panel v3.6.0+). The sub
+                                // server may be unreachable from the phone or predate
+                                // the endpoint — then the readout is simply omitted.
+                                clientSubInfo = clientSubUrl?.let { url ->
+                                    try { api?.subInfo(url) } catch (e: Throwable) { null }
+                                }
                             }
                         },
                         ips = clientIps,

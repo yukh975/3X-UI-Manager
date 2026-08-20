@@ -1,6 +1,11 @@
 package net.yukh.xui.app
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,16 +13,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
@@ -34,16 +37,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import net.yukh.xui.shared.dto.Client
-import net.yukh.xui.shared.secureRandomIndex
 import net.yukh.xui.shared.dto.ClientIpInfo
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundSlim
+import net.yukh.xui.shared.dto.SubInfo
+import net.yukh.xui.shared.secureRandomIndex
 
 private const val GBC = 1_073_741_824.0
 
@@ -62,6 +67,7 @@ fun ClientEditorScreen(
     links: List<String>,
     linksLoading: Boolean,
     subUrl: String? = null,
+    subInfo: SubInfo? = null,
     onShowLinks: () -> Unit,
     ips: List<ClientIpInfo>,
     ipsLoading: Boolean,
@@ -230,6 +236,7 @@ fun ClientEditorScreen(
                             )
                             SelectionContainer { Text(sub, style = MaterialTheme.typography.bodySmall) }
                             LinkActions(sub)
+                            subInfo?.let { SubStatusRow(it) }
                         }
                     }
                 }
@@ -378,4 +385,48 @@ private fun LinkActions(content: String) {
 private fun randomSubId(len: Int = 16): String {
     val alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
     return buildString(len) { repeat(len) { append(alphabet[secureRandomIndex(alphabet.length)]) } }
+}
+
+/** What the subscriber's own client app shows when it refreshes the link. */
+@Composable
+private fun SubStatusRow(info: SubInfo) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            tr("As the subscriber sees it"),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(
+                        color = if (info.isOnline) Color(0xFF34C759)
+                        else MaterialTheme.colorScheme.outline,
+                        shape = CircleShape,
+                    ),
+            )
+            Text(
+                if (info.isOnline) tr("Online") else tr("Offline"),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        val usage = listOfNotNull(
+            info.used.takeIf { it.isNotBlank() },
+            info.total.takeIf { it.isNotBlank() }?.let { "${tr("of")} $it" },
+        ).joinToString(" ")
+        if (usage.isNotBlank()) {
+            Text(
+                usage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }

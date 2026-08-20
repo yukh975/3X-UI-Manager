@@ -411,3 +411,23 @@ data class PanelUpdateInfo(
     val latestVersion: String = "",
     val updateAvailable: Boolean = false,
 )
+
+/**
+ * The subscription server's `?format=info` snapshot (panel v3.6.0+): the same
+ * live status a subscriber's own client app sees when it refreshes the link,
+ * minus the config links. Fetched best-effort from the public sub URL, so the
+ * app can show the customer's-eye view next to the share QR.
+ *
+ * Only the human-readable status fields are modeled; the endpoint returns more
+ * (byte counters, sub URLs, announce, …) which lenient parsing drops.
+ */
+@Serializable
+data class SubInfo(
+    val isOnline: Boolean = false,
+    val enabled: Boolean = true,
+    val used: String = "",
+    val total: String = "",
+    val remained: String = "",
+    val download: String = "",
+    val upload: String = "",
+)

@@ -52,6 +52,7 @@ import net.yukh.xui.shared.dto.PanelSubSettings
 import net.yukh.xui.shared.dto.PanelUpdateInfo
 import net.yukh.xui.shared.dto.RouteTestResult
 import net.yukh.xui.shared.dto.ServerStatus
+import net.yukh.xui.shared.dto.SubInfo
 import net.yukh.xui.shared.dto.TestOutboundResult
 import net.yukh.xui.shared.dto.VlessEncResponse
 
@@ -395,23 +396,33 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     suspend fun restartPanel(): ApiAck =
         client.post("$base/panel/api/setting/restartPanel") { auth() }.body()
 
-    // ---- Subscription announcement (0.9.2 parity) --------------------------
+    // ---- Panel settings ----------------------------------------------------
     // setting/update replaces ALL settings, so read the full object, patch only
-    // subAnnounce, and send it back (mirrors Android's rawSettings approach).
-    private suspend fun getRawSettings(): JsonObject? =
+    // the edited fields, and send it back (mirrors Android's rawSettings
+    // approach). Callers keep the object they loaded and pass it back to save,
+    // so an unrelated setting changed in the panel meanwhile is not clobbered
+    // by a stale read.
+    suspend fun getRawSettings(): JsonObject? =
         client.post("$base/panel/api/setting/all") { auth() }.body<ApiResponse<JsonObject>>().obj
 
-    suspend fun getSubAnnounce(): String =
-        getRawSettings()?.get("subAnnounce")?.jsonPrimitive?.contentOrNull ?: ""
-
-    suspend fun updateSubAnnounce(value: String): ApiAck {
-        val all = getRawSettings() ?: JsonObject(emptyMap())
-        val patched = JsonObject(all.toMutableMap().apply { put("subAnnounce", JsonPrimitive(value)) })
+    suspend fun updateSettings(all: JsonObject, patch: Map<String, JsonElement>): ApiAck {
+        val patched = JsonObject(all.toMutableMap().apply { putAll(patch) })
         return client.post("$base/panel/api/setting/update") {
             auth()
             contentType(ContentType.Application.Json)
             setBody(patched)
         }.body()
+    }
+
+    /**
+     * Best-effort customer's-eye subscription status from the sub server's
+     * `?format=info` (panel v3.6.0+). The sub server may sit on a port the
+     * phone can't reach, or the panel may predate the endpoint, so the caller
+     * treats any failure as "no readout" rather than an error.
+     */
+    suspend fun subInfo(subUrl: String): SubInfo {
+        val separator = if (subUrl.contains('?')) '&' else '?'
+        return client.get("$subUrl${separator}format=info").body()
     }
 
     suspend fun listApiTokens(): ApiResponse<List<ApiToken>> =
