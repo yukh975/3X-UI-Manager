@@ -103,7 +103,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Pkg)
             packageName = "3X-UI Manager"
             // macOS dmg/pkg require MAJOR > 0; the in-app version (About) is
-            // 0.3.23 (appVersionName), synced with the Android + iOS builds.
+            // version (appVersionName) is synced with the Android + iOS builds.
             packageVersion = "1.0.0"
             macOS {
                 bundleID = "net.yukh.xui.desktop"

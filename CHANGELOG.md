@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.10.9] — 2026-08-20
+
+### Added
+- **The iOS app caught up with Android.** It now carries everything from 0.10.1–0.10.8: outbound subscriptions, the panel's email From address and sender name, the outbound-down alert threshold, the subscriber's-eye subscription status, the in-app changelog, About as its own screen with our other projects, an icons-only tab bar, and a UI language that follows the device.
+
+### Fixed
+- **The minimum panel version is v3.3.0, not v3.4.1.** The connect screen overstated it — the app works with v3.3.0, and only some features need a newer panel. Running the latest panel is still recommended.
+
 ## [0.10.8] — 2026-08-13
 
 ### Changed

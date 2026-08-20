@@ -54,7 +54,7 @@ fun ConnectScreen(
         Spacer(Modifier.height(4.dp))
         Text(
             if (addMode) tr("Connect to another panel")
-            else tr("Sign in with an API token. Requires panel v3.4.1 or newer."),
+            else tr("Sign in with an API token. Requires panel v3.3.0 or newer."),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

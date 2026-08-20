@@ -4,7 +4,19 @@
 
 Эта ветка (`apple`) — проект на **Kotlin Multiplatform + Compose Multiplatform**, собирается прямо из корня репозитория. Даёт приложение для **iOS** (через Xcode) и для **macOS** (desktop), разделяя бизнес-логику с Android-приложением.
 
-🇬🇧 [English version](README.md)
+🇬🇧 [English version](README.md) · 📖 [Руководство пользователя](https://github.com/yukh975/3X-UI-Manager/blob/main/docs/3X-UI-MANAGER.ru.md) · 📝 [Список изменений](CHANGELOG.ru.md)
+
+---
+
+## Документация
+
+Полное руководство пользователя приложения — установка, подключение по
+API-токену, все экраны, оповещения, приватность и решение проблем.
+
+| Руководство | Язык | Формат |
+| --- | --- | --- |
+| **[3X-UI-MANAGER.ru.md](https://github.com/yukh975/3X-UI-Manager/blob/main/docs/3X-UI-MANAGER.ru.md)** · [PDF](https://github.com/yukh975/3X-UI-Manager/blob/main/docs/pdf/3X-UI-MANAGER.ru.pdf) | 🇷🇺 Русский | Markdown + PDF |
+| **[3X-UI-MANAGER.en.md](https://github.com/yukh975/3X-UI-Manager/blob/main/docs/3X-UI-MANAGER.en.md)** · [PDF](https://github.com/yukh975/3X-UI-Manager/blob/main/docs/pdf/3X-UI-MANAGER.en.pdf) | 🇬🇧 English | Markdown + PDF |
 
 ---
 
