@@ -34,6 +34,7 @@ private const val KEY_PROFILES = "xui.profiles"
 private const val KEY_ACTIVE = "xui.activeId"
 private const val KEY_LANG = "xui.lang"
 private const val KEY_SPEED_BITS = "xui.speedInBits"
+private const val KEY_UPDATE_DISMISSED = "xui.update.dismissed"
 
 /** All saved profiles; migrates a pre-multi-profile single session once. */
 fun SessionStore.loadProfiles(): List<SavedSession> {
@@ -83,6 +84,14 @@ fun SessionStore.loadLang(): String? = getString(KEY_LANG)
 fun SessionStore.saveLang(lang: String) = putString(KEY_LANG, lang)
 
 /** Live-speed unit choice: true = bits/s, false (default) = bytes/s. */
+/** The release the user already waved away. The launch check stays quiet about
+ *  it — on iOS an update cannot be installed from inside the app, so without
+ *  this the same prompt reappears on every single launch until the user
+ *  sideloads the new build. A manual check ignores it. */
+fun SessionStore.dismissedUpdate(): String? = getString(KEY_UPDATE_DISMISSED)
+
+fun SessionStore.setDismissedUpdate(version: String) = putString(KEY_UPDATE_DISMISSED, version)
+
 fun SessionStore.loadSpeedInBits(): Boolean = getString(KEY_SPEED_BITS) == "true"
 fun SessionStore.saveSpeedInBits(value: Boolean) = putString(KEY_SPEED_BITS, value.toString())
 

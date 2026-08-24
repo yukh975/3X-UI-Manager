@@ -195,13 +195,16 @@ fun App() {
                     }
                 }
             }
-            // Silent check once on launch — only surfaces when a newer build exists.
+            // Silent check once on launch — only surfaces when a newer build exists
+            // and the user has not already waved that version away. Installing is
+            // a manual sideload here, so a prompt the user dismissed would
+            // otherwise return on every launch until they got around to it.
             LaunchedEffect(Unit) {
                 val upd = try { UpdateChecker.latestIfNewer(appVersionName()) } catch (e: Throwable) { null }
                 if (upd != null) {
                     val u = localizedUpdate(upd)
                     lastAvailableUpdate = u
-                    if (updateState == UpdateUiState.Idle) {
+                    if (updateState == UpdateUiState.Idle && u.version != store.dismissedUpdate()) {
                         updateState = UpdateUiState.Available(u)
                     }
                 }
@@ -1056,8 +1059,15 @@ fun App() {
                 // Update prompt overlays whatever screen is showing (Connect or panel).
                 UpdateDialog(
                     state = updateState,
-                    onOpenPage = { platformOpenUrl(it.pageUrl); updateState = UpdateUiState.Idle },
-                    onDismiss = { updateState = UpdateUiState.Idle },
+                    onOpenPage = { u ->
+                        store.setDismissedUpdate(u.version)
+                        platformOpenUrl(u.pageUrl)
+                        updateState = UpdateUiState.Idle
+                    },
+                    onDismiss = {
+                        (updateState as? UpdateUiState.Available)?.let { store.setDismissedUpdate(it.update.version) }
+                        updateState = UpdateUiState.Idle
+                    },
                 )
             }
         }
