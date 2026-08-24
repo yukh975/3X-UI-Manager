@@ -38,6 +38,12 @@ class AppSettingsStore @Inject constructor(
     fun setAlertPanelPort(port: Int) = prefs.edit { putInt(KEY_ALERT_PANEL_PORT, port) }
 
     /** Show live speeds in bits/s (Kbit/s…) instead of bytes/s (KB/s). */
+    /** The release the user already waved away, so the startup check stays quiet
+     *  about it instead of re-opening the same dialog on every launch. A manual
+     *  check from Settings ignores it. */
+    fun getDismissedUpdate(): String = prefs.getString(KEY_UPDATE_DISMISSED, "") ?: ""
+    fun setDismissedUpdate(version: String) = prefs.edit { putString(KEY_UPDATE_DISMISSED, version) }
+
     fun getSpeedInBits(): Boolean = prefs.getBoolean(KEY_SPEED_BITS, false)
     fun setSpeedInBits(value: Boolean) = prefs.edit { putBoolean(KEY_SPEED_BITS, value) }
 
@@ -51,5 +57,6 @@ class AppSettingsStore @Inject constructor(
         const val KEY_ALERT_TRAFFIC_PCT = "alerts.trafficPct"
         const val KEY_ALERT_PANEL_PORT = "alerts.panelPort"
         const val KEY_SPEED_BITS = "ui.speedInBits"
+        const val KEY_UPDATE_DISMISSED = "update.dismissedVersion"
     }
 }

@@ -64,7 +64,9 @@ class UpdateViewModel @Inject constructor(
         return release.copy(notes = UpdateChecker.reflowNotes(notes))
     }
 
-    /** Silent check for startup — only surfaces a dialog when a newer build exists.
+    /** Silent check for startup — only surfaces a dialog when a newer build exists
+     *  and the user has not already waved that version away; otherwise the same
+     *  prompt reappears on every launch until they get around to updating.
      *  No-op on the F-Droid flavor, which delegates updates to the store. */
     fun checkOnStart() {
         if (!BuildConfig.IN_APP_UPDATER) return
@@ -74,7 +76,7 @@ class UpdateViewModel @Inject constructor(
             if (rel != null) {
                 val localized = localized(rel)
                 _latestAvailable.value = localized
-                if (_state.value == UpdateState.Idle) {
+                if (_state.value == UpdateState.Idle && localized.version != settings.getDismissedUpdate()) {
                     _state.value = UpdateState.Available(localized)
                 }
             }
@@ -105,7 +107,10 @@ class UpdateViewModel @Inject constructor(
         _latestAvailable.value?.let { _state.value = UpdateState.Available(it) }
     }
 
-    fun dismiss() { _state.value = UpdateState.Idle }
+    fun dismiss() {
+        (_state.value as? UpdateState.Available)?.let { settings.setDismissedUpdate(it.release.version) }
+        _state.value = UpdateState.Idle
+    }
 
     /** Download the release APK and launch the installer (falls back to the web
      *  page if the release has no APK asset). */
