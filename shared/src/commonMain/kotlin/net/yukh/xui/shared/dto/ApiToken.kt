@@ -14,4 +14,8 @@ data class ApiToken(
     val token: String = "",
     val enabled: Boolean = true,
     val createdAt: Long = 0,
+    // Panel v3.7.0: what the token may reach, and when it stops working. An
+    // older panel omits both; "admin" + 0 is exactly how it behaves.
+    val scope: String = "admin",
+    val expiresAt: Long = 0,
 )

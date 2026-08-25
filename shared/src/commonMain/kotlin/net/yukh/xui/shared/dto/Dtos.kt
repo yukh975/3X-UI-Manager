@@ -140,6 +140,8 @@ data class InboundModel(
     val expiryTime: Long = 0,
     val total: Long = 0,
     val trafficReset: String = "never",
+    // Panel v3.7.0 (VLESS): opt this inbound out of automatic xtls-rprx-vision.
+    val disableFlow: Boolean = false,
     val settings: JsonElement = JsonObject(emptyMap()),
     val streamSettings: JsonElement = JsonObject(emptyMap()),
     val sniffing: JsonElement = JsonObject(emptyMap()),
@@ -180,6 +182,15 @@ data class Client(
     val totalGB: Long = 0,
     val expiryTime: Long = 0,
     val reset: Int = 0,
+    // Panel v3.7.0: calendar-day renewal + a cap on auto-renewals, the client's
+    // own traffic-reset cycle, the subscription device limit, and AmneziaWG
+    // forwarded ports.
+    val resetDay: Int = 0,
+    val resetMax: Int = 0,
+    val trafficReset: String = "never",
+    val trafficResetDay: Int = 1,
+    val limitHwid: Int = 0,
+    val forwardedPorts: String = "",
     val group: String = "",
     val comment: String = "",
     val createdAt: Long = 0,
@@ -200,7 +211,10 @@ data class Client(
         keepAlive = keepAlive,
         flow = flow, limitIp = limitIp, totalGB = totalGB, expiryTime = expiryTime,
         enable = enable, tgId = tgId, subId = subId, group = group, comment = comment,
-        reset = reset, createdAt = createdAt, updatedAt = updatedAt,
+        reset = reset, resetDay = resetDay, resetMax = resetMax,
+        trafficReset = trafficReset, trafficResetDay = trafficResetDay,
+        limitHwid = limitHwid, forwardedPorts = forwardedPorts,
+        createdAt = createdAt, updatedAt = updatedAt,
     )
 }
 
@@ -228,6 +242,12 @@ data class ClientModel(
     val group: String = "",
     val comment: String = "",
     val reset: Int = 0,
+    val resetDay: Int = 0,
+    val resetMax: Int = 0,
+    val trafficReset: String = "never",
+    val trafficResetDay: Int = 1,
+    val limitHwid: Int = 0,
+    val forwardedPorts: String = "",
     @SerialName("created_at") val createdAt: Long = 0,
     @SerialName("updated_at") val updatedAt: Long = 0,
 )
@@ -465,3 +485,40 @@ data class OutboundSubscription(
     /** How many outbounds the last fetch produced. */
     val outboundCount: Int = 0,
 )
+
+/**
+ * One device registered against a client's subscription (panel v3.7.0). The
+ * panel counts these against the client's HWID limit; removing one just makes
+ * that device register again on its next subscription fetch.
+ */
+@Serializable
+data class ClientHwid(
+    val id: Int = 0,
+    val subId: String = "",
+    val firstSeen: Long = 0,
+    val lastSeen: Long = 0,
+    val userAgent: String = "",
+    val deviceOs: String = "",
+    val osVersion: String = "",
+    val deviceModel: String = "",
+) {
+    /** What to show as the device's name: model, else OS, else the user agent. */
+    val label: String
+        get() = listOf(deviceModel, deviceOs, osVersion)
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+            .ifBlank { userAgent }
+}
+
+/**
+ * What an API token is allowed to reach (panel v3.7.0). A panel older than that
+ * has no scopes and treats every token as [ADMIN], which is why that is the
+ * default everywhere.
+ */
+object ApiTokenScope {
+    const val ADMIN = "admin"
+    const val MONITOR = "monitor"
+    const val NODE_SYNC = "node-sync"
+
+    val ALL = listOf(ADMIN, MONITOR, NODE_SYNC)
+}

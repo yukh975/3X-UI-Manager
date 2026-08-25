@@ -10,6 +10,7 @@ import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
+import io.ktor.client.request.delete
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -30,10 +31,12 @@ import kotlinx.serialization.json.jsonPrimitive
 import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.ApiResponse
 import net.yukh.xui.shared.dto.ApiToken
+import net.yukh.xui.shared.dto.ApiTokenScope
 import net.yukh.xui.shared.dto.BulkAdjustRequest
 import net.yukh.xui.shared.dto.BulkDelRequest
 import net.yukh.xui.shared.dto.BulkEmailsRequest
 import net.yukh.xui.shared.dto.Client
+import net.yukh.xui.shared.dto.ClientHwid
 import net.yukh.xui.shared.dto.ClientCreatePayload
 import net.yukh.xui.shared.dto.ClientImportRequest
 import net.yukh.xui.shared.dto.ClientIpInfo
@@ -490,20 +493,58 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     suspend fun listApiTokens(): ApiResponse<List<ApiToken>> =
         client.get("$base/panel/api/setting/apiTokens") { auth() }.body()
 
-    suspend fun createApiToken(name: String): ApiResponse<ApiToken> =
+    /** scope/expiresAt are panel v3.7.0 fields; an older panel ignores the extra
+     *  form values and keeps minting full-access tokens. */
+    suspend fun createApiToken(
+        name: String,
+        scope: String = ApiTokenScope.ADMIN,
+        expiresAt: Long = 0,
+    ): ApiResponse<ApiToken> =
         client.submitForm(
             url = "$base/panel/api/setting/apiTokens/create",
-            formParameters = parameters { append("name", name) },
+            formParameters = parameters {
+                append("name", name)
+                append("scope", scope)
+                append("expiresAt", expiresAt.toString())
+            },
         ) { auth() }.body()
 
-    suspend fun deleteApiToken(id: Int): ApiAck =
-        client.post("$base/panel/api/setting/apiTokens/delete/$id") { auth() }.body()
+    /** expectedScope is REQUIRED from panel v3.7.0: the panel refuses to delete
+     *  or toggle a token unless the caller names the scope it thinks it has, so
+     *  a stale list cannot revoke the wrong token. */
+    suspend fun deleteApiToken(id: Int, expectedScope: String): ApiAck =
+        client.submitForm(
+            url = "$base/panel/api/setting/apiTokens/delete/$id",
+            formParameters = parameters { append("expectedScope", expectedScope) },
+        ) { auth() }.body()
 
-    suspend fun setApiTokenEnabled(id: Int, enabled: Boolean): ApiAck =
+    suspend fun setApiTokenEnabled(id: Int, enabled: Boolean, expectedScope: String): ApiAck =
         client.submitForm(
             url = "$base/panel/api/setting/apiTokens/setEnabled/$id",
-            formParameters = parameters { append("enabled", enabled.toString()) },
+            formParameters = parameters {
+                append("enabled", enabled.toString())
+                append("expectedScope", expectedScope)
+            },
         ) { auth() }.body()
+
+    // ---- Subscription devices (HWID, panel v3.7.0) -------------------------
+    // The panel counts registered devices against the client's HWID limit.
+
+    suspend fun listClientHwids(email: String): ApiResponse<List<ClientHwid>> {
+        val resp = client.post("$base/panel/api/clients/hwids/$email") { auth() }
+        if (resp.status == HttpStatusCode.NotFound) throw PanelFeatureUnsupportedException()
+        return resp.body()
+    }
+
+    suspend fun clearClientHwids(email: String): ApiAck =
+        client.delete("$base/panel/api/clients/hwids/$email") { auth() }.body()
+
+    suspend fun deleteClientHwid(email: String, id: Int): ApiAck =
+        client.delete("$base/panel/api/clients/hwids/$email/$id") { auth() }.body()
+
+    /** Apply a rotated master mTLS credential in place (panel v3.7.0). */
+    suspend fun reloadNodeMtlsClient(): ApiAck =
+        client.post("$base/panel/api/nodes/mtls/reloadClient") { auth() }.body()
 
     fun close() = client.close()
 }

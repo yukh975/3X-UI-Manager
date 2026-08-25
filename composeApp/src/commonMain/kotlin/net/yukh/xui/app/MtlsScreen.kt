@@ -88,6 +88,24 @@ fun MtlsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(tr("Set trusted parent CA")) }
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                message = try {
+                                    api.reloadNodeMtlsClient()
+                                    tr(lang, "Master credential reloaded")
+                                } catch (e: Throwable) {
+                                    e.message ?: tr(lang, "Reload failed")
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(tr("Reload master credential")) }
+                    Text(
+                        tr("Applies a rotated master certificate without restarting the panel. Needs panel v3.7.0."),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium) }

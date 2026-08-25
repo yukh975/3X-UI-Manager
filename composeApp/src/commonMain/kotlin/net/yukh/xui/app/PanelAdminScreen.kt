@@ -17,6 +17,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,6 +45,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.dto.ApiToken
+import net.yukh.xui.shared.dto.ApiTokenScope
 
 /**
  * Panel administration over the token-accessible setting API: change the admin
@@ -74,6 +76,7 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
     var smtpFrom by remember { mutableStateOf("") }
     var smtpFromName by remember { mutableStateOf("") }
     var outboundDownThreshold by remember { mutableStateOf("3") }
+    var ipLimitAllowlist by remember { mutableStateOf("") }
     var subLoaded by remember { mutableStateOf(false) }
     // The whole settings object, kept verbatim so a save only changes the
     // fields this screen edits.
@@ -93,6 +96,7 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
             smtpFrom = all.str("smtpFrom")
             smtpFromName = all.str("smtpFromName")
             outboundDownThreshold = (all.int("outboundDownThreshold") ?: 3).toString()
+            ipLimitAllowlist = all.str("ipLimitAllowlist")
         }
         subLoaded = true
     }
@@ -158,9 +162,24 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(t.name.ifBlank { "#${t.id}" }, Modifier.weight(1f))
+                                Column(Modifier.weight(1f)) {
+                                    Text(t.name.ifBlank { "#${t.id}" })
+                                    val expired = t.expiresAt in 1..epochNowMs()
+                                    val detail = listOfNotNull(
+                                        tr(scopeLabel(t.scope)),
+                                        t.expiresAt.takeIf { it > 0 }?.let {
+                                            (if (expired) tr("expired") else tr("until")) + " " + formatDayMonth(it)
+                                        },
+                                    ).joinToString(" · ")
+                                    Text(
+                                        detail,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = if (expired) MaterialTheme.colorScheme.error
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                                 Switch(checked = t.enabled, onCheckedChange = { on ->
-                                    scope.launch { runCatching { api.setApiTokenEnabled(t.id, on) }; reload() }
+                                    scope.launch { runCatching { api.setApiTokenEnabled(t.id, on, t.scope) }; reload() }
                                 })
                                 TextButton(onClick = { deleteTarget = t }) {
                                     Text(tr("Delete"), color = MaterialTheme.colorScheme.error)
@@ -242,6 +261,38 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                 }
             }
 
+            // ---- Security (panel v3.7.0) ----
+            Text(tr("Security"), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        tr("Addresses the IP limit never counts and never bans, so a shared office or campus address can't use up a client's limit. Comma-separated, IP or CIDR."),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(
+                        value = ipLimitAllowlist,
+                        onValueChange = { ipLimitAllowlist = it },
+                        label = { Text(tr("IP limit allowlist")) },
+                        placeholder = { Text("203.0.113.7, 198.51.100.0/24") },
+                        singleLine = true,
+                        enabled = subLoaded && !busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Button(
+                        onClick = {
+                            saveSettings(
+                                mapOf("ipLimitAllowlist" to JsonPrimitive(ipLimitAllowlist.trim())),
+                                "IP limit allowlist saved",
+                                "Couldn't save settings",
+                            )
+                        },
+                        enabled = !busy && subLoaded,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(tr("Save")) }
+                }
+            }
+
             // ---- Notifications (panel v3.6.0) ----
             Text(tr("Notifications"), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             Card(Modifier.fillMaxWidth()) {
@@ -301,11 +352,11 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
 
     if (showCreate) {
         TokenNameDialog(
-            onConfirm = { name ->
+            onConfirm = { name, tokenScope, expiresAt ->
                 showCreate = false
                 busy = true
                 scope.launch {
-                    val r = runCatching { api.createApiToken(name.trim()) }.getOrNull()
+                    val r = runCatching { api.createApiToken(name.trim(), tokenScope, expiresAt) }.getOrNull()
                     if (r?.success == true) newToken = r.obj else message = tr(lang, "Couldn't create token")
                     busy = false
                     reload()
@@ -337,7 +388,7 @@ fun PanelAdminScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
             confirm = tr("Delete"),
             onConfirm = {
                 deleteTarget = null
-                scope.launch { runCatching { api.deleteApiToken(t.id) }; reload() }
+                scope.launch { runCatching { api.deleteApiToken(t.id, t.scope) }; reload() }
             },
             onDismiss = { deleteTarget = null },
         )
@@ -374,15 +425,67 @@ private fun PField(value: String, onChange: (String) -> Unit, label: String, pas
 }
 
 @Composable
-private fun TokenNameDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+private fun TokenNameDialog(onConfirm: (String, String, Long) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
+    var tokenScope by remember { mutableStateOf(ApiTokenScope.ADMIN) }
+    var days by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(tr("Create token")) },
-        text = { OutlinedTextField(name, { name = it }, label = { Text(tr("Token name")) }, singleLine = true, modifier = Modifier.fillMaxWidth()) },
-        confirmButton = { TextButton(onClick = { onConfirm(name) }, enabled = name.isNotBlank()) { Text(tr("Create")) } },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(name, { name = it }, label = { Text(tr("Token name")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Text(tr("Scope"), style = MaterialTheme.typography.labelMedium)
+                ApiTokenScope.ALL.forEach { s ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = tokenScope == s, onClick = { tokenScope = s })
+                        Column {
+                            Text(tr(scopeLabel(s)))
+                            Text(
+                                tr(scopeHelp(s)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    days,
+                    { days = it.filter(Char::isDigit).take(5) },
+                    label = { Text(tr("Expires in, days (0 = never)")) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    tr("Scope and expiry need panel v3.7.0. An older panel ignores them and issues a full-access token."),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val d = days.toLongOrNull() ?: 0
+                    onConfirm(name, tokenScope, if (d > 0) epochNowMs() + d * 86_400_000L else 0L)
+                },
+                enabled = name.isNotBlank(),
+            ) { Text(tr("Create")) }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
+}
+
+private fun scopeLabel(scope: String): String = when (scope) {
+    ApiTokenScope.MONITOR -> "Monitor (read-only)"
+    ApiTokenScope.NODE_SYNC -> "Node sync"
+    else -> "Admin (full access)"
+}
+
+private fun scopeHelp(scope: String): String = when (scope) {
+    ApiTokenScope.MONITOR -> "Server status and metric history only."
+    ApiTokenScope.NODE_SYNC -> "What a central panel needs: inbounds, clients, restart Xray."
+    else -> "Everything the panel API can do."
 }
 
 @Composable

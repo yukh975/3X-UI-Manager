@@ -91,6 +91,7 @@ fun InboundEditorScreen(
     var port by remember { mutableStateOf(if (initial.port > 0) initial.port.toString() else "") }
     var enable by remember { mutableStateOf(initial.enable) }
     var trafficReset by remember { mutableStateOf(initial.trafficReset.ifBlank { "never" }) }
+    var disableFlow by remember { mutableStateOf(initial.disableFlow) }
     var totalGb by remember { mutableStateOf(gbString(initial.total)) }
     var settingsJson by remember { mutableStateOf(if (isNew) InboundTemplates.settings(protocol) else initial.settingsText()) }
     var streamJson by remember { mutableStateOf(if (isNew) InboundTemplates.streamSettings(protocol) else initial.streamSettingsText()) }
@@ -100,7 +101,7 @@ fun InboundEditorScreen(
     val totalBytes = totalGb.trim().replace(',', '.').toDoubleOrNull()?.let { (it * GB).toLong() } ?: 0L
     val built = buildInbound(
         initial, protocol, remark.trim(), listen.trim(), portNum, totalBytes,
-        trafficReset, enable, settingsJson, streamJson, sniffingJson,
+        trafficReset, disableFlow, enable, settingsJson, streamJson, sniffingJson,
     )
     val canSave = !saving && portNum in 1..65535 && built != null
 
@@ -145,6 +146,17 @@ fun InboundEditorScreen(
 
             Text(tr("Traffic reset"), style = MaterialTheme.typography.labelMedium)
             Chips(InboundTemplates.TRAFFIC_RESET, trafficReset) { trafficReset = it }
+            if (protocol == "vless") {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(tr("Disable XTLS flow"), Modifier.weight(1f))
+                    Switch(checked = disableFlow, onCheckedChange = { disableFlow = it })
+                }
+                Text(
+                    tr("Stops the panel injecting xtls-rprx-vision into this inbound. Vision keeps working on your other inbounds. Needs panel v3.7.0."),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             EditToggle(tr("Enabled"), enable) { enable = it }
 

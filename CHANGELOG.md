@@ -6,6 +6,21 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.11.1] — 2026-08-24
+
+### Added
+- **Panel 3.7.0 support.** The client editor gained the panel's new fields: **renew on a calendar day** of the month instead of a rolling interval, a **cap on auto-renewals**, the client's **own traffic-reset cycle**, a **device limit** for subscription requests, and **forwarded ports** for AmneziaWG clients.
+- **Subscription devices.** A client's registered devices are listed with when each was last seen, and can be removed one at a time or all at once — the way to unlink a phone without touching anything else.
+- **Scoped API tokens.** Creating a token now offers its scope — admin, monitor (read-only) or node-sync — and an optional expiry in days. Existing tokens keep full access, as the panel intends.
+- **IP limit allowlist** in Panel admin: addresses and networks the panel's IP limit never counts and never bans, so a shared office address can't use up a client's limit.
+- **Disable XTLS flow** switch for VLESS inbounds, and a **Reload master credential** button on the Node mTLS screen that applies a rotated certificate without restarting the panel.
+
+### Fixed
+- **The update prompt no longer reappears on every launch.** Dismissing it only cleared in-memory state, so the startup check re-opened the same dialog every time until the update was actually installed — on the Apple build, where updating means a manual sideload, that could be a long time. The dismissed version is now remembered; the Dashboard hint and a manual check still show it.
+- **Deleting or disabling an API token works on panel 3.7.0.** That panel requires the caller to name the scope it expects, and the app was not sending it, so both actions failed.
+- Several UI labels were translated twice with different wording and the later copy silently won — "Fingerprint" and "Outbound test URL" among them.
+- **The minimum panel version is v3.3.0, not v3.4.1.** The connect screen overstated it — the app works with v3.3.0, and only some features need a newer panel.
+
 ## [0.10.8] — 2026-08-13
 
 ### Changed

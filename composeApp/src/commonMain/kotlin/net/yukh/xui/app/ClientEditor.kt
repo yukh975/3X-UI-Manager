@@ -73,6 +73,7 @@ fun ClientEditorScreen(
     ipsLoading: Boolean,
     onShowIps: () -> Unit,
     onClearIps: () -> Unit,
+    onShowDevices: () -> Unit = {},
     onSave: (ClientModel, List<Int>) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit,
@@ -84,6 +85,13 @@ fun ClientEditorScreen(
     var totalGb by remember { mutableStateOf(gbStr(source.totalGB)) }
     var limitIp by remember { mutableStateOf(if (source.limitIp > 0) source.limitIp.toString() else "") }
     var reset by remember { mutableStateOf(if (source.reset > 0) source.reset.toString() else "") }
+    // Panel v3.7.0 client fields.
+    var resetDay by remember { mutableStateOf(if (source.resetDay > 0) source.resetDay.toString() else "") }
+    var resetMax by remember { mutableStateOf(if (source.resetMax > 0) source.resetMax.toString() else "") }
+    var trafficReset by remember { mutableStateOf(source.trafficReset.ifBlank { "never" }) }
+    var trafficResetDay by remember { mutableStateOf(source.trafficResetDay.coerceAtLeast(1).toString()) }
+    var limitHwid by remember { mutableStateOf(if (source.limitHwid > 0) source.limitHwid.toString() else "") }
+    var forwardedPorts by remember { mutableStateOf(source.forwardedPorts) }
     var tgId by remember { mutableStateOf(if (source.tgId != 0L) source.tgId.toString() else "") }
     var group by remember { mutableStateOf(source.group) }
     var comment by remember { mutableStateOf(source.comment) }
@@ -95,6 +103,7 @@ fun ClientEditorScreen(
     val selectedProtocols = availableInbounds.filter { it.id in selectedInbounds }.map { it.protocol.lowercase() }
     val isMtproto = "mtproto" in selectedProtocols
     val isWireguard = "wireguard" in selectedProtocols
+    val isAmneziawg = "amneziawg" in selectedProtocols
 
     val canSave = !saving && email.isNotBlank() && (!isNew || selectedInbounds.isNotEmpty())
     fun build(): ClientModel {
@@ -104,6 +113,13 @@ fun ClientEditorScreen(
             totalGB = totalGb.trim().replace(',', '.').toDoubleOrNull()?.let { (it * GBC).toLong() } ?: 0L,
             limitIp = limitIp.toIntOrNull() ?: 0,
             reset = reset.toIntOrNull() ?: 0,
+            // 3.7.0: a day of 0 keeps the old rolling interval, so the two
+            // coexist and the panel picks whichever is set.
+            resetDay = (resetDay.toIntOrNull() ?: 0).coerceIn(0, 31),
+            resetMax = (resetMax.toIntOrNull() ?: 0).coerceAtLeast(0),
+            trafficReset = trafficReset,
+            trafficResetDay = (trafficResetDay.toIntOrNull() ?: 1).coerceIn(1, 31),
+            limitHwid = (limitHwid.toIntOrNull() ?: 0).coerceAtLeast(0),
             tgId = tgId.toLongOrNull() ?: 0L,
             group = group.trim(),
             comment = comment.trim(),
@@ -120,6 +136,7 @@ fun ClientEditorScreen(
             } else {
                 base.allowedIPs
             },
+            forwardedPorts = if (isAmneziawg) forwardedPorts.trim() else base.forwardedPorts,
         )
     }
 
@@ -143,6 +160,29 @@ fun ClientEditorScreen(
             CField(totalGb, { totalGb = it }, tr("Traffic limit (GB, 0 = unlimited)"), KeyboardType.Decimal)
             CField(limitIp, { limitIp = it.filter(Char::isDigit) }, tr("IP limit (0 = unlimited)"), KeyboardType.Number)
             CField(reset, { reset = it.filter(Char::isDigit) }, tr("Traffic reset period (days, 0 = off)"), KeyboardType.Number)
+            // ---- Renewal, reset cycle and devices (panel v3.7.0) ----
+            CField(resetDay, { resetDay = it.filter(Char::isDigit).take(2) }, tr("Renew on day (0 = interval)"), KeyboardType.Number)
+            CField(resetMax, { resetMax = it.filter(Char::isDigit).take(4) }, tr("Max renewals (0 = ∞)"), KeyboardType.Number)
+            Text(tr("Traffic reset cycle"), style = MaterialTheme.typography.labelMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TRAFFIC_RESET_CYCLES.forEach { cycle ->
+                    FilterChip(
+                        selected = trafficReset == cycle,
+                        onClick = { trafficReset = cycle },
+                        label = { Text(tr(cycle.replaceFirstChar { c -> c.uppercase() })) },
+                    )
+                }
+            }
+            if (trafficReset == "monthly") {
+                CField(trafficResetDay, { trafficResetDay = it.filter(Char::isDigit).take(2) }, tr("Day"), KeyboardType.Number)
+            }
+            CField(limitHwid, { limitHwid = it.filter(Char::isDigit).take(4) }, tr("Device limit (0 = unlimited)"), KeyboardType.Number)
+            if (!isNew) {
+                OutlinedButton(onClick = onShowDevices, modifier = Modifier.fillMaxWidth()) { Text(tr("Devices")) }
+            }
+            if (isAmneziawg) {
+                CField(forwardedPorts, { forwardedPorts = it }, tr("Forwarded ports"))
+            }
             CField(tgId, { tgId = it.filter(Char::isDigit) }, tr("Telegram ID (optional)"), KeyboardType.Number)
             CField(group, { group = it }, tr("Group (optional)"))
             // Pick from groups already in use (avoids typos that split a group in two).
@@ -430,3 +470,7 @@ private fun SubStatusRow(info: SubInfo) {
         }
     }
 }
+
+
+/** Panel-side cycles for a client's own traffic reset (panel v3.7.0). */
+private val TRAFFIC_RESET_CYCLES = listOf("never", "hourly", "daily", "weekly", "monthly")

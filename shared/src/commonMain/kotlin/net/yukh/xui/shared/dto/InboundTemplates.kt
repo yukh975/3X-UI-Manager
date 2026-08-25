@@ -52,6 +52,7 @@ fun buildInbound(
     port: Int,
     totalBytes: Long,
     trafficReset: String,
+    disableFlow: Boolean,
     enable: Boolean,
     settingsText: String,
     streamSettingsText: String,
@@ -62,7 +63,7 @@ fun buildInbound(
     val sn = parseJsonOrNull(sniffingText) ?: return null
     return base.copy(
         protocol = protocol, remark = remark, listen = listen, port = port,
-        total = totalBytes, trafficReset = trafficReset, enable = enable,
+        total = totalBytes, trafficReset = trafficReset, disableFlow = disableFlow, enable = enable,
         settings = s, streamSettings = st, sniffing = sn,
     )
 }

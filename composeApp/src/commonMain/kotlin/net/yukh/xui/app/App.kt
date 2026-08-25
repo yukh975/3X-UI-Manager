@@ -8,12 +8,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -23,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,15 +41,15 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.AppUpdate
-import net.yukh.xui.shared.systemLanguage
 import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
+import net.yukh.xui.shared.api.PanelFeatureUnsupportedException
 import net.yukh.xui.shared.api.UpdateChecker
 import net.yukh.xui.shared.dto.BulkAdjustRequest
-import net.yukh.xui.shared.dto.SubInfo
 import net.yukh.xui.shared.dto.BulkDelRequest
 import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientCreatePayload
+import net.yukh.xui.shared.dto.ClientHwid
 import net.yukh.xui.shared.dto.ClientIpInfo
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundModel
@@ -53,10 +58,12 @@ import net.yukh.xui.shared.dto.Node
 import net.yukh.xui.shared.dto.NodeModel
 import net.yukh.xui.shared.dto.PanelSubSettings
 import net.yukh.xui.shared.dto.ServerStatus
+import net.yukh.xui.shared.dto.SubInfo
 import net.yukh.xui.shared.dto.TrafficSummary
 import net.yukh.xui.shared.dto.VlessEncAuth
 import net.yukh.xui.shared.dto.parseXrayObj
 import net.yukh.xui.shared.dto.trafficByNode
+import net.yukh.xui.shared.systemLanguage
 
 /** One server's currently-online clients, for the grouped online view. */
 data class OnlineGroup(val server: String, val isMain: Boolean, val emails: List<String>)
@@ -139,6 +146,11 @@ fun App() {
             var clientSubUrl by remember { mutableStateOf<String?>(null) }
             var clientIps by remember { mutableStateOf<List<ClientIpInfo>>(emptyList()) }
             var clientIpsLoading by remember { mutableStateOf(false) }
+            // Subscription devices (panel v3.7.0), same shape as the IP log.
+            var clientHwids by remember { mutableStateOf<List<ClientHwid>>(emptyList()) }
+            var clientHwidsLoading by remember { mutableStateOf(false) }
+            var clientHwidsUnsupported by remember { mutableStateOf(false) }
+            var showHwids by remember { mutableStateOf(false) }
             var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
             var geoAllUpdating by remember { mutableStateOf(false) }
             var updatingNodeIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
@@ -634,6 +646,22 @@ fun App() {
                                 clientIpsLoading = false
                             }
                         },
+                        onShowDevices = {
+                            showHwids = true
+                            scope.launch {
+                                clientHwidsLoading = true
+                                clientHwidsUnsupported = false
+                                try {
+                                    clientHwids = api?.listClientHwids(editingClient!!.email)?.obj ?: emptyList()
+                                } catch (e: PanelFeatureUnsupportedException) {
+                                    clientHwidsUnsupported = true
+                                    clientHwids = emptyList()
+                                } catch (e: Throwable) {
+                                    clientHwids = emptyList()
+                                }
+                                clientHwidsLoading = false
+                            }
+                        },
                         onSave = { model, inboundIds ->
                             scope.launch {
                                 editorSaving = true; editorError = null
@@ -675,6 +703,58 @@ fun App() {
                         },
                         onCancel = { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); editorError = null },
                     )
+                    if (showHwids) {
+                        val hwidEmail = editingClient?.email.orEmpty()
+                        AlertDialog(
+                            onDismissRequest = { showHwids = false },
+                            title = { Text(tr("Devices") + " · " + hwidEmail) },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    when {
+                                        clientHwidsLoading -> CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                                        clientHwidsUnsupported -> Text(
+                                            tr("Your panel version doesn't support this yet. Update the panel to the latest version to use it."),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                        clientHwids.isEmpty() -> Text(
+                                            tr("No devices registered."),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                        else -> clientHwids.forEach { d ->
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Column(Modifier.weight(1f)) {
+                                                    Text(d.label.ifBlank { "#" + d.id }, style = MaterialTheme.typography.bodyMedium)
+                                                    Text(
+                                                        tr("Last seen") + ": " + formatDayMonth(d.lastSeen),
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    )
+                                                }
+                                                TextButton(onClick = {
+                                                    scope.launch {
+                                                        try { api?.deleteClientHwid(hwidEmail, d.id) } catch (e: Throwable) {}
+                                                        clientHwids = clientHwids.filterNot { it.id == d.id }
+                                                    }
+                                                }) { Text(tr("Remove")) }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try { api?.clearClientHwids(hwidEmail) } catch (e: Throwable) {}
+                                            clientHwids = emptyList()
+                                        }
+                                    },
+                                    enabled = clientHwids.isNotEmpty(),
+                                ) { Text(tr("Clear")) }
+                            },
+                            dismissButton = { TextButton(onClick = { showHwids = false }) { Text(tr("Close")) } },
+                        )
+                    }
                 } else if (editingInbound != null) {
                     InboundEditorScreen(
                         initial = editingInbound!!,
