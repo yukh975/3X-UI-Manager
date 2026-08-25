@@ -12,6 +12,7 @@ import net.yukh.xui.data.api.XuiApiFactory
 import net.yukh.xui.data.api.dto.ApiAck
 import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
+import net.yukh.xui.data.api.dto.ClientHwid
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
@@ -359,6 +360,17 @@ class PanelRepository @Inject constructor(
     suspend fun clearClientIps(email: String): Result<Unit> =
         authedAck { it.clearClientIps(email) }
 
+    // ---- Subscription devices (HWID, panel v3.7.0) -------------------------
+
+    suspend fun listClientHwids(email: String): Result<List<ClientHwid>> =
+        authedData { it.listClientHwids(email) }
+
+    suspend fun clearClientHwids(email: String): Result<Unit> =
+        authedAck { it.clearClientHwids(email) }
+
+    suspend fun deleteClientHwid(email: String, id: Int): Result<Unit> =
+        authedAck { it.deleteClientHwid(email, id) }
+
     suspend fun listOnlines(): Result<List<String>> =
         authedData { it.listOnlines() }
 
@@ -395,6 +407,10 @@ class PanelRepository @Inject constructor(
     /** Set the CA whose client certs this panel trusts as a node ("" disables). */
     suspend fun setNodeMtlsTrustCA(caCert: String): Result<Unit> =
         authedAck { it.setNodeMtlsTrustCA(MtlsTrustCaRequest(caCert)) }
+
+    /** Apply a rotated master mTLS credential in place (panel v3.7.0) — before
+     *  this, a rotation only took effect after a panel restart. */
+    suspend fun reloadNodeMtlsClient(): Result<Unit> = authedAck { it.reloadNodeMtlsClient() }
 
     /**
      * Online clients on a specific node, queried directly against that node's own
@@ -503,12 +519,14 @@ class PanelRepository @Inject constructor(
     suspend fun listApiTokens(): Result<List<ApiToken>> = authedData { it.listApiTokens() }
 
     /** Create a token; the result carries the plaintext value (shown once). */
-    suspend fun createApiToken(name: String): Result<ApiToken> = authedData { it.createApiToken(name) }
+    suspend fun createApiToken(name: String, scope: String, expiresAt: Long): Result<ApiToken> =
+        authedData { it.createApiToken(name, scope, expiresAt) }
 
-    suspend fun deleteApiToken(id: Int): Result<Unit> = authedAck { it.deleteApiToken(id) }
+    suspend fun deleteApiToken(id: Int, expectedScope: String): Result<Unit> =
+        authedAck { it.deleteApiToken(id, expectedScope) }
 
-    suspend fun setApiTokenEnabled(id: Int, enabled: Boolean): Result<Unit> =
-        authedAck { it.setApiTokenEnabled(id, enabled) }
+    suspend fun setApiTokenEnabled(id: Int, enabled: Boolean, expectedScope: String): Result<Unit> =
+        authedAck { it.setApiTokenEnabled(id, enabled, expectedScope) }
 
     // ---- Internals --------------------------------------------------------
 

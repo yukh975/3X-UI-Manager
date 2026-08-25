@@ -26,6 +26,8 @@ data class InboundModel(
     val expiryTime: Long = 0,
     val total: Long = 0,
     val trafficReset: String = "never",
+    // Panel v3.7.0 (VLESS): opt this inbound out of automatic xtls-rprx-vision.
+    val disableFlow: Boolean = false,
     val settings: JsonElement = JsonObject(emptyMap()),
     val streamSettings: JsonElement = JsonObject(emptyMap()),
     val sniffing: JsonElement = JsonObject(emptyMap()),

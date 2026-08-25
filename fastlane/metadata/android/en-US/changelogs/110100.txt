@@ -1,0 +1,1 @@
+Added: panel 3.7.0 support — calendar-day renewals, renewal cap, per-client traffic reset cycle, device limit and the list of subscription devices, scoped API tokens, IP limit allowlist, Disable XTLS flow. Fixed: the update prompt no longer reappears on every launch; deleting or disabling an API token works on panel 3.7.0.

@@ -199,6 +199,14 @@ fun InboundEditorScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             LabeledDropdown(tr("Traffic reset"), state.trafficReset, InboundTemplates.TRAFFIC_RESET, true, vm::setEditorTrafficReset)
+            if (state.protocol == "vless") {
+                SwitchRow(tr("Disable XTLS flow"), state.disableFlow, vm::setEditorDisableFlow)
+                Text(
+                    tr("Stops the panel injecting xtls-rprx-vision into this inbound. Vision keeps working on your other inbounds. Needs panel v3.7.0."),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

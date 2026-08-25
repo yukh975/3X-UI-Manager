@@ -77,6 +77,7 @@ import net.yukh.xui.ui.components.ExportJsonDialog
 import net.yukh.xui.ui.components.ImportJsonDialog
 import net.yukh.xui.ui.components.LabeledDropdown
 import net.yukh.xui.ui.format.formatBytes
+import net.yukh.xui.ui.format.formatDate
 import net.yukh.xui.ui.format.formatSpeed
 import net.yukh.xui.ui.format.formatExpiryDays
 import net.yukh.xui.ui.format.formatLastOnline
@@ -299,6 +300,45 @@ fun ClientsScreen(
                 TextButton(onClick = vm::clearIpLog, enabled = state.ipLog.isNotEmpty()) { Text(tr("Clear")) }
             },
             dismissButton = { TextButton(onClick = vm::closeIpLog) { Text(tr("Close")) } },
+        )
+    }
+
+    state.hwidEmail?.let { email ->
+        AlertDialog(
+            onDismissRequest = vm::closeHwids,
+            title = { Text("${tr("Devices")} · $email") },
+            text = {
+                Column(
+                    modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    when {
+                        state.hwidsLoading -> CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        state.hwidsUnsupported -> Text(
+                            tr("Your panel version doesn't support this yet. Update the panel to the latest version to use it."),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        state.hwids.isEmpty() -> Text(tr("No devices registered."), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        else -> state.hwids.forEach { d ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(d.label.ifBlank { "#${d.id}" }, style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        "${tr("Last seen")}: ${d.lastSeen.formatDate(LocalAppLanguage.current)}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                TextButton(onClick = { vm.removeHwid(d.id) }) { Text(tr("Remove")) }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = vm::clearHwids, enabled = state.hwids.isNotEmpty()) { Text(tr("Clear")) }
+            },
+            dismissButton = { TextButton(onClick = vm::closeHwids) { Text(tr("Close")) } },
         )
     }
 

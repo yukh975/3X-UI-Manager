@@ -1,6 +1,7 @@
 package net.yukh.xui.ui.screen.clients
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -55,6 +56,13 @@ fun ClientEditorScreen(
     onLimitIp: (String) -> Unit,
     onTotalGb: (String) -> Unit,
     onReset: (String) -> Unit,
+    onResetDay: (String) -> Unit,
+    onResetMax: (String) -> Unit,
+    onTrafficReset: (String) -> Unit,
+    onTrafficResetDay: (String) -> Unit,
+    onLimitHwid: (String) -> Unit,
+    onForwardedPorts: (String) -> Unit,
+    onShowDevices: () -> Unit,
     onTgId: (String) -> Unit,
     onGroup: (String) -> Unit,
     onComment: (String) -> Unit,
@@ -166,6 +174,83 @@ fun ClientEditorScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            // ---- Renewal, reset cycle and devices (panel v3.7.0) ----
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = state.resetDay,
+                    onValueChange = onResetDay,
+                    label = { Text(tr("Renew on day (0 = interval)")) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = state.resetMax,
+                    onValueChange = onResetMax,
+                    label = { Text(tr("Max renewals (0 = ∞)")) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    EditableDropdownField(
+                        label = tr("Traffic reset cycle"),
+                        value = state.trafficReset,
+                        options = TRAFFIC_RESET_CYCLES,
+                        onChange = onTrafficReset,
+                    )
+                }
+                if (state.trafficReset == "monthly") {
+                    OutlinedTextField(
+                        value = state.trafficResetDay,
+                        onValueChange = onTrafficResetDay,
+                        label = { Text(tr("Day")) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = state.limitHwid,
+                    onValueChange = onLimitHwid,
+                    label = { Text(tr("Device limit (0 = unlimited)")) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                )
+                if (!state.isNew) {
+                    OutlinedButton(onClick = onShowDevices) { Text(tr("Devices")) }
+                }
+            }
+
+            if (state.isAmneziawg) {
+                OutlinedTextField(
+                    value = state.forwardedPorts,
+                    onValueChange = onForwardedPorts,
+                    label = { Text(tr("Forwarded ports")) },
+                    placeholder = { Text("80, 443, 8000-8100") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -285,3 +370,7 @@ private fun ExpiryDatePickerDialog(
         androidx.compose.material3.DatePicker(state = pickerState)
     }
 }
+
+
+/** Panel-side cycles for a client's own traffic reset (panel v3.7.0). */
+private val TRAFFIC_RESET_CYCLES = listOf("never", "hourly", "daily", "weekly", "monthly")

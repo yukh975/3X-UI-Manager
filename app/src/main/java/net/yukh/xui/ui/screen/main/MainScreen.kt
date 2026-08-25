@@ -322,6 +322,13 @@ fun MainScreen(
             onLimitIp = clientsVm::setEditorLimitIp,
             onTotalGb = clientsVm::setEditorTotalGb,
             onReset = clientsVm::setEditorReset,
+            onResetDay = clientsVm::setEditorResetDay,
+            onResetMax = clientsVm::setEditorResetMax,
+            onTrafficReset = clientsVm::setEditorTrafficReset,
+            onTrafficResetDay = clientsVm::setEditorTrafficResetDay,
+            onLimitHwid = clientsVm::setEditorLimitHwid,
+            onForwardedPorts = clientsVm::setEditorForwardedPorts,
+            onShowDevices = { editor.source?.email?.let(clientsVm::openHwids) },
             onTgId = clientsVm::setEditorTgId,
             onGroup = clientsVm::setEditorGroup,
             onComment = clientsVm::setEditorComment,
@@ -362,6 +369,7 @@ fun MainScreen(
             panelCa = nodesState.mtlsCa,
             busy = nodesState.mtlsBusy,
             onSaveTrustCa = nodesVm::saveMtlsTrustCa,
+            onReloadCredential = nodesVm::reloadMtlsCredential,
             onClose = nodesVm::closeMtls,
         )
     }

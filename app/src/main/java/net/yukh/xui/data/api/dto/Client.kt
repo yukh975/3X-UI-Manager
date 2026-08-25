@@ -38,6 +38,15 @@ data class Client(
     val totalGB: Long = 0,
     val expiryTime: Long = 0,
     val reset: Int = 0,
+    // Panel v3.7.0: calendar-day renewal + a cap on auto-renewals, the client's
+    // own traffic-reset cycle, the subscription device limit, and AmneziaWG
+    // forwarded ports.
+    val resetDay: Int = 0,
+    val resetMax: Int = 0,
+    val trafficReset: String = "never",
+    val trafficResetDay: Int = 1,
+    val limitHwid: Int = 0,
+    val forwardedPorts: String = "",
     val group: String = "",
     val comment: String = "",
     val createdAt: Long = 0,
@@ -80,6 +89,12 @@ data class Client(
         group = group,
         comment = comment,
         reset = reset,
+        resetDay = resetDay,
+        resetMax = resetMax,
+        trafficReset = trafficReset,
+        trafficResetDay = trafficResetDay,
+        limitHwid = limitHwid,
+        forwardedPorts = forwardedPorts,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )

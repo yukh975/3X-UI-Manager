@@ -38,6 +38,8 @@ data class PanelAdminUiState(
     // Notifications: consecutive failed probes before an outbound.down alert
     // (panel v3.6.0). Kept as text so the field can be cleared while typing.
     val outboundDownThreshold: String = "3",
+    // Addresses the IP limit never counts and never bans (panel v3.7.0).
+    val ipLimitAllowlist: String = "",
 )
 
 /**
@@ -68,6 +70,7 @@ class PanelAdminViewModel @Inject constructor(
                             smtpFrom = obj.string("smtpFrom"),
                             smtpFromName = obj.string("smtpFromName"),
                             outboundDownThreshold = (obj.int("outboundDownThreshold") ?: 3).toString(),
+                            ipLimitAllowlist = obj.string("ipLimitAllowlist"),
                         )
                     }
                 }
@@ -108,6 +111,23 @@ class PanelAdminViewModel @Inject constructor(
                 .onSuccess {
                     rawSettings = updated
                     _state.update { it.copy(busy = false, message = "Email settings saved") }
+                }
+                .onFailure { e -> _state.update { it.copy(busy = false, error = e.message ?: "Couldn't save settings") } }
+        }
+    }
+
+    fun setIpLimitAllowlist(v: String) = _state.update { it.copy(ipLimitAllowlist = v) }
+
+    fun saveIpLimitAllowlist() {
+        val raw = rawSettings ?: return
+        if (_state.value.busy) return
+        _state.update { it.copy(busy = true, error = null, message = null) }
+        viewModelScope.launch {
+            val updated = raw.putString("ipLimitAllowlist", _state.value.ipLimitAllowlist.trim())
+            repo.updateSettings(updated)
+                .onSuccess {
+                    rawSettings = updated
+                    _state.update { it.copy(busy = false, message = "IP limit allowlist saved") }
                 }
                 .onFailure { e -> _state.update { it.copy(busy = false, error = e.message ?: "Couldn't save settings") } }
         }
@@ -171,11 +191,13 @@ class PanelAdminViewModel @Inject constructor(
         }
     }
 
-    fun createToken(name: String) {
+    /** [scope] and [expiresAt] are panel v3.7.0 fields; an older panel ignores
+     *  them and keeps minting full-access tokens, which is its old behaviour. */
+    fun createToken(name: String, scope: String = ApiTokenScope.ADMIN, expiresAt: Long = 0) {
         if (_state.value.busy || name.isBlank()) return
         _state.update { it.copy(busy = true, error = null, message = null) }
         viewModelScope.launch {
-            repo.createApiToken(name.trim())
+            repo.createApiToken(name.trim(), scope, expiresAt)
                 .onSuccess { tok ->
                     _state.update { it.copy(busy = false, newToken = tok) }
                     loadTokens()
@@ -184,19 +206,22 @@ class PanelAdminViewModel @Inject constructor(
         }
     }
 
-    fun setTokenEnabled(id: Int, enabled: Boolean) {
+    /** [scope] is the scope the list says this token has — panel v3.7.0 refuses
+     *  the change unless the caller names it, so a stale list cannot toggle the
+     *  wrong token. */
+    fun setTokenEnabled(id: Int, enabled: Boolean, scope: String) {
         viewModelScope.launch {
-            repo.setApiTokenEnabled(id, enabled)
+            repo.setApiTokenEnabled(id, enabled, scope)
                 .onSuccess { loadTokens() }
                 .onFailure { e -> _state.update { it.copy(error = e.message ?: "Couldn't update token") } }
         }
     }
 
-    fun deleteToken(id: Int) {
+    fun deleteToken(id: Int, scope: String) {
         if (_state.value.busy) return
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
-            repo.deleteApiToken(id)
+            repo.deleteApiToken(id, scope)
                 .onSuccess { _state.update { it.copy(busy = false, message = "Token deleted") }; loadTokens() }
                 .onFailure { e -> _state.update { it.copy(busy = false, error = e.message ?: "Couldn't delete token") } }
         }

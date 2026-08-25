@@ -67,6 +67,7 @@ data class InboundEditorState(
     val totalGb: String = "0",
     val expiryTime: Long = 0,
     val trafficReset: String = "never",
+    val disableFlow: Boolean = false,
     val stream: JsonObject = JsonObject(emptyMap()),
     val sniffing: JsonObject = JsonObject(emptyMap()),
     val settingsText: String = "",
@@ -225,6 +226,7 @@ class InboundsViewModel @Inject constructor(
                                 totalGb = gb,
                                 expiryTime = ib.expiryTime,
                                 trafficReset = ib.trafficReset.ifBlank { "never" },
+                                disableFlow = ib.disableFlow,
                                 stream = ib.streamSettings.asObject(),
                                 sniffing = ib.sniffing.asObject(),
                                 settingsText = settingsWithoutClients(settingsObj),
@@ -265,6 +267,7 @@ class InboundsViewModel @Inject constructor(
     fun setEditorTotalGb(v: String) = edit { it.copy(totalGb = v.filter { c -> c.isDigit() || c == '.' }) }
     fun setEditorExpiry(ms: Long) = edit { it.copy(expiryTime = ms) }
     fun setEditorTrafficReset(v: String) = edit { it.copy(trafficReset = v) }
+    fun setEditorDisableFlow(v: Boolean) = edit { it.copy(disableFlow = v) }
     fun setEditorSettings(v: String) = edit { it.copy(settingsText = v) }
 
     /** Replace the whole streamSettings object (raw-JSON advanced editor) — covers
@@ -344,6 +347,7 @@ class InboundsViewModel @Inject constructor(
             expiryTime = e.expiryTime,
             total = gbBytes,
             trafficReset = e.trafficReset,
+            disableFlow = e.disableFlow,
             settings = settings,
             streamSettings = e.stream,
             sniffing = e.sniffing,

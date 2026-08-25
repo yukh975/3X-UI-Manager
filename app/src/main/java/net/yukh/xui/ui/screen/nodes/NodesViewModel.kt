@@ -283,5 +283,15 @@ class NodesViewModel @Inject constructor(
         }
     }
 
+    /** Apply a rotated master mTLS credential in place (panel v3.7.0). */
+    fun reloadMtlsCredential() {
+        _state.update { it.copy(mtlsBusy = true) }
+        viewModelScope.launch {
+            repo.reloadNodeMtlsClient()
+                .onSuccess { _state.update { it.copy(mtlsBusy = false, transientMessage = "Master credential reloaded") } }
+                .onFailure { e -> _state.update { it.copy(mtlsBusy = false, transientMessage = "Reload failed: ${e.message}") } }
+        }
+    }
+
     fun dismissMessage() = _state.update { it.copy(transientMessage = null) }
 }

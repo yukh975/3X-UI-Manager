@@ -36,6 +36,12 @@ data class ClientModel(
     val group: String = "",
     val comment: String = "",
     val reset: Int = 0,
+    val resetDay: Int = 0,
+    val resetMax: Int = 0,
+    val trafficReset: String = "never",
+    val trafficResetDay: Int = 1,
+    val limitHwid: Int = 0,
+    val forwardedPorts: String = "",
     @SerialName("created_at") val createdAt: Long = 0,
     @SerialName("updated_at") val updatedAt: Long = 0,
 )

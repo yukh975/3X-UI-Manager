@@ -51,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.yukh.xui.data.api.dto.ApiToken
+import androidx.compose.material3.RadioButton
+import net.yukh.xui.data.api.dto.ApiTokenScope
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.SectionTitle
 
@@ -111,7 +113,7 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
                             if (i > 0) HorizontalDivider()
                             TokenRow(
                                 token = t,
-                                onToggle = { vm.setTokenEnabled(t.id, it) },
+                                onToggle = { vm.setTokenEnabled(t.id, it, t.scope) },
                                 onDelete = { deleteTarget = t },
                             )
                         }
@@ -173,6 +175,31 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
             }
 
             // ---- Notifications ----
+            // ---- Security (panel v3.7.0) ----
+            SectionTitle(tr("Security"))
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        tr("Addresses the IP limit never counts and never bans, so a shared office or campus address can't use up a client's limit. Comma-separated, IP or CIDR."),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(
+                        value = state.ipLimitAllowlist,
+                        onValueChange = vm::setIpLimitAllowlist,
+                        label = { Text(tr("IP limit allowlist")) },
+                        placeholder = { Text("203.0.113.7, 198.51.100.0/24") },
+                        enabled = state.subLoaded && !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedButton(
+                        onClick = vm::saveIpLimitAllowlist,
+                        enabled = state.subLoaded && !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(tr("Save")) }
+                }
+            }
+
             SectionTitle(tr("Notifications"))
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -209,7 +236,10 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
 
     if (showCreate) {
         CreateTokenDialog(
-            onConfirm = { name -> showCreate = false; vm.createToken(name) },
+            onConfirm = { name, scope, expiresAt ->
+                showCreate = false
+                vm.createToken(name, scope, expiresAt)
+            },
             onDismiss = { showCreate = false },
         )
     }
@@ -221,7 +251,7 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
             title = tr("Delete token?"),
             body = tr("Apps using") + " \"${t.name}\" " + tr("will stop working. This can't be undone."),
             confirmLabel = tr("Delete"),
-            onConfirm = { deleteTarget = null; vm.deleteToken(t.id) },
+            onConfirm = { deleteTarget = null; vm.deleteToken(t.id, t.scope) },
             onDismiss = { deleteTarget = null },
         )
     }
@@ -278,7 +308,21 @@ private fun TokenRow(token: ApiToken, onToggle: (Boolean) -> Unit, onDelete: () 
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(token.name.ifBlank { "#${token.id}" }, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f)) {
+            Text(token.name.ifBlank { "#${token.id}" }, style = MaterialTheme.typography.bodyLarge)
+            val expired = token.expiresAt in 1..System.currentTimeMillis()
+            val detail = listOfNotNull(
+                tr(scopeLabel(token.scope)),
+                token.expiresAt.takeIf { it > 0 }?.let {
+                    (if (expired) tr("expired") else tr("until")) + " " + formatDate(it)
+                },
+            ).joinToString(" · ")
+            Text(
+                detail,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (expired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Switch(checked = token.enabled, onCheckedChange = onToggle)
         IconButton(onClick = onDelete) {
             Icon(Icons.Outlined.Delete, contentDescription = tr("Delete"), tint = MaterialTheme.colorScheme.error)
@@ -287,16 +331,66 @@ private fun TokenRow(token: ApiToken, onToggle: (Boolean) -> Unit, onDelete: () 
 }
 
 @Composable
-private fun CreateTokenDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+private fun CreateTokenDialog(onConfirm: (String, String, Long) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
+    var scope by remember { mutableStateOf(ApiTokenScope.ADMIN) }
+    var days by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(tr("Create token")) },
-        text = { Field(name, { name = it }, tr("Token name")) },
-        confirmButton = { TextButton(onClick = { onConfirm(name) }, enabled = name.isNotBlank()) { Text(tr("Create")) } },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Field(name, { name = it }, tr("Token name"))
+                Text(tr("Scope"), style = MaterialTheme.typography.labelMedium)
+                ApiTokenScope.ALL.forEach { s ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = scope == s, onClick = { scope = s })
+                        Column {
+                            Text(tr(scopeLabel(s)))
+                            Text(
+                                tr(scopeHelp(s)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+                Field(days, { days = it.filter(Char::isDigit).take(5) }, tr("Expires in, days (0 = never)"))
+                Text(
+                    tr("Scope and expiry need panel v3.7.0. An older panel ignores them and issues a full-access token."),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val d = days.toLongOrNull() ?: 0
+                    val expiresAt = if (d > 0) System.currentTimeMillis() + d * 86_400_000L else 0L
+                    onConfirm(name, scope, expiresAt)
+                },
+                enabled = name.isNotBlank(),
+            ) { Text(tr("Create")) }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
 }
+
+private fun scopeLabel(scope: String): String = when (scope) {
+    ApiTokenScope.MONITOR -> "Monitor (read-only)"
+    ApiTokenScope.NODE_SYNC -> "Node sync"
+    else -> "Admin (full access)"
+}
+
+private fun scopeHelp(scope: String): String = when (scope) {
+    ApiTokenScope.MONITOR -> "Server status and metric history only."
+    ApiTokenScope.NODE_SYNC -> "What a central panel needs: inbounds, clients, restart Xray."
+    else -> "Everything the panel API can do."
+}
+
+private fun formatDate(epochMs: Long): String =
+    java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(epochMs))
 
 @Composable
 private fun NewTokenDialog(token: ApiToken, onDismiss: () -> Unit) {

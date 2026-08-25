@@ -50,6 +50,7 @@ fun NodeMtlsScreen(
     panelCa: String?,
     busy: Boolean,
     onSaveTrustCa: (String) -> Unit,
+    onReloadCredential: () -> Unit,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -112,6 +113,17 @@ fun NodeMtlsScreen(
                 onValueChange = { trustCa = it },
                 label = { Text(tr("Trusted parent CA (PEM)")) },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
+            )
+
+            OutlinedButton(
+                onClick = onReloadCredential,
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(tr("Reload master credential")) }
+            Text(
+                tr("Applies a rotated master certificate without restarting the panel. Needs panel v3.7.0."),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

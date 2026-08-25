@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.ApiToken
 import net.yukh.xui.data.api.dto.Client
+import net.yukh.xui.data.api.dto.ClientHwid
 import net.yukh.xui.data.api.dto.ClientCreatePayload
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.EnableRequest
@@ -36,6 +37,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -228,6 +230,11 @@ interface XuiApi {
     @POST("panel/api/nodes/mtls/trustCA")
     suspend fun setNodeMtlsTrustCA(@Body body: MtlsTrustCaRequest): ApiAck
 
+    // Panel v3.7.0: apply a rotated master mTLS credential without restarting
+    // the panel — before this, a rotation needed a restart to take effect.
+    @POST("panel/api/nodes/mtls/reloadClient")
+    suspend fun reloadNodeMtlsClient(): ApiAck
+
     // ---- Settings & Xray config -------------------------------------------
     // Panel v3.3.0 (upstream c6f15cd5) moved these under /panel/api/* so they now
     // accept a Bearer token too (were session-only at /panel/setting/* and
@@ -358,18 +365,49 @@ interface XuiApi {
     @POST("panel/api/setting/restartPanel")
     suspend fun restartPanel(): ApiAck
 
+    // ---- Subscription devices (HWID, panel v3.7.0) -----------------------
+    // The panel counts registered devices against the client's HWID limit.
+    // Listing is a POST (the panel's own convention for read endpoints that
+    // take a path parameter); removal is a real DELETE.
+
+    @POST("panel/api/clients/hwids/{email}")
+    suspend fun listClientHwids(@Path("email") email: String): ApiResponse<List<ClientHwid>>
+
+    @DELETE("panel/api/clients/hwids/{email}")
+    suspend fun clearClientHwids(@Path("email") email: String): ApiAck
+
+    @DELETE("panel/api/clients/hwids/{email}/{id}")
+    suspend fun deleteClientHwid(@Path("email") email: String, @Path("id") id: Int): ApiAck
+
     @GET("panel/api/setting/apiTokens")
     suspend fun listApiTokens(): ApiResponse<List<ApiToken>>
 
     // Returns the new token with its plaintext value (shown only once).
+    // scope/expiresAt are panel v3.7.0 fields; older panels ignore the extra
+    // form values and keep minting full-access tokens.
     @FormUrlEncoded
     @POST("panel/api/setting/apiTokens/create")
-    suspend fun createApiToken(@Field("name") name: String): ApiResponse<ApiToken>
+    suspend fun createApiToken(
+        @Field("name") name: String,
+        @Field("scope") scope: String,
+        @Field("expiresAt") expiresAt: Long,
+    ): ApiResponse<ApiToken>
 
+    // expectedScope is REQUIRED from panel v3.7.0: the panel refuses to delete
+    // or toggle a token unless the caller names the scope it thinks it has, so
+    // a stale list cannot revoke the wrong token.
+    @FormUrlEncoded
     @POST("panel/api/setting/apiTokens/delete/{id}")
-    suspend fun deleteApiToken(@Path("id") id: Int): ApiAck
+    suspend fun deleteApiToken(
+        @Path("id") id: Int,
+        @Field("expectedScope") expectedScope: String,
+    ): ApiAck
 
     @FormUrlEncoded
     @POST("panel/api/setting/apiTokens/setEnabled/{id}")
-    suspend fun setApiTokenEnabled(@Path("id") id: Int, @Field("enabled") enabled: Boolean): ApiAck
+    suspend fun setApiTokenEnabled(
+        @Path("id") id: Int,
+        @Field("enabled") enabled: Boolean,
+        @Field("expectedScope") expectedScope: String,
+    ): ApiAck
 }

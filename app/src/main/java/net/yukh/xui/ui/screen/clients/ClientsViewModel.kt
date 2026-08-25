@@ -14,11 +14,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.yukh.xui.data.api.dto.Client
+import net.yukh.xui.data.api.dto.ClientHwid
 import net.yukh.xui.data.api.dto.ClientIpInfo
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.SubInfo
 import net.yukh.xui.data.repo.PanelRepository
+import net.yukh.xui.data.repo.isUnsupportedByPanel
 
 private const val BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0
 private const val POLL_INTERVAL_MS = 5_000L
@@ -51,6 +53,11 @@ data class ClientsUiState(
     val ipLogEmail: String? = null,
     val ipLog: List<ClientIpInfo> = emptyList(),
     val ipLogLoading: Boolean = false,
+    // Subscription devices (panel v3.7.0), same shape as the IP log above.
+    val hwidEmail: String? = null,
+    val hwids: List<ClientHwid> = emptyList(),
+    val hwidsLoading: Boolean = false,
+    val hwidsUnsupported: Boolean = false,
     val editor: ClientEditorState? = null,
 ) {
     /** Distinct non-empty client groups in use, sorted — for the editor picker
@@ -127,6 +134,13 @@ data class ClientEditorState(
     val totalGb: String = "0",
     val expiryTime: Long = 0,
     val reset: String = "0",
+    // Panel v3.7.0 client fields.
+    val resetDay: String = "0",
+    val resetMax: String = "0",
+    val trafficReset: String = "never",
+    val trafficResetDay: String = "1",
+    val limitHwid: String = "0",
+    val forwardedPorts: String = "",
     val tgId: String = "",
     val group: String = "",
     val comment: String = "",
@@ -146,6 +160,10 @@ data class ClientEditorState(
     /** A selected inbound is MTProto — show the secret / ad-tag fields. */
     val isMtproto: Boolean
         get() = availableInbounds.any { it.id in selectedInboundIds && it.protocol == "mtproto" }
+
+    /** A selected inbound is AmneziaWG — show the peer's forwarded ports. */
+    val isAmneziawg: Boolean
+        get() = availableInbounds.any { it.id in selectedInboundIds && it.protocol == "amneziawg" }
 
     /** A selected inbound is WireGuard — show the peer's allowed IPs. */
     val isWireguard: Boolean
@@ -346,6 +364,12 @@ class ClientsViewModel @Inject constructor(
                     email = client.email,
                     enable = client.enable,
                     limitIp = client.limitIp.toString(),
+                    resetDay = client.resetDay.toString(),
+                    resetMax = client.resetMax.toString(),
+                    trafficReset = client.trafficReset.ifBlank { "never" },
+                    trafficResetDay = client.trafficResetDay.coerceAtLeast(1).toString(),
+                    limitHwid = client.limitHwid.toString(),
+                    forwardedPorts = client.forwardedPorts,
                     totalGb = gb,
                     expiryTime = client.expiryTime,
                     reset = client.reset.toString(),
@@ -384,6 +408,12 @@ class ClientsViewModel @Inject constructor(
     fun setEditorEmail(v: String) = updateEditor { it.copy(email = v) }
     fun setEditorEnable(v: Boolean) = updateEditor { it.copy(enable = v) }
     fun setEditorLimitIp(v: String) = updateEditor { it.copy(limitIp = v.filter(Char::isDigit)) }
+    fun setEditorResetDay(v: String) = updateEditor { it.copy(resetDay = v.filter(Char::isDigit).take(2)) }
+    fun setEditorResetMax(v: String) = updateEditor { it.copy(resetMax = v.filter(Char::isDigit).take(4)) }
+    fun setEditorTrafficReset(v: String) = updateEditor { it.copy(trafficReset = v) }
+    fun setEditorTrafficResetDay(v: String) = updateEditor { it.copy(trafficResetDay = v.filter(Char::isDigit).take(2)) }
+    fun setEditorLimitHwid(v: String) = updateEditor { it.copy(limitHwid = v.filter(Char::isDigit).take(4)) }
+    fun setEditorForwardedPorts(v: String) = updateEditor { it.copy(forwardedPorts = v) }
     fun setEditorTotalGb(v: String) = updateEditor { it.copy(totalGb = v.filter { c -> c.isDigit() || c == '.' }) }
     fun setEditorReset(v: String) = updateEditor { it.copy(reset = v.filter(Char::isDigit)) }
     fun setEditorTgId(v: String) = updateEditor { it.copy(tgId = v.filter(Char::isDigit)) }
@@ -419,6 +449,14 @@ class ClientsViewModel @Inject constructor(
             totalGB = gbBytes,
             expiryTime = e.expiryTime,
             reset = e.reset.toIntOrNull() ?: 0,
+            // 3.7.0: a day of 0 keeps the old rolling interval, so the fields
+            // coexist; the panel picks whichever is set.
+            resetDay = (e.resetDay.toIntOrNull() ?: 0).coerceIn(0, 31),
+            resetMax = (e.resetMax.toIntOrNull() ?: 0).coerceAtLeast(0),
+            trafficReset = e.trafficReset,
+            trafficResetDay = (e.trafficResetDay.toIntOrNull() ?: 1).coerceIn(1, 31),
+            limitHwid = (e.limitHwid.toIntOrNull() ?: 0).coerceAtLeast(0),
+            forwardedPorts = if (e.isAmneziawg) e.forwardedPorts.trim() else base.forwardedPorts,
             tgId = e.tgId.toLongOrNull() ?: 0,
             group = e.group.trim(),
             comment = e.comment.trim(),
@@ -573,6 +611,49 @@ class ClientsViewModel @Inject constructor(
     }
 
     fun closeIpLog() = _state.update { it.copy(ipLogEmail = null, ipLog = emptyList()) }
+
+    // ---- Subscription devices (HWID, panel v3.7.0) -------------------------
+
+    fun openHwids(email: String) {
+        _state.update {
+            it.copy(hwidEmail = email, hwids = emptyList(), hwidsLoading = true, hwidsUnsupported = false)
+        }
+        viewModelScope.launch {
+            val r = repo.listClientHwids(email)
+            r.onSuccess { list -> _state.update { it.copy(hwids = list, hwidsLoading = false) } }
+                .onFailure { e ->
+                    _state.update {
+                        it.copy(
+                            hwidsLoading = false,
+                            hwidsUnsupported = r.isUnsupportedByPanel(),
+                            transientMessage = if (r.isUnsupportedByPanel()) null else "Devices failed: ${e.message}",
+                        )
+                    }
+                }
+        }
+    }
+
+    fun removeHwid(id: Int) {
+        val email = _state.value.hwidEmail ?: return
+        viewModelScope.launch {
+            repo.deleteClientHwid(email, id)
+                .onSuccess {
+                    _state.update { it.copy(hwids = it.hwids.filterNot { d -> d.id == id }, transientMessage = "Device removed") }
+                }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Remove failed: ${e.message}") } }
+        }
+    }
+
+    fun clearHwids() {
+        val email = _state.value.hwidEmail ?: return
+        viewModelScope.launch {
+            repo.clearClientHwids(email)
+                .onSuccess { _state.update { it.copy(hwids = emptyList(), transientMessage = "Devices removed") } }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Remove failed: ${e.message}") } }
+        }
+    }
+
+    fun closeHwids() = _state.update { it.copy(hwidEmail = null, hwids = emptyList()) }
 
     fun importClients(jsonText: String) {
         viewModelScope.launch {
