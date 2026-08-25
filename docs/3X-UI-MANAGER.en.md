@@ -2,7 +2,7 @@
 
 🇬🇧 English · 🇷🇺 [Русский](3X-UI-MANAGER.ru.md)
 
-**App version: 0.10.8.** This manual is based on and current for that version.
+**App version: 0.11.1.** This manual is based on and current for that version.
 
 **Get the app:** [F-Droid](https://f-droid.org/packages/net.yukh.xui) ·
 [GitHub Releases](https://github.com/yukh975/3X-UI-Manager/releases) ·
@@ -312,6 +312,9 @@ shows the error.
 - **Traffic quota** and **expiry** for the whole inbound;
 - **Periodic traffic reset** — including the day of the month, if the panel
   supports it (3.6.0);
+- **Disable XTLS flow** (VLESS only, needs panel 3.7.0) — stops the panel from
+  injecting `xtls-rprx-vision` into this inbound even when its transport allows
+  it. Vision keeps working on your other inbounds in the same subscription;
 - **Node** — which server to deploy the inbound on, when nodes are attached.
 
 ### 7.3. Transport and security
@@ -371,7 +374,28 @@ The form adapts to the protocol of the selected inbound:
 
 - for **MTProto** a FakeTLS secret (with a regenerate button) and an ad-tag appear;
 - for **WireGuard** — the peer's allowed IPs;
+- for **AmneziaWG** — **forwarded ports**: the ports and ranges the panel routes
+  to this client, e.g. `80, 443, 8000-8100`;
 - for VLESS — the **flow** field.
+
+**Renewal and traffic reset (needs panel 3.7.0).** Beyond the familiar "auto-renew
+every N days" there are now:
+
+- **renew on a day of the month** — the client renews on that date every month
+  instead of on a fixed interval; `0` keeps the old mode. A month too short for
+  the chosen day renews on its last day;
+- **max renewals** — how many times auto-renew may fire before the client is left
+  to expire; `0` means no limit;
+- **the client's own traffic-reset cycle** (never / hourly / daily / weekly /
+  monthly), with a day of the month for the monthly one. The reset period used to
+  be an inbound-level setting only.
+
+**Device limit and the device list (needs panel 3.7.0).** The **device limit**
+caps how many devices may fetch this client's subscription; `0` means unlimited.
+The **"Devices"** button (on a saved client) lists the registered devices — model
+and OS, and when each was last seen. A device can be removed one at a time or the
+list cleared entirely: this is how you unlink a phone, since a removed device
+simply registers again on its next subscription fetch.
 
 Identifiers (UUID, password, subId) are minted by the app on creation in the same
 format the web panel uses.
@@ -723,6 +747,7 @@ some capabilities arrived in later panel releases:
 | Bulk client actions, VLESS encryption key generation | 3.4.1 |
 | Live per-client speed, outbound test, Target Strategy, route test, subscription announcement, MTProto and WireGuard client fields | 3.5.0 |
 | SMTP sender settings, outbound-down alert threshold, "as the subscriber sees it" status, write-only node tokens, day-of-month traffic reset | 3.6.0 |
+| Renewal on a day of the month, max renewals, the client's own traffic-reset cycle, the device limit and device list (HWID), AmneziaWG forwarded ports, API token scope and expiry, the IP limit allowlist, Disable XTLS flow, reloading the master mTLS credential | 3.7.0 |
 
 **The recommendation is simple: run the latest panel.** Then every section of the
 app is available, and you get the panel's own fixes along the way.
