@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import net.yukh.xui.data.api.dto.ApiToken
+import net.yukh.xui.data.api.dto.ApiTokenScope
 import net.yukh.xui.data.json.int
 import net.yukh.xui.data.json.putInt
 import net.yukh.xui.data.json.putString
