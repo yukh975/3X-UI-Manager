@@ -19,6 +19,7 @@ uses [Semantic Versioning](https://semver.org/).
 - **The update prompt no longer reappears on every launch.** Dismissing it only cleared in-memory state, so the startup check re-opened the same dialog every time until the update was actually installed — on the Apple build, where updating means a manual sideload, that could be a long time. The dismissed version is now remembered; the Dashboard hint and a manual check still show it.
 - **Deleting or disabling an API token works on panel 3.7.0.** That panel requires the caller to name the scope it expects, and the app was not sending it, so both actions failed.
 - Several UI labels were translated twice with different wording and the later copy silently won — "Fingerprint" and "Outbound test URL" among them.
+- **The minimum panel version is v3.3.0, not v3.4.1.** The connect screen overstated it — the app works with v3.3.0, and only some features need a newer panel.
 
 ## [0.10.8] — 2026-08-13
 
