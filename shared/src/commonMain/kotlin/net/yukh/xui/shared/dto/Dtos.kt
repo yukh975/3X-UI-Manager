@@ -48,6 +48,9 @@ data class ServerStatus(
     val load15: Double get() = loads.getOrElse(2) { 0.0 }
     val memPercent: Double get() = if (mem.total > 0) mem.current.toDouble() / mem.total * 100.0 else 0.0
     val diskPercent: Double get() = if (disk.total > 0) disk.current.toDouble() / disk.total * 100.0 else 0.0
+
+    /** Swap used percentage, 0..100. Servers without swap report a zero total. */
+    val swapPercent: Double get() = if (swap.total > 0) swap.current.toDouble() / swap.total * 100.0 else 0.0
 }
 
 @Serializable

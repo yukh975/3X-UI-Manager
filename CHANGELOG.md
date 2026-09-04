@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [Unreleased]
+
+### Added
+- **Swap usage on the dashboard** (#7) — a tile next to CPU, memory and storage, shown only when the server actually has swap, and tappable for its history like the others.
+- **IPv6 address on the dashboard** (#7) — the server's public addresses are now labelled and listed as IPv4 and IPv6 instead of IPv4 alone.
+
 ## [0.11.1] — 2026-08-24
 
 ### Added

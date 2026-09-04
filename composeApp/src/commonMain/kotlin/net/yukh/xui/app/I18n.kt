@@ -43,6 +43,8 @@ val ruStrings: Map<String, String> = mapOf(
     // Tabs (Inbounds stays untranslated by project rule)
     "Dashboard" to "Дашборд",
     "System default" to "Как в системе",
+    "Swap" to "Подкачка",
+    "Public IP" to "Публичный IP",
     "Renew on day (0 = interval)" to "Продлевать в день месяца (0 — интервал)",
     "Max renewals (0 = ∞)" to "Максимум продлений (0 — без лимита)",
     "Traffic reset cycle" to "Цикл сброса трафика",

@@ -113,6 +113,13 @@ fun DashboardScreen(
             BarCard(tr("Memory"), status.memPercent.formatPercent(),
                 (status.memPercent / 100.0).toFloat(),
                 "${status.mem.current.formatBytes()} / ${status.mem.total.formatBytes()}", onClick = { onMetric(MetricBlock.MEMORY) })
+            // Only when the server actually has swap — a swapless box reports a
+            // zero total and an empty bar would just puzzle.
+            if (status.swap.total > 0) {
+                BarCard(tr("Swap"), status.swapPercent.formatPercent(),
+                    (status.swapPercent / 100.0).toFloat(),
+                    "${status.swap.current.formatBytes()} / ${status.swap.total.formatBytes()}", onClick = { onMetric(MetricBlock.SWAP) })
+            }
             if (status.disk.total > 0) {
                 BarCard(tr("Disk"), status.diskPercent.formatPercent(),
                     (status.diskPercent / 100.0).toFloat(),
@@ -124,6 +131,11 @@ fun DashboardScreen(
                 "${status.netIO.up.formatBytes()} / ${status.netIO.down.formatBytes()}", onClick = { onMetric(MetricBlock.NET) })
             ValueCard(tr("Connections"), "TCP ${status.tcpCount} · UDP ${status.udpCount}", onClick = { onMetric(MetricBlock.CONN) })
             if (status.uptime > 0) ValueCard(tr("Uptime"), status.uptime.formatUptime())
+            val addresses = listOf("IPv4" to status.publicIP.ipv4, "IPv6" to status.publicIP.ipv6)
+                .filter { (_, a) -> a.isNotBlank() && a != "N/A" }
+            if (addresses.isNotEmpty()) {
+                ValueCard(tr("Public IP"), addresses.joinToString("\n") { (label, a) -> "$label $a" })
+            }
             if (status.panelVersion.isNotBlank()) ValueCard(tr("Panel"), "v${status.panelVersion}")
             AppVersionCard(updateVersion = appUpdateVersion, onUpdate = onAppUpdate)
             mainTraffic?.let { TrafficCard(it) }
