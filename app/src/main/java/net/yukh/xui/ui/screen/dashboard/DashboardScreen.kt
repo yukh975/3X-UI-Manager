@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.AlertDialog
@@ -184,6 +185,18 @@ fun DashboardScreen(
                     progress = (status.memPercent / 100.0).toFloat().coerceIn(0f, 1f),
                     onClick = { vm.openMetricChart(MetricBlock.MEMORY) },
                 )
+                // Only when the server actually has swap — a swapless box
+                // reports a zero total and an empty bar would just puzzle.
+                if (status.swap.total > 0) {
+                    MetricBarCard(
+                        icon = Icons.Outlined.SwapHoriz,
+                        title = tr("Swap"),
+                        primaryValue = status.swapPercent.formatPercent(),
+                        secondaryValue = "${status.swap.current.formatBytes()} / ${status.swap.total.formatBytes()}",
+                        progress = (status.swapPercent / 100.0).toFloat().coerceIn(0f, 1f),
+                        onClick = { vm.openMetricChart(MetricBlock.SWAP) },
+                    )
+                }
                 if (status.disk.total > 0) {
                     MetricBarCard(
                         icon = Icons.Outlined.Storage,
@@ -236,18 +249,23 @@ fun DashboardScreen(
                     onClick = { vm.openMetricChart(MetricBlock.CONN) },
                 )
 
-                if (status.uptime > 0 || status.publicIP.ipv4.isNotBlank()) {
+                if (status.uptime > 0 || status.publicIP.ipv4.isNotBlank() || status.publicIP.ipv6.isNotBlank()) {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             if (status.uptime > 0) {
                                 Text("${tr("Uptime")} ${status.uptime.formatUptime()}", style = MaterialTheme.typography.bodyMedium)
                             }
-                            if (status.publicIP.ipv4.isNotBlank() && status.publicIP.ipv4 != "N/A") {
-                                Text(
-                                    "${tr("IP")} ${status.publicIP.ipv4}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                            listOf(
+                                "IPv4" to status.publicIP.ipv4,
+                                "IPv6" to status.publicIP.ipv6,
+                            ).forEach { (label, address) ->
+                                if (address.isNotBlank() && address != "N/A") {
+                                    Text(
+                                        "$label $address",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }

@@ -47,6 +47,7 @@ data class MetricSeriesDef(val label: String, val key: String)
 enum class MetricBlock(val title: String, val kind: MetricKind, val series: List<MetricSeriesDef>) {
     CPU("CPU", MetricKind.PERCENT, listOf(MetricSeriesDef("CPU", "cpu"))),
     MEMORY("Memory", MetricKind.PERCENT, listOf(MetricSeriesDef("Memory", "mem"))),
+    SWAP("Swap", MetricKind.PERCENT, listOf(MetricSeriesDef("Swap", "swap"))),
     DISK("Disk", MetricKind.PERCENT, listOf(MetricSeriesDef("Disk", "diskUsage"))),
     LOAD("Load", MetricKind.RATIO, listOf(MetricSeriesDef("1m", "load1"), MetricSeriesDef("5m", "load5"), MetricSeriesDef("15m", "load15"))),
     NET("Network", MetricKind.BYTES, listOf(MetricSeriesDef("↑", "netUp"), MetricSeriesDef("↓", "netDown"))),

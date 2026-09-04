@@ -5,6 +5,7 @@ package net.yukh.xui.i18n
  * Missing keys fall back to English, so this can grow incrementally.
  */
 val ruStrings: Map<String, String> = mapOf(
+    "Swap" to "Подкачка",
     "Renew on day (0 = interval)" to "Продлевать в день месяца (0 — интервал)",
     "Max renewals (0 = ∞)" to "Максимум продлений (0 — без лимита)",
     "Traffic reset cycle" to "Цикл сброса трафика",
