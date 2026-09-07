@@ -1,0 +1,1 @@
+Added: swap usage and the IPv6 address on the dashboard (#7); editing Xray's geodata auto-update schedule. Changed: an empty client IP log now explains that the panel keeps addresses for 30 minutes after the last connection.
