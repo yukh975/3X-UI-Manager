@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
@@ -86,6 +87,7 @@ import net.yukh.xui.ui.screen.settings.SettingsScreen
 import net.yukh.xui.ui.screen.xray.XrayConfigScreen
 import net.yukh.xui.ui.screen.xrayedit.DnsScreen
 import net.yukh.xui.ui.screen.xrayedit.GeneralScreen
+import net.yukh.xui.ui.screen.xrayedit.GeodataScreen
 import net.yukh.xui.ui.screen.xrayedit.RoutingScreen
 import net.yukh.xui.update.UpdateDialogHost
 import net.yukh.xui.update.UpdateViewModel
@@ -131,6 +133,7 @@ fun MainScreen(
     var showRouting by rememberSaveable { mutableStateOf(false) }
     var showDns by rememberSaveable { mutableStateOf(false) }
     var showGeneral by rememberSaveable { mutableStateOf(false) }
+    var showGeodata by rememberSaveable { mutableStateOf(false) }
     var showBackup by rememberSaveable { mutableStateOf(false) }
     var showPanelAdmin by rememberSaveable { mutableStateOf(false) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
@@ -207,6 +210,11 @@ fun MainScreen(
                             text = { Text(tr("General / Logs")) },
                             leadingIcon = { Icon(Icons.Outlined.Article, contentDescription = null) },
                             onClick = { menuOpen = false; showGeneral = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(tr("Geodata auto-update")) },
+                            leadingIcon = { Icon(Icons.Outlined.Public, contentDescription = null) },
+                            onClick = { menuOpen = false; showGeodata = true },
                         )
                         DropdownMenuItem(
                             text = { Text(tr("Xray config")) },
@@ -397,6 +405,11 @@ fun MainScreen(
     if (showGeneral) {
         BackHandler(onBack = { showGeneral = false })
         GeneralScreen(onClose = { showGeneral = false })
+    }
+
+    if (showGeodata) {
+        BackHandler(onBack = { showGeodata = false })
+        GeodataScreen(onClose = { showGeodata = false })
     }
 
     if (showBackup) {
