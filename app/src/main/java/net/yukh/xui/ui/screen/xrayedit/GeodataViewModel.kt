@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.yukh.xui.data.json.asObject
@@ -135,7 +136,7 @@ class GeodataViewModel @Inject constructor(
                 // way the panel does, instead of leaving an empty block behind.
                 next.remove("geodata")
             } else {
-                val block = mutableMapOf(
+                val block = mutableMapOf<String, JsonElement>(
                     "assets" to JsonArray(
                         assets.map {
                             JsonObject(
