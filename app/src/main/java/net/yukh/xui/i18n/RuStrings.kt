@@ -5,6 +5,7 @@ package net.yukh.xui.i18n
  * Missing keys fall back to English, so this can grow incrementally.
  */
 val ruStrings: Map<String, String> = mapOf(
+    "The panel keeps an address for 30 minutes after the last connection, so this stays empty for anyone who hasn't connected recently." to "Панель хранит адрес 30 минут после последнего подключения — поэтому у тех, кто давно не подключался, здесь пусто.",
     "Geodata auto-update" to "Автообновление гео-баз",
     "Xray downloads these files on schedule and reloads them without a restart. URLs must be HTTPS, and each file has to exist in the panel's bin folder once before Xray can update it." to "Xray скачивает эти файлы по расписанию и перечитывает их без перезапуска. Адреса — только HTTPS, и каждый файл должен один раз появиться в папке bin панели, иначе обновлять будет нечего.",
     "Schedule" to "Расписание",

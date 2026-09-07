@@ -282,7 +282,14 @@ fun ClientsScreen(
                 ) {
                     when {
                         state.ipLogLoading -> CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                        state.ipLog.isEmpty() -> Text(tr("No IPs logged."), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        state.ipLog.isEmpty() -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(tr("No IPs logged."), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                tr("The panel keeps an address for 30 minutes after the last connection, so this stays empty for anyone who hasn't connected recently."),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         else -> state.ipLog.forEach { e ->
                             Column {
                                 Text(e.ip, style = MaterialTheme.typography.bodyMedium)
