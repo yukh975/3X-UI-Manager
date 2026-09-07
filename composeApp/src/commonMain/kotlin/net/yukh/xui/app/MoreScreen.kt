@@ -51,6 +51,7 @@ fun MoreScreen(
     onXrayConfig: () -> Unit,
     onGeneralX: () -> Unit,
     onDnsX: () -> Unit,
+    onGeodataX: () -> Unit,
     onRoutingX: () -> Unit,
     onOutboundsX: () -> Unit,
     onPanelAdmin: () -> Unit,
@@ -162,6 +163,7 @@ fun MoreScreen(
         NavCard(tr("Outbounds"), onOutboundsX)
         NavCard(tr("General / Logs"), onGeneralX)
         NavCard(tr("DNS"), onDnsX)
+        NavCard(tr("Geodata auto-update"), onGeodataX)
         NavCard(tr("Routing"), onRoutingX)
 
         // ---- Panel admin ----

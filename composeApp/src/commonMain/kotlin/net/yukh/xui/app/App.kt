@@ -124,6 +124,7 @@ fun App() {
             var editingInboundMonitored by remember { mutableStateOf(false) }
             var showXray by remember { mutableStateOf(false) }
             var showGeneralX by remember { mutableStateOf(false) }
+            var showGeodataX by remember { mutableStateOf(false) }
             var showDnsX by remember { mutableStateOf(false) }
             var showRoutingX by remember { mutableStateOf(false) }
             var showOutboundsX by remember { mutableStateOf(false) }
@@ -868,6 +869,16 @@ fun App() {
                         onSave = { saveXrayThen { showGeneralX = false } },
                         onCancel = { showGeneralX = false; editorError = null },
                     )
+                } else if (showGeodataX) {
+                    GeodataXrayScreen(
+                        configJson = xrayConfigJson,
+                        loading = xrayLoading,
+                        saving = editorSaving,
+                        error = editorError,
+                        onConfigChange = { xrayConfigJson = it },
+                        onSave = { saveXrayThen { showGeodataX = false } },
+                        onCancel = { showGeodataX = false; editorError = null },
+                    )
                 } else if (showDnsX) {
                     DnsXrayScreen(
                         configJson = xrayConfigJson,
@@ -1117,6 +1128,7 @@ fun App() {
                                     onXrayConfig = { showXray = true; editorError = null; scope.launch { loadXray() } },
                                     onGeneralX = { showGeneralX = true; editorError = null; scope.launch { loadXray() } },
                                     onDnsX = { showDnsX = true; editorError = null; scope.launch { loadXray() } },
+                                    onGeodataX = { showGeodataX = true; editorError = null; scope.launch { loadXray() } },
                                     onRoutingX = { showRoutingX = true; editorError = null; scope.launch { loadXray() } },
                                     onOutboundsX = { showOutboundsX = true; editorError = null; scope.launch { loadXray() } },
                                     onPanelAdmin = { showPanelAdmin = true },
