@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [0.12.1] — 2026-09-07
 
 ### Added
 - **Swap usage on the dashboard** (#7) — a tile next to CPU, memory and storage, shown only when the server actually has swap, and tappable for its history like the others.
