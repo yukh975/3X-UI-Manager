@@ -12,6 +12,7 @@ uses [Semantic Versioning](https://semver.org/).
 - **Swap usage on the dashboard** (#7) — a tile next to CPU, memory and storage, shown only when the server actually has swap, and tappable for its history like the others.
 - **IPv6 address on the dashboard** (#7) — the server's public addresses are now labelled and listed as IPv4 and IPv6 instead of IPv4 alone.
 - **Geodata auto-update** — the panel's scheduled geo-database refresh is now editable from the app: the files Xray keeps current, the cron schedule and, optionally, the outbound to download through. Xray reloads them without a restart, so this is the unattended counterpart of the dashboard's manual geo update. Requires panel 3.7.0.
+- **The empty IP log now explains itself** — the panel keeps an address for 30 minutes after the last connection, so the log is empty for anyone who has not connected recently; that is no longer indistinguishable from something being broken.
 
 ## [0.11.1] — 2026-08-24
 

@@ -71,6 +71,7 @@ fun ClientEditorScreen(
     onShowLinks: () -> Unit,
     ips: List<ClientIpInfo>,
     ipsLoading: Boolean,
+    ipsLoaded: Boolean = false,
     onShowIps: () -> Unit,
     onClearIps: () -> Unit,
     onShowDevices: () -> Unit = {},
@@ -311,6 +312,14 @@ fun ClientEditorScreen(
                     }
                 }
                 if (ipsLoading) Text(tr("Loading…"), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (ipsLoaded && !ipsLoading && ips.isEmpty()) {
+                    Text(tr("No IPs logged."), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        tr("The panel keeps an address for 30 minutes after the last connection, so this stays empty for anyone who hasn't connected recently."),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (ips.isNotEmpty()) {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -147,6 +147,7 @@ fun App() {
             var clientSubUrl by remember { mutableStateOf<String?>(null) }
             var clientIps by remember { mutableStateOf<List<ClientIpInfo>>(emptyList()) }
             var clientIpsLoading by remember { mutableStateOf(false) }
+            var clientIpsLoaded by remember { mutableStateOf(false) }
             // Subscription devices (panel v3.7.0), same shape as the IP log.
             var clientHwids by remember { mutableStateOf<List<ClientHwid>>(emptyList()) }
             var clientHwidsLoading by remember { mutableStateOf(false) }
@@ -631,11 +632,13 @@ fun App() {
                         },
                         ips = clientIps,
                         ipsLoading = clientIpsLoading,
+                        ipsLoaded = clientIpsLoaded,
                         onShowIps = {
                             scope.launch {
                                 clientIpsLoading = true
                                 val r = try { api?.clientIps(editingClient!!.email) } catch (e: Throwable) { null }
                                 clientIps = r?.obj ?: emptyList()
+                                clientIpsLoaded = true
                                 clientIpsLoading = false
                             }
                         },
@@ -644,6 +647,7 @@ fun App() {
                                 clientIpsLoading = true
                                 try { api?.clearClientIps(editingClient!!.email) } catch (e: Throwable) {}
                                 clientIps = emptyList()
+                                clientIpsLoaded = true
                                 clientIpsLoading = false
                             }
                         },
@@ -702,7 +706,7 @@ fun App() {
                                 else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
                             }
                         },
-                        onCancel = { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); editorError = null },
+                        onCancel = { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); clientIpsLoaded = false; editorError = null },
                     )
                     if (showHwids) {
                         val hwidEmail = editingClient?.email.orEmpty()
