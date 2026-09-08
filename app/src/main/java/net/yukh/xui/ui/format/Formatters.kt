@@ -43,6 +43,13 @@ fun Long.formatExpiry(lang: String = LANG_EN): String {
     return if (this < now) tr(lang, "Expired") + " " + date else date
 }
 
+/** Calendar date and time of day for an expiry timestamp (Unix ms), in the
+ *  phone's own time zone. 0 → "Never". The panel stores expiry to the minute,
+ *  so a date alone would hide half of what was set. */
+fun Long.formatDateTime(lang: String = LANG_EN): String =
+    if (this == 0L) tr(lang, "Never")
+    else SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date(this))
+
 /** Plain calendar date for an expiry timestamp (Unix ms). 0 → "Never". */
 fun Long.formatDate(lang: String = LANG_EN): String =
     if (this == 0L) tr(lang, "Never") else SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(this))

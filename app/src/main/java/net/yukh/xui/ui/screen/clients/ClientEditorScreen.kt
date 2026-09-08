@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,7 +46,7 @@ import net.yukh.xui.i18n.LocalAppLanguage
 import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.components.EditableDropdownField
-import net.yukh.xui.ui.format.formatDate
+import net.yukh.xui.ui.format.formatDateTime
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -75,6 +76,9 @@ fun ClientEditorScreen(
     onClose: () -> Unit,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
+    // Date and time are picked in two steps; this holds the chosen day (UTC
+    // midnight, as the date picker reports it) while the time is chosen.
+    var pendingDateMillis by remember { mutableStateOf<Long?>(null) }
     var confirmSave by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -259,12 +263,12 @@ fun ClientEditorScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(tr("Expiry"), style = MaterialTheme.typography.labelMedium)
-                    Text(state.expiryTime.formatDate(LocalAppLanguage.current), style = MaterialTheme.typography.bodyLarge)
+                    Text(state.expiryTime.formatDateTime(LocalAppLanguage.current), style = MaterialTheme.typography.bodyLarge)
                 }
                 if (state.expiryTime != 0L) {
                     OutlinedButton(onClick = { onExpiry(0) }) { Text(tr("Never")) }
                 }
-                Button(onClick = { showDatePicker = true }) { Text(tr("Pick date")) }
+                Button(onClick = { showDatePicker = true }) { Text(tr("Pick date & time")) }
             }
 
             OutlinedTextField(
@@ -344,10 +348,76 @@ fun ClientEditorScreen(
     if (showDatePicker) {
         ExpiryDatePickerDialog(
             initialMillis = state.expiryTime.takeIf { it > 0 },
-            onPick = { onExpiry(it); showDatePicker = false },
+            onPick = { showDatePicker = false; pendingDateMillis = it },
             onDismiss = { showDatePicker = false },
         )
     }
+
+    pendingDateMillis?.let { dayMillis ->
+        ExpiryTimePickerDialog(
+            initialMillis = state.expiryTime.takeIf { it > 0 },
+            onPick = { hour, minute ->
+                onExpiry(combineExpiry(dayMillis, hour, minute))
+                pendingDateMillis = null
+            },
+            onDismiss = { pendingDateMillis = null },
+        )
+    }
+}
+
+/**
+ * Combine the day the date picker reported (UTC midnight) with a wall-clock time
+ * into an instant in the phone's own time zone — which is how the panel reads
+ * and shows the value. Taking the picker's millis as-is would pin every expiry
+ * to midnight UTC and, west of Greenwich, show the previous day.
+ */
+private fun combineExpiry(dayUtcMillis: Long, hour: Int, minute: Int): Long {
+    val utc = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+    utc.timeInMillis = dayUtcMillis
+    val local = java.util.Calendar.getInstance()
+    local.set(
+        utc.get(java.util.Calendar.YEAR),
+        utc.get(java.util.Calendar.MONTH),
+        utc.get(java.util.Calendar.DAY_OF_MONTH),
+        hour,
+        minute,
+        0,
+    )
+    local.set(java.util.Calendar.MILLISECOND, 0)
+    return local.timeInMillis
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExpiryTimePickerDialog(
+    initialMillis: Long?,
+    onPick: (Int, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val calendar = java.util.Calendar.getInstance().apply {
+        // An expiry the operator hasn't timed yet ends the day rather than
+        // starting it: 23:59 is what "expires on that date" means to a customer.
+        if (initialMillis != null && initialMillis > 0) {
+            timeInMillis = initialMillis
+        } else {
+            set(java.util.Calendar.HOUR_OF_DAY, 23)
+            set(java.util.Calendar.MINUTE, 59)
+        }
+    }
+    val pickerState = androidx.compose.material3.rememberTimePickerState(
+        initialHour = calendar.get(java.util.Calendar.HOUR_OF_DAY),
+        initialMinute = calendar.get(java.util.Calendar.MINUTE),
+        is24Hour = true,
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(tr("Expiry time")) },
+        text = { androidx.compose.material3.TimePicker(state = pickerState) },
+        confirmButton = {
+            TextButton(onClick = { onPick(pickerState.hour, pickerState.minute) }) { Text(tr("OK")) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
