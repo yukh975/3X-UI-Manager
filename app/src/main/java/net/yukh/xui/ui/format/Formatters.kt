@@ -4,6 +4,7 @@ import androidx.compose.runtime.compositionLocalOf
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import kotlin.math.ln
 import kotlin.math.pow
 import net.yukh.xui.i18n.LANG_EN
@@ -49,6 +50,25 @@ fun Long.formatExpiry(lang: String = LANG_EN): String {
 fun Long.formatDateTime(lang: String = LANG_EN): String =
     if (this == 0L) tr(lang, "Never")
     else SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date(this))
+
+/** The phone's UTC offset at that instant, e.g. "UTC+03:00" — the clock the
+ *  expiry above is expressed in, so nobody has to guess whose it is. */
+fun Long.localZoneLabel(): String {
+    val offset = TimeZone.getDefault().getOffset(if (this > 0) this else System.currentTimeMillis())
+    val sign = if (offset < 0) "-" else "+"
+    val minutes = kotlin.math.abs(offset) / 60_000
+    return "UTC%s%02d:%02d".format(sign, minutes / 60, minutes % 60)
+}
+
+/** The same instant in another time zone, or null when the id is not a real
+ *  zone — the panel's `timeLocation` defaults to "Local", which says nothing an
+ *  outside caller can resolve. */
+fun Long.formatDateTimeInZone(zoneId: String): String? {
+    if (this <= 0L || zoneId.isBlank() || zoneId.equals("Local", ignoreCase = true)) return null
+    val zone = TimeZone.getTimeZone(zoneId)
+    if (zone.id != zoneId) return null
+    return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).apply { timeZone = zone }.format(Date(this))
+}
 
 /** Plain calendar date for an expiry timestamp (Unix ms). 0 → "Never". */
 fun Long.formatDate(lang: String = LANG_EN): String =

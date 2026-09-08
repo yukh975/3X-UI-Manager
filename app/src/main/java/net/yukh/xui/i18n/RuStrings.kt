@@ -5,6 +5,8 @@ package net.yukh.xui.i18n
  * Missing keys fall back to English, so this can grow incrementally.
  */
 val ruStrings: Map<String, String> = mapOf(
+    "your phone" to "часы телефона",
+    "On the panel" to "На панели",
     "Pick date & time" to "Выбрать дату и время",
     "Expiry time" to "Время окончания",
     "The panel keeps an address for 30 minutes after the last connection, so this stays empty for anyone who hasn't connected recently." to "Панель хранит адрес 30 минут после последнего подключения — поэтому у тех, кто давно не подключался, здесь пусто.",

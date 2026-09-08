@@ -19,6 +19,7 @@ import net.yukh.xui.data.api.dto.ClientIpInfo
 import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.SubInfo
+import net.yukh.xui.data.json.string
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.data.repo.isUnsupportedByPanel
 
@@ -141,6 +142,10 @@ data class ClientEditorState(
     val trafficResetDay: String = "1",
     val limitHwid: String = "0",
     val forwardedPorts: String = "",
+    /** The panel's configured time zone, when it names a real one. Only used to
+     *  show the expiry in the panel's clock as well; "Local" (the default) says
+     *  nothing an outside caller can resolve, so it stays empty. */
+    val panelTimeZone: String = "",
     val tgId: String = "",
     val group: String = "",
     val comment: String = "",
@@ -348,6 +353,18 @@ class ClientsViewModel @Inject constructor(
             it.copy(editor = ClientEditorState(isNew = true, inboundsLoading = true, availableGroups = existingGroups()))
         }
         loadInboundsForEditor()
+        loadPanelTimeZone()
+    }
+
+    /** The panel's own time zone, for the expiry caption. Best-effort: an older
+     *  panel, a missing key or "Local" all just leave the caption showing the
+     *  phone's clock alone. */
+    private fun loadPanelTimeZone() {
+        viewModelScope.launch {
+            val zone = repo.getRawSettings().getOrNull()?.string("timeLocation").orEmpty()
+            if (zone.isBlank() || zone.equals("Local", ignoreCase = true)) return@launch
+            _state.update { s -> s.editor?.let { s.copy(editor = it.copy(panelTimeZone = zone)) } ?: s }
+        }
     }
 
     fun openEditEditor(email: String) {
@@ -386,6 +403,7 @@ class ClientsViewModel @Inject constructor(
             )
         }
         loadInboundsForEditor()
+        loadPanelTimeZone()
     }
 
     private fun loadInboundsForEditor() {

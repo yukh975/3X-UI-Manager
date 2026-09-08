@@ -47,6 +47,8 @@ import net.yukh.xui.i18n.tr
 import net.yukh.xui.ui.components.ConfirmDialog
 import net.yukh.xui.ui.components.EditableDropdownField
 import net.yukh.xui.ui.format.formatDateTime
+import net.yukh.xui.ui.format.formatDateTimeInZone
+import net.yukh.xui.ui.format.localZoneLabel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -264,6 +266,22 @@ fun ClientEditorScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(tr("Expiry"), style = MaterialTheme.typography.labelMedium)
                     Text(state.expiryTime.formatDateTime(LocalAppLanguage.current), style = MaterialTheme.typography.bodyLarge)
+                    if (state.expiryTime > 0) {
+                        // Whose clock this is, spelled out: the panel may well sit in
+                        // another zone than the phone it is managed from.
+                        Text(
+                            state.expiryTime.localZoneLabel() + " · " + tr("your phone"),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        state.expiryTime.formatDateTimeInZone(state.panelTimeZone)?.let { onPanel ->
+                            Text(
+                                "${tr("On the panel")}: $onPanel (${state.panelTimeZone})",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
                 if (state.expiryTime != 0L) {
                     OutlinedButton(onClick = { onExpiry(0) }) { Text(tr("Never")) }
