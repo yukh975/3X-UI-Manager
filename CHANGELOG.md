@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [0.13.1] — 2026-09-07
 
 ### Added
 - **A client's expiry now carries a time of day, not just a date.** The panel stores it to the minute and its own form picks both; the app could only pick a day, so half of what the panel showed was unreachable from the phone. Picking an expiry asks for the time after the date and defaults to 23:59 for a client that had none. On the Apple build the expiry could not be edited at all before — it can now.
