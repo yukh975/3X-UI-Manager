@@ -19,10 +19,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -30,6 +34,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -93,6 +100,12 @@ fun ClientEditorScreen(
     var trafficResetDay by remember { mutableStateOf(source.trafficResetDay.coerceAtLeast(1).toString()) }
     var limitHwid by remember { mutableStateOf(if (source.limitHwid > 0) source.limitHwid.toString() else "") }
     var forwardedPorts by remember { mutableStateOf(source.forwardedPorts) }
+    // Expiry is an instant, not a date: the panel stores it to the minute.
+    var expiryTime by remember { mutableStateOf(source.expiryTime) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    // Holds the chosen day (UTC midnight, as the picker reports it) until the
+    // time is chosen.
+    var pendingDay by remember { mutableStateOf<Long?>(null) }
     var tgId by remember { mutableStateOf(if (source.tgId != 0L) source.tgId.toString() else "") }
     var group by remember { mutableStateOf(source.group) }
     var comment by remember { mutableStateOf(source.comment) }
@@ -121,6 +134,7 @@ fun ClientEditorScreen(
             trafficReset = trafficReset,
             trafficResetDay = (trafficResetDay.toIntOrNull() ?: 1).coerceIn(1, 31),
             limitHwid = (limitHwid.toIntOrNull() ?: 0).coerceAtLeast(0),
+            expiryTime = expiryTime,
             tgId = tgId.toLongOrNull() ?: 0L,
             group = group.trim(),
             comment = comment.trim(),
@@ -176,6 +190,19 @@ fun ClientEditorScreen(
             }
             if (trafficReset == "monthly") {
                 CField(trafficResetDay, { trafficResetDay = it.filter(Char::isDigit).take(2) }, tr("Day"), KeyboardType.Number)
+            }
+            Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp), Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(tr("Expiry"), style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        if (expiryTime > 0) formatDateTime(expiryTime) else tr("Never"),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+                if (expiryTime > 0) {
+                    OutlinedButton(onClick = { expiryTime = 0 }) { Text(tr("Never")) }
+                }
+                Button(onClick = { showDatePicker = true }) { Text(tr("Pick date & time")) }
             }
             CField(limitHwid, { limitHwid = it.filter(Char::isDigit).take(4) }, tr("Device limit (0 = unlimited)"), KeyboardType.Number)
             if (!isNew) {
@@ -336,6 +363,21 @@ fun ClientEditorScreen(
                         }
                     }
                 }
+                if (showDatePicker) {
+                    ExpiryDatePickerDialog(
+                        initialMillis = expiryTime.takeIf { it > 0 },
+                        onPick = { showDatePicker = false; pendingDay = it },
+                        onDismiss = { showDatePicker = false },
+                    )
+                }
+                pendingDay?.let { day ->
+                    ExpiryTimePickerDialog(
+                        initialMillis = expiryTime.takeIf { it > 0 },
+                        onPick = { h, m -> expiryTime = combineDateAndTime(day, h, m); pendingDay = null },
+                        onDismiss = { pendingDay = null },
+                    )
+                }
+
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = onDelete,
@@ -483,3 +525,33 @@ private fun SubStatusRow(info: SubInfo) {
 
 /** Panel-side cycles for a client's own traffic reset (panel v3.7.0). */
 private val TRAFFIC_RESET_CYCLES = listOf("never", "hourly", "daily", "weekly", "monthly")
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExpiryDatePickerDialog(initialMillis: Long?, onPick: (Long) -> Unit, onDismiss: () -> Unit) {
+    val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { pickerState.selectedDateMillis?.let(onPick) }) { Text(tr("OK")) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
+    ) { DatePicker(state = pickerState) }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExpiryTimePickerDialog(initialMillis: Long?, onPick: (Int, Int) -> Unit, onDismiss: () -> Unit) {
+    // An expiry the operator hasn't timed yet ends the day rather than starting
+    // it: 23:59 is what "expires on that date" means to a customer.
+    val (hour, minute) = if (initialMillis != null && initialMillis > 0) localHourMinute(initialMillis) else 23 to 59
+    val pickerState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(tr("Expiry time")) },
+        text = { TimePicker(state = pickerState) },
+        confirmButton = { TextButton(onClick = { onPick(pickerState.hour, pickerState.minute) }) { Text(tr("OK")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
+    )
+}

@@ -43,6 +43,10 @@ val ruStrings: Map<String, String> = mapOf(
     // Tabs (Inbounds stays untranslated by project rule)
     "Dashboard" to "Дашборд",
     "System default" to "Как в системе",
+    "Pick date & time" to "Выбрать дату и время",
+    "Expiry time" to "Время окончания",
+    "Expiry" to "Срок действия",
+    "OK" to "OK",
     "No IPs logged." to "Адресов пока нет.",
     "The panel keeps an address for 30 minutes after the last connection, so this stays empty for anyone who hasn't connected recently." to "Панель хранит адрес 30 минут после последнего подключения — поэтому у тех, кто давно не подключался, здесь пусто.",
     "Geodata auto-update" to "Автообновление гео-баз",
