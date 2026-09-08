@@ -1,0 +1,1 @@
+Added: a client's expiry now carries a time of day, not just a date, and shows which time zone it is set in. Fixed: an expiry picked in the app was pinned to midnight UTC instead of the phone's own clock.
