@@ -82,6 +82,9 @@ fun ClientEditorScreen(
     onShowIps: () -> Unit,
     onClearIps: () -> Unit,
     onShowDevices: () -> Unit = {},
+    /** The panel's own time zone, when it names a real one — shown next to the
+     *  expiry so the two clocks are never confused. */
+    panelTimeZone: String = "",
     onSave: (ClientModel, List<Int>) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit,
@@ -198,6 +201,22 @@ fun ClientEditorScreen(
                         if (expiryTime > 0) formatDateTime(expiryTime) else tr("Never"),
                         style = MaterialTheme.typography.bodyLarge,
                     )
+                    if (expiryTime > 0) {
+                        // Whose clock this is, spelled out: the panel may well sit
+                        // in another zone than the device it is managed from.
+                        Text(
+                            localZoneLabel(expiryTime) + " · " + tr("your phone"),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        formatDateTimeInZone(expiryTime, panelTimeZone)?.let { onPanel ->
+                            Text(
+                                tr("On the panel") + ": " + onPanel + " (" + panelTimeZone + ")",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
                 if (expiryTime > 0) {
                     OutlinedButton(onClick = { expiryTime = 0 }) { Text(tr("Never")) }

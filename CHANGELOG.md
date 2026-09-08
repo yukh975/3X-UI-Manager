@@ -10,6 +10,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 - **A client's expiry now carries a time of day, not just a date.** The panel stores it to the minute and its own form picks both; the app could only pick a day, so half of what the panel showed was unreachable from the phone. Picking an expiry asks for the time after the date and defaults to 23:59 for a client that had none. On the Apple build the expiry could not be edited at all before — it can now.
+- **The expiry says which clock it is in.** The value is entered in the phone's time zone — the same way the panel's own web form behaves — and now shows that zone underneath, plus the same instant in the panel's zone when the panel names a real one. A panel abroad and an operator at home no longer have to guess whose midnight was meant.
 
 ### Fixed
 - An expiry picked in the app was pinned to midnight UTC; it is now built in the phone's own time zone, which is how the panel reads and shows it. West of Greenwich that used to display the day before the one that was picked.

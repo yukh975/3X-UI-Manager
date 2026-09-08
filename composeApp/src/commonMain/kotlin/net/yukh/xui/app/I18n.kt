@@ -43,6 +43,8 @@ val ruStrings: Map<String, String> = mapOf(
     // Tabs (Inbounds stays untranslated by project rule)
     "Dashboard" to "Дашборд",
     "System default" to "Как в системе",
+    "your phone" to "часы телефона",
+    "On the panel" to "На панели",
     "Pick date & time" to "Выбрать дату и время",
     "Expiry time" to "Время окончания",
     "Expiry" to "Срок действия",

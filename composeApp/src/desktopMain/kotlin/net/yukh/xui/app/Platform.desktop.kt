@@ -35,3 +35,17 @@ actual fun localHourMinute(epochMs: Long): Pair<Int, Int> {
     val c = java.util.Calendar.getInstance().apply { timeInMillis = epochMs }
     return c.get(java.util.Calendar.HOUR_OF_DAY) to c.get(java.util.Calendar.MINUTE)
 }
+
+actual fun localZoneLabel(epochMs: Long): String {
+    val offset = java.util.TimeZone.getDefault().getOffset(if (epochMs > 0) epochMs else System.currentTimeMillis())
+    val sign = if (offset < 0) "-" else "+"
+    val minutes = kotlin.math.abs(offset) / 60_000
+    return "UTC%s%02d:%02d".format(sign, minutes / 60, minutes % 60)
+}
+
+actual fun formatDateTimeInZone(epochMs: Long, zoneId: String): String? {
+    if (epochMs <= 0L || zoneId.isBlank() || zoneId.equals("Local", ignoreCase = true)) return null
+    val zone = java.util.TimeZone.getTimeZone(zoneId)
+    if (zone.id != zoneId) return null
+    return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).apply { timeZone = zone }.format(Date(epochMs))
+}

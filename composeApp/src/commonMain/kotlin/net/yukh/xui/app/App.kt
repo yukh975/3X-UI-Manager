@@ -152,6 +152,9 @@ fun App() {
             var clientHwids by remember { mutableStateOf<List<ClientHwid>>(emptyList()) }
             var clientHwidsLoading by remember { mutableStateOf(false) }
             var clientHwidsUnsupported by remember { mutableStateOf(false) }
+            // The panel's configured time zone, for the expiry caption. Best-effort:
+            // "Local" (its default) resolves to nothing an outside caller can use.
+            var panelTimeZone by remember { mutableStateOf("") }
             var showHwids by remember { mutableStateOf(false) }
             var geoUpdating by remember { mutableStateOf<Set<String>>(emptySet()) }
             var geoAllUpdating by remember { mutableStateOf(false) }
@@ -651,6 +654,7 @@ fun App() {
                                 clientIpsLoading = false
                             }
                         },
+                        panelTimeZone = panelTimeZone,
                         onShowDevices = {
                             showHwids = true
                             scope.launch {

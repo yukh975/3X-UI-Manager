@@ -9,6 +9,7 @@ import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDateComponents
 import platform.Foundation.NSTimeZone
 import platform.Foundation.timeZoneWithAbbreviation
+import platform.Foundation.timeZoneWithName
 import platform.Foundation.timeIntervalSince1970
 import platform.Foundation.NSBundle
 import platform.Foundation.NSDate
@@ -53,4 +54,24 @@ actual fun localHourMinute(epochMs: Long): Pair<Int, Int> {
     val date = NSDate.dateWithTimeIntervalSince1970(epochMs / 1000.0)
     val parts = NSCalendar.currentCalendar.components(NSCalendarUnitHour or NSCalendarUnitMinute, date)
     return parts.hour.toInt() to parts.minute.toInt()
+}
+
+actual fun localZoneLabel(epochMs: Long): String {
+    val at = NSDate.dateWithTimeIntervalSince1970((if (epochMs > 0) epochMs else 0L) / 1000.0)
+    val seconds = NSCalendar.currentCalendar.timeZone.secondsFromGMTForDate(at).toInt()
+    val sign = if (seconds < 0) "-" else "+"
+    val minutes = kotlin.math.abs(seconds) / 60
+    val hh = (minutes / 60).toString().padStart(2, '0')
+    val mm = (minutes % 60).toString().padStart(2, '0')
+    return "UTC$sign$hh:$mm"
+}
+
+actual fun formatDateTimeInZone(epochMs: Long, zoneId: String): String? {
+    if (epochMs <= 0L || zoneId.isBlank() || zoneId.equals("Local", ignoreCase = true)) return null
+    val zone = NSTimeZone.timeZoneWithName(zoneId) ?: return null
+    val formatter = NSDateFormatter().apply {
+        dateFormat = "yyyy-MM-dd HH:mm"
+        timeZone = zone
+    }
+    return formatter.stringFromDate(NSDate.dateWithTimeIntervalSince1970(epochMs / 1000.0))
 }
