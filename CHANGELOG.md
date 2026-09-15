@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.14.3] — 2026-09-15
+
+### Added
+- **Update channel in Settings.** The updater now offers a Stable channel (the tested public releases — the default) and an Experimental channel (pre-release builds as soon as they are made, which can be unstable) for trying a build early. The "Check for updates" button moved next to the channel picker.
+
 ## [0.14.2] — 2026-09-15
 
 ### Added
