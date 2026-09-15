@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
  * Settings so neither screen is a grab bag.
  */
 @Composable
-fun AboutScreen(host: String, onCheckUpdates: () -> Unit, onClose: () -> Unit) {
+fun AboutScreen(host: String, onClose: () -> Unit) {
     var showChangelog by remember { mutableStateOf(false) }
 
     if (showChangelog) {
@@ -90,9 +90,6 @@ fun AboutScreen(host: String, onCheckUpdates: () -> Unit, onClose: () -> Unit) {
                             },
                             style = MaterialTheme.typography.bodyMedium,
                         )
-                        OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
-                            Text(tr("Check for updates"))
-                        }
                         OutlinedButton(onClick = { showChangelog = true }, modifier = Modifier.fillMaxWidth()) {
                             Text(tr("Changelog"))
                         }

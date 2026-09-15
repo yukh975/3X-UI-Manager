@@ -294,6 +294,11 @@ val ruStrings: Map<String, String> = mapOf(
     "Speed units" to "Единицы скорости",
     "Bytes (KB/s)" to "Байты (КБ/с)",
     "Bits (Kbit/s)" to "Биты (Кбит/с)",
+    "Update channel" to "Канал обновлений",
+    "Stable" to "Стабильный",
+    "Experimental" to "Экспериментальный",
+    "Stable installs the tested public releases. Experimental installs pre-release builds as soon as they are made and can be unstable." to
+        "Стабильный — проверенные публичные релизы. Экспериментальный — предрелизные сборки сразу после выпуска, могут быть нестабильны.",
     "Update available" to "Доступно обновление",
     "Open release page" to "Открыть страницу релиза",
     "Open the release page to download and reinstall the app." to

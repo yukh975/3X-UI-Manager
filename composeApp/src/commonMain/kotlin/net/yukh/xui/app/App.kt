@@ -45,6 +45,7 @@ import net.yukh.xui.shared.api.AppUpdate
 import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.PanelFeatureUnsupportedException
+import net.yukh.xui.shared.api.UpdateChannel
 import net.yukh.xui.shared.api.UpdateChecker
 import net.yukh.xui.shared.api.supportsPanel380
 import net.yukh.xui.shared.dto.BulkAdjustRequest
@@ -108,6 +109,7 @@ fun App() {
             // reaches the UI without an explicit restart.
             val lang = resolveLanguage(langPref, systemLanguage())
             var speedInBits by remember { mutableStateOf(false) }
+            var updateChannel by remember { mutableStateOf(UpdateChannel.STABLE_KEY) }
             var status by remember { mutableStateOf<ServerStatus?>(null) }
             var inbounds by remember { mutableStateOf<List<InboundSlim>>(emptyList()) }
             var inboundSpeeds by remember { mutableStateOf<Map<Int, Pair<Long, Long>>>(emptyMap()) }
@@ -210,13 +212,13 @@ fun App() {
             // Swap the English release body for the changelog section in the UI
             // language (falls back to the release body when the fetch fails).
             suspend fun localizedUpdate(u: AppUpdate): AppUpdate {
-                val notes = UpdateChecker.localizedNotes(u.version, lang == LANG_RU) ?: u.notes
+                val notes = UpdateChecker.localizedNotes(u.version, lang == LANG_RU, UpdateChannel.from(updateChannel)) ?: u.notes
                 return u.copy(notes = UpdateChecker.reflowNotes(notes))
             }
             fun checkUpdatesManual() {
                 updateState = UpdateUiState.Checking
                 scope.launch {
-                    val latest = try { UpdateChecker.fetchLatest() } catch (e: Throwable) { null }
+                    val latest = try { UpdateChecker.fetchLatest(UpdateChannel.from(updateChannel)) } catch (e: Throwable) { null }
                     updateState = when {
                         latest == null -> UpdateUiState.Error
                         UpdateChecker.isNewer(latest.version, appVersionName()) -> {
@@ -233,7 +235,7 @@ fun App() {
             // a manual sideload here, so a prompt the user dismissed would
             // otherwise return on every launch until they got around to it.
             LaunchedEffect(Unit) {
-                val upd = try { UpdateChecker.latestIfNewer(appVersionName()) } catch (e: Throwable) { null }
+                val upd = try { UpdateChecker.latestIfNewer(appVersionName(), UpdateChannel.from(updateChannel)) } catch (e: Throwable) { null }
                 if (upd != null) {
                     val u = localizedUpdate(upd)
                     lastAvailableUpdate = u
@@ -491,6 +493,7 @@ fun App() {
             LaunchedEffect(Unit) {
                 langPref = store.loadLang() ?: LANG_SYSTEM
                 speedInBits = store.loadSpeedInBits()
+                updateChannel = store.loadUpdateChannel()
                 if (!connected) {
                     profiles = store.loadProfiles()
                     store.activeProfile()?.let { saved ->
@@ -604,7 +607,6 @@ fun App() {
                 } else if (showAbout) {
                     AboutScreen(
                         host = if (connected) baseUrl else "",
-                        onCheckUpdates = { checkUpdatesManual() },
                         onClose = { showAbout = false },
                     )
                 } else if (!connected && showConnectSettings) {
@@ -1247,6 +1249,9 @@ fun App() {
                                     onLang = { langPref = it; store.saveLang(it) },
                                     speedInBits = speedInBits,
                                     onSpeedUnit = { speedInBits = it; store.saveSpeedInBits(it) },
+                                    updateChannel = updateChannel,
+                                    onUpdateChannel = { updateChannel = it; store.saveUpdateChannel(it) },
+                                    onCheckUpdates = { checkUpdatesManual() },
                                     lock = lock,
                                     profiles = profiles,
                                     activeId = activeId,

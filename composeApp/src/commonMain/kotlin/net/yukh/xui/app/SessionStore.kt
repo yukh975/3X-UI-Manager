@@ -35,6 +35,7 @@ private const val KEY_ACTIVE = "xui.activeId"
 private const val KEY_LANG = "xui.lang"
 private const val KEY_SPEED_BITS = "xui.speedInBits"
 private const val KEY_UPDATE_DISMISSED = "xui.update.dismissed"
+private const val KEY_UPDATE_CHANNEL = "xui.update.channel"
 
 /** All saved profiles; migrates a pre-multi-profile single session once. */
 fun SessionStore.loadProfiles(): List<SavedSession> {
@@ -94,6 +95,10 @@ fun SessionStore.setDismissedUpdate(version: String) = putString(KEY_UPDATE_DISM
 
 fun SessionStore.loadSpeedInBits(): Boolean = getString(KEY_SPEED_BITS) == "true"
 fun SessionStore.saveSpeedInBits(value: Boolean) = putString(KEY_SPEED_BITS, value.toString())
+
+/** Update channel: "stable" (GitHub) or "testing" (home GitLab). Default stable. */
+fun SessionStore.loadUpdateChannel(): String = getString(KEY_UPDATE_CHANNEL) ?: "stable"
+fun SessionStore.saveUpdateChannel(channel: String) = putString(KEY_UPDATE_CHANNEL, channel)
 
 // ---- encoding (composeApp has no kotlinx-serialization dependency) ----------
 // Fields joined by U+0001, profiles by U+0002 — control chars that never appear

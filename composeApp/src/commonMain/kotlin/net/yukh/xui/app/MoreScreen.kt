@@ -15,6 +15,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import net.yukh.xui.shared.api.UpdateChannel
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -42,6 +43,9 @@ fun MoreScreen(
     onLang: (String) -> Unit,
     speedInBits: Boolean,
     onSpeedUnit: (Boolean) -> Unit,
+    updateChannel: String,
+    onUpdateChannel: (String) -> Unit,
+    onCheckUpdates: () -> Unit,
     lock: AppLock,
     profiles: List<SavedSession>,
     activeId: String?,
@@ -112,6 +116,17 @@ fun MoreScreen(
                 Text(tr("Speed units"), style = MaterialTheme.typography.labelMedium)
                 LanguageRow(tr("Bytes (KB/s)"), selected = !speedInBits) { onSpeedUnit(false) }
                 LanguageRow(tr("Bits (Kbit/s)"), selected = speedInBits) { onSpeedUnit(true) }
+                Text(tr("Update channel"), style = MaterialTheme.typography.labelMedium)
+                LanguageRow(tr("Stable"), selected = updateChannel != UpdateChannel.TESTING_KEY) { onUpdateChannel(UpdateChannel.STABLE_KEY) }
+                LanguageRow(tr("Experimental"), selected = updateChannel == UpdateChannel.TESTING_KEY) { onUpdateChannel(UpdateChannel.TESTING_KEY) }
+                Text(
+                    tr("Stable installs the tested public releases. Experimental installs pre-release builds as soon as they are made and can be unstable."),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) {
+                    Text(tr("Check for updates"))
+                }
             }
         }
 
