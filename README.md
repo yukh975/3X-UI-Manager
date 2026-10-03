@@ -2,6 +2,8 @@
 
 Native mobile clients for managing [3x-ui](https://github.com/MHSanaei/3x-ui) panels over the REST API — dashboard, inbounds, clients (with QR sharing), nodes, and the Xray config, on the go. **Multi-instance: connect to several panels and switch between them from one app.**
 
+> ✅ **Compatible with 3x-ui panels up to v3.9.0.** The app speaks the panel's stable REST API, so a new panel release does **not** require a new app version — no need to wait for an app update when the panel bumps (the rare exceptions are noted in this app's release notes).
+
 This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built straight from the repository root.
 
 [![Get it on F-Droid](https://fdroid.gitlab.io/artwork/badge/get-it-on.png)](https://f-droid.org/packages/net.yukh.xui)
@@ -19,9 +21,7 @@ This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built
 - **[Obtainium](https://github.com/ImranR98/Obtainium)** — install and auto-update straight from GitHub Releases: add the app by its repo URL `https://github.com/yukh975/3X-UI-Manager` (filter APKs by `3x-ui-manager` to pick the `standard` flavor).
 - **iOS** — unsigned `.ipa` for sideloading (AltStore / Sideloadly), attached to each release.
 
-Requires a panel running **3x-ui v3.3.0 or newer** (API-token auth).
-
-**Tracks the latest panel — tested through 3x-ui v3.9.0.** The app talks to the panel's stable REST API, so a new panel release does **not** require a new app version — no need to wait for an app update when the panel bumps. The rare panel versions that did add something the app had to follow are called out in this app's release notes.
+Requires a panel running **3x-ui v3.3.0 or newer** (API-token auth); tested through **v3.9.0** (see the compatibility note at the top).
 
 ---
 
