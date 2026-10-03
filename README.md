@@ -21,6 +21,8 @@ This branch (`main`) holds the **Android** app (Kotlin + Jetpack Compose), built
 
 Requires a panel running **3x-ui v3.3.0 or newer** (API-token auth).
 
+**Tracks the latest panel — tested through 3x-ui v3.9.0.** The app talks to the panel's stable REST API, so a new panel release does **not** require a new app version — no need to wait for an app update when the panel bumps. The rare panel versions that did add something the app had to follow are called out in this app's release notes.
+
 ---
 
 ## Documentation
@@ -112,7 +114,7 @@ Structured editors over the panel's Xray config — each round-trips the **whole
 
 ## Authentication
 
-The app authenticates with an **API token** (Bearer) only, and is designed for panel **v3.4.x**. There is no login/password mode.
+The app authenticates with an **API token** (Bearer) only, and is designed for panel **v3.4.x and newer** (tested through **v3.9.0**). There is no login/password mode.
 
 > **Panel v3.3.x users:** the current app version is optimised for **v3.4.x**. For panels on **v3.3.x**, use the last compatible release — **v0.3.23**.
 
