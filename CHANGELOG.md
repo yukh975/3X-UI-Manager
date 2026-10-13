@@ -6,6 +6,27 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.15.1] — 2026-10-13
+
+### Added
+- **Panel 3.10.0 support.** The app works with panel 3.10.0 and keeps everything new it adds when you save.
+- **MASQUE inbounds** (panel 3.10+): create them with an address pool, MTU and path; TLS only. TLS inbounds now have certificate and key file fields.
+- **JSON subscription in the client's subscription card** when the panel serves it — the only subscription that carries MASQUE.
+- **"Use system CA" in outbound TLS** (panel 3.10+): Xray-core 26.10.10 verifies servers against its bundled roots, so an outbound to a server with a private CA needs this switch.
+- **Lua scripts and DNS server ID** (panel 3.10+): a DNS server's ID, the DNS Lua script and the routing script (under General / Logs). Routing shows a warning while a routing script is set, because Xray then ignores all rules.
+- **Certificate SHA-256 pin field** for nodes in pin mode, so such nodes can be saved.
+
+### Fixed
+- **A new Shadowsocks inbound could not be created on panel 3.10.** The app now generates a server key sized for the method and makes a new one when the method changes; 2022-blake3-chacha20-poly1305, which the panel refuses on inbounds, is no longer offered.
+- **Save in the outbound editor only staged the change**, and leaving the list with Cancel lost it. It now writes to the panel at once.
+- **Editing an inbound reset its tag, subscription order, "exclude from subscription" flag and monthly reset day.** The Enabled switch in the inbound editor now really turns the inbound on or off.
+- **Editing a client — or toggling it in the list — turned off its weekly renewal and removed its VLESS reverse proxy.**
+- **Editing a node switched "sync selected inbounds" back to all inbounds.**
+- **If the panel refused to add or remove a client's inbounds after an edit**, nothing said so; the clients list now shows the panel's error. With a MASQUE inbound selected, an email containing ":" is refused.
+- **A DNS server written by the panel showed empty Expected IPs**, and editing them added a second list. Balancers are now saved the way the panel writes them.
+- **The new-inbound list offered "socks"**, which the panel rejects; it now offers "mixed". The inbound editor shows only the transport, security and sniffing settings that suit the protocol (MASQUE, XDRIVE, TUN), and WebSocket + TLS defaults to ALPN http/1.1.
+- **Links with post-quantum keys show a note instead of a QR code**, which would be too dense to scan.
+
 ## [0.14.3] — 2026-09-15
 
 ### Added
