@@ -26,6 +26,7 @@ uses [Semantic Versioning](https://semver.org/).
 - **A DNS server written by the panel showed empty Expected IPs**, and editing them added a second list. Balancers are now saved the way the panel writes them.
 - **The new-inbound list offered "socks"**, which the panel rejects; it now offers "mixed". The inbound editor shows only the transport, security and sniffing settings that suit the protocol (MASQUE, XDRIVE, TUN), and WebSocket + TLS defaults to ALPN http/1.1.
 - **Links with post-quantum keys show a note instead of a QR code**, which would be too dense to scan.
+- **Editing a port in an outbound form or a DNS server wrote it as text** (`"443"`), which Xray cannot read, so the core could fail to start after saving. Ports are now written as numbers, and a cleared field removes the port.
 
 ## [0.14.3] — 2026-09-15
 

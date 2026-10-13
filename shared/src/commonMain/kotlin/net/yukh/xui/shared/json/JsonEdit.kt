@@ -76,6 +76,10 @@ fun jsonPutString(obj: String, path: List<String>, value: String): String =
 fun jsonPutBool(obj: String, path: List<String>, value: Boolean): String =
     encode(parseObj(obj).withPut(path, JsonPrimitive(value)))
 
+/** Xray reads every `port` as uint16, so a quoted "443" stops the core; blank removes the key. */
+fun jsonPutPort(obj: String, path: List<String>, value: String): String =
+    encode(parseObj(obj).withPut(path, value.trim().toIntOrNull()?.let { JsonPrimitive(it) }))
+
 fun jsonPutStrings(obj: String, path: List<String>, values: List<String>): String =
     encode(parseObj(obj).withPut(path, JsonArray(values.map { JsonPrimitive(it) })))
 

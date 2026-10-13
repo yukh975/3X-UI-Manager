@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import net.yukh.xui.shared.json.jsonPutPort
 import net.yukh.xui.shared.json.jsonGetBool
 import net.yukh.xui.shared.json.jsonGetChild
 import net.yukh.xui.shared.json.jsonGetObjectList
@@ -166,7 +167,7 @@ private fun DnsServerDialog(initial: String, onConfirm: (String) -> Unit, onDism
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 XrayField(g("address"), { p("address", it) }, tr("Address"))
-                XrayField(g("port"), { p("port", it.filter(Char::isDigit)) }, tr("Port (blank = 53)"))
+                XrayField(g("port"), { obj = jsonPutPort(obj, listOf("port"), it.filter(Char::isDigit)) }, tr("Port (blank = 53)"))
                 XrayField(g("id"), { obj = if (it.isBlank()) jsonRemove(obj, listOf("id")) else jsonPutString(obj, listOf("id"), it) }, tr("ID"))
                 XrayHelp(tr("The name a Lua DNS script uses to pick this server"))
                 XrayLabel(tr("Query strategy"))

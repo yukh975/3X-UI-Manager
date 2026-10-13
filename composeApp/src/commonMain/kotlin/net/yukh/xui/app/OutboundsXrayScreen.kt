@@ -47,6 +47,7 @@ import net.yukh.xui.shared.dto.parseVlessLink
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import net.yukh.xui.shared.json.jsonPutPort
 import net.yukh.xui.shared.json.jsonGetBool
 import net.yukh.xui.shared.json.jsonGetChild
 import net.yukh.xui.shared.json.jsonGetObjectList
@@ -296,34 +297,34 @@ private fun ProtocolForm(protocol: String, obj: String, onChange: (String) -> Un
     when (protocol) {
         "vless" -> {
             XrayField(g("settings", "address"), { p(it, "settings", "address") }, tr("Address"))
-            XrayField(g("settings", "port"), { p(it.filter(Char::isDigit), "settings", "port") }, tr("Port"))
+            XrayField(g("settings", "port"), { onChange(jsonPutPort(obj, listOf("settings", "port"), it.filter(Char::isDigit))) }, tr("Port"))
             XrayField(g("settings", "id"), { p(it, "settings", "id") }, tr("ID (UUID)"))
             XrayLabel(tr("Flow")); XrayChips(VLESS_FLOW, g("settings", "flow")) { p(it, "settings", "flow") }
         }
         "vmess" -> {
             XrayField(g("settings", "address"), { p(it, "settings", "address") }, tr("Address"))
-            XrayField(g("settings", "port"), { p(it.filter(Char::isDigit), "settings", "port") }, tr("Port"))
+            XrayField(g("settings", "port"), { onChange(jsonPutPort(obj, listOf("settings", "port"), it.filter(Char::isDigit))) }, tr("Port"))
             XrayField(g("settings", "id"), { p(it, "settings", "id") }, tr("ID (UUID)"))
             XrayLabel(tr("Security")); XrayChips(VMESS_SECURITY, g("settings", "security").ifBlank { "auto" }) { p(it, "settings", "security") }
         }
         "trojan" -> {
             XrayField(g("settings", "address"), { p(it, "settings", "address") }, tr("Address"))
-            XrayField(g("settings", "port"), { p(it.filter(Char::isDigit), "settings", "port") }, tr("Port"))
+            XrayField(g("settings", "port"), { onChange(jsonPutPort(obj, listOf("settings", "port"), it.filter(Char::isDigit))) }, tr("Port"))
             XrayField(g("settings", "password"), { p(it, "settings", "password") }, tr("Password"))
         }
         "shadowsocks" -> {
             XrayField(g("settings", "address"), { p(it, "settings", "address") }, tr("Address"))
-            XrayField(g("settings", "port"), { p(it.filter(Char::isDigit), "settings", "port") }, tr("Port"))
+            XrayField(g("settings", "port"), { onChange(jsonPutPort(obj, listOf("settings", "port"), it.filter(Char::isDigit))) }, tr("Port"))
             XrayLabel(tr("Method")); XrayChips(SS_METHODS, g("settings", "method").ifBlank { "aes-256-gcm" }) { p(it, "settings", "method") }
             XrayField(g("settings", "password"), { p(it, "settings", "password") }, tr("Password"))
         }
         "socks" -> {
             XrayField(g("settings", "address"), { p(it, "settings", "address") }, tr("Address"))
-            XrayField(g("settings", "port"), { p(it.filter(Char::isDigit), "settings", "port") }, tr("Port"))
+            XrayField(g("settings", "port"), { onChange(jsonPutPort(obj, listOf("settings", "port"), it.filter(Char::isDigit))) }, tr("Port"))
         }
         "http" -> {
             XrayField(g("settings", "address"), { p(it, "settings", "address") }, tr("Address"))
-            XrayField(g("settings", "port"), { p(it.filter(Char::isDigit), "settings", "port") }, tr("Port"))
+            XrayField(g("settings", "port"), { onChange(jsonPutPort(obj, listOf("settings", "port"), it.filter(Char::isDigit))) }, tr("Port"))
             // CONNECT headers sent to the upstream proxy (settings.headers, key→value).
             HttpHeadersEditor(jsonGetStringMap(obj, listOf("settings", "headers"))) { rows ->
                 onChange(jsonPutStringMap(obj, listOf("settings", "headers"), rows))
