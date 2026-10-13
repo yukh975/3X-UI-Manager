@@ -759,4 +759,11 @@ val ruStrings: Map<String, String> = mapOf(
 
     // update changelog
     "Changes in earlier versions are on the release page." to "Изменения более ранних версий — на странице релиза.",
+
+    // apply on save
+    "Saved and applied" to "Сохранено и применено",
+    "Saved — applies when Xray starts" to "Сохранено — применится при запуске Xray",
+    "Saved — the panel applies it within 30 seconds" to "Сохранено — панель применит изменения в течение 30 секунд",
+    "The panel applies the config on save, restarting Xray only when a change can't be applied live. A broken config can take Xray down." to
+        "Панель применяет конфиг при сохранении и перезапускает Xray, только если изменение нельзя применить на лету. Сломанный конфиг может уронить Xray.",
 )

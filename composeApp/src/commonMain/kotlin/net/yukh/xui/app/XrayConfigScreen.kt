@@ -39,6 +39,7 @@ fun XrayConfigScreen(
     onTestUrlChange: (String) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
+    appliesOnSave: Boolean,
 ) {
     val valid = configJson.isNotBlank() && isValidJson(configJson)
     Column(Modifier.fillMaxSize()) {
@@ -81,7 +82,11 @@ fun XrayConfigScreen(
                     Text(tr("Invalid JSON."), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
                 }
                 Text(
-                    tr("Save, then restart Xray to apply. A broken config can take Xray down."),
+                    if (appliesOnSave) {
+                        tr("The panel applies the config on save, restarting Xray only when a change can't be applied live. A broken config can take Xray down.")
+                    } else {
+                        tr("Save, then restart Xray to apply. A broken config can take Xray down.")
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

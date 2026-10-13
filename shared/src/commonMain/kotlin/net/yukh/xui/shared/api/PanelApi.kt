@@ -518,7 +518,8 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
         append("allowInsecure", sub.allowInsecure.toString())
     }
 
-    suspend fun createOutboundSub(sub: OutboundSubscription): ApiAck =
+    /** Returns the stored row (its new id); the panel does not fetch it yet. */
+    suspend fun createOutboundSub(sub: OutboundSubscription): ApiResponse<OutboundSubscription> =
         client.submitForm("$base/panel/api/xray/outbound-subs", subForm(sub)) { auth() }.body()
 
     suspend fun updateOutboundSub(sub: OutboundSubscription): ApiAck =
@@ -527,7 +528,7 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
     suspend fun deleteOutboundSub(id: Int): ApiAck =
         client.post("$base/panel/api/xray/outbound-subs/$id/del") { auth() }.body()
 
-    /** Returns the freshly fetched outbounds; the panel also flags xray for restart. */
+    /** Returns the freshly fetched outbounds; the panel flags Xray for its 30-second reload. */
     suspend fun refreshOutboundSub(id: Int): ApiResponse<List<JsonObject>> =
         client.post("$base/panel/api/xray/outbound-subs/$id/refresh") { auth() }.body()
 

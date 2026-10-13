@@ -40,8 +40,10 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import net.yukh.xui.shared.api.OutboundSubChange
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.PanelFeatureUnsupportedException
+import net.yukh.xui.shared.api.outboundSubNotice
 import net.yukh.xui.shared.dto.OutboundSubscription
 
 /** One line of a subscription preview: the tag the panel would assign and the
@@ -53,8 +55,8 @@ private data class PreviewedOutbound(val tag: String, val protocol: String)
  * timer and merges into the Xray config (the panel's "Subscriptions" panel on
  * the Outbounds page).
  *
- * Every mutation only flags Xray for a restart, so the screen says so and
- * offers to do it.
+ * Most changes are reloaded by the panel itself within 30 seconds; only an
+ * edited subscription waits for an Xray restart, so only then is one offered.
  */
 @Composable
 fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
@@ -63,14 +65,12 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
     var unsupported by remember { mutableStateOf(false) }
     var items by remember { mutableStateOf<List<OutboundSubscription>>(emptyList()) }
     var busy by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf<String?>(null) }
+    var notice by remember { mutableStateOf<OutboundSubChange?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var editor by remember { mutableStateOf<OutboundSubscription?>(null) }
     var previewing by remember { mutableStateOf(false) }
     var preview by remember { mutableStateOf<List<PreviewedOutbound>?>(null) }
     var deleteTarget by remember { mutableStateOf<OutboundSubscription?>(null) }
-
-    val restartHint = tr(lang, "Saved — restart Xray to apply")
 
     suspend fun load() {
         loading = true
@@ -88,7 +88,7 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
     }
     LaunchedEffect(Unit) { load() }
 
-    fun mutate(block: suspend () -> Boolean) {
+    fun mutate(change: OutboundSubChange, block: suspend () -> Boolean) {
         if (busy) return
         busy = true
         error = null
@@ -96,7 +96,7 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
             val ok = try { block() } catch (e: Throwable) { error = e.message; false }
             busy = false
             if (ok) {
-                message = restartHint
+                notice = change
                 load()
             }
         }
@@ -131,9 +131,21 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                     busy = true
                     error = null
                     scope.launch {
+                        val change = if (draft.id == 0) OutboundSubChange.Create else OutboundSubChange.Update
+                        var fetched = false
                         val ok = try {
-                            val r = if (draft.id == 0) api.createOutboundSub(draft) else api.updateOutboundSub(draft)
-                            r.success
+                            if (change == OutboundSubChange.Create) {
+                                val r = api.createOutboundSub(draft)
+                                // The panel stores a new subscription without fetching it; its web UI
+                                // fetches right away, which queues the Xray reload. A failure shows on the card.
+                                val newId = r.obj?.id ?: 0
+                                if (r.success && newId > 0) {
+                                    fetched = try { api.refreshOutboundSub(newId).success } catch (e: Throwable) { false }
+                                }
+                                r.success
+                            } else {
+                                api.updateOutboundSub(draft).success
+                            }
                         } catch (e: Throwable) {
                             error = e.message
                             false
@@ -142,7 +154,7 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                         if (ok) {
                             editor = null
                             preview = null
-                            message = restartHint
+                            notice = if (change == OutboundSubChange.Update || fetched) change else null
                             load()
                         }
                     }
@@ -160,7 +172,7 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     deleteTarget = null
-                    mutate { api.deleteOutboundSub(sub.id).success }
+                    mutate(OutboundSubChange.Delete) { api.deleteOutboundSub(sub.id).success }
                 }) { Text(tr("Delete"), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(tr("Cancel")) } },
@@ -179,7 +191,7 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                 if (!unsupported && items.any { it.enabled }) {
                     TextButton(
                         onClick = {
-                            mutate {
+                            mutate(OutboundSubChange.Refresh) {
                                 var failed = 0
                                 items.filter { it.enabled }.forEach { sub ->
                                     val ok = try { api.refreshOutboundSub(sub.id).success } catch (e: Throwable) { false }
@@ -196,16 +208,21 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                 }
             }
 
-            message?.let {
+            notice?.let { change ->
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
-                    TextButton(
+                    Text(
+                        tr(lang, outboundSubNotice(change)),
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (change == OutboundSubChange.Update) TextButton(
                         onClick = {
-                            message = null
+                            notice = null
                             scope.launch {
                                 busy = true
                                 try { api.restartXray() } catch (e: Throwable) { error = e.message }
@@ -248,11 +265,11 @@ fun OutboundSubsScreen(api: PanelApi, lang: String, onClose: () -> Unit) {
                         SubscriptionCard(
                             sub = sub,
                             busy = busy,
-                            onToggle = { v -> mutate { api.updateOutboundSub(sub.copy(enabled = v)).success } },
-                            onRefresh = { mutate { api.refreshOutboundSub(sub.id).success } },
+                            onToggle = { v -> mutate(OutboundSubChange.Update) { api.updateOutboundSub(sub.copy(enabled = v)).success } },
+                            onRefresh = { mutate(OutboundSubChange.Refresh) { api.refreshOutboundSub(sub.id).success } },
                             onEdit = { editor = sub; preview = null },
                             onDelete = { deleteTarget = sub },
-                            onMove = { up -> mutate { api.moveOutboundSub(sub.id, up).success } },
+                            onMove = { up -> mutate(OutboundSubChange.Move) { api.moveOutboundSub(sub.id, up).success } },
                         )
                     }
                     OutlinedButton(

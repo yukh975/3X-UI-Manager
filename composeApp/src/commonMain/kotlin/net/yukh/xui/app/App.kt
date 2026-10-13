@@ -15,6 +15,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,8 +51,10 @@ import net.yukh.xui.shared.api.PanelFeatureUnsupportedException
 import net.yukh.xui.shared.api.UpdateChannel
 import net.yukh.xui.shared.json.observatorySettingsChanged
 import net.yukh.xui.shared.api.UpdateChecker
+import net.yukh.xui.shared.api.panelAppliesXrayOnSave
 import net.yukh.xui.shared.api.panelVersionAtLeast
 import net.yukh.xui.shared.api.supportsPanel380
+import net.yukh.xui.shared.api.xraySaveNotice
 import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.BulkAdjustRequest
 import net.yukh.xui.shared.dto.BulkAdjustResult
@@ -115,6 +119,7 @@ fun App() {
             var speedInBits by remember { mutableStateOf(false) }
             var updateChannel by remember { mutableStateOf(UpdateChannel.STABLE_KEY) }
             var status by remember { mutableStateOf<ServerStatus?>(null) }
+            val xraySavedSnackbar = remember { SnackbarHostState() }
             var inbounds by remember { mutableStateOf<List<InboundSlim>>(emptyList()) }
             var inboundSpeeds by remember { mutableStateOf<Map<Int, Pair<Long, Long>>>(emptyMap()) }
             var clientSpeeds by remember { mutableStateOf<Map<String, Pair<Long, Long>>>(emptyMap()) }
@@ -494,16 +499,25 @@ fun App() {
                 }
             }
 
+            // After an Xray save that closes its editor, say whether the panel already applied it.
+            fun announceXraySaved() {
+                val text = tr(lang, xraySaveNotice(status?.panelVersion.orEmpty(), status?.xrayRunning == true))
+                scope.launch {
+                    xraySavedSnackbar.currentSnackbarData?.dismiss()
+                    xraySavedSnackbar.showSnackbar(text)
+                }
+            }
+
             // Save the (possibly structurally-edited) Xray config, then run [close]
-            // on success. Shared by the raw editor + the structured sections.
-            fun saveXrayThen(close: () -> Unit) {
+            // on success. Shared by the structured sections; [announce] is off for in-place saves.
+            fun saveXrayThen(announce: Boolean = true, close: () -> Unit) {
                 scope.launch {
                     editorSaving = true; editorError = null
                     val sent = xrayConfigJson
                     val r = try { api?.updateXraySetting(sent, xrayTestUrl) }
                         catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                     editorSaving = false
-                    if (r?.success == true) { xraySavedJson = sent; close() }
+                    if (r?.success == true) { xraySavedJson = sent; close(); if (announce) announceXraySaved() }
                     else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
                 }
             }
@@ -988,11 +1002,12 @@ fun App() {
                                 val r = try { api?.updateXraySetting(xrayConfigJson, xrayTestUrl) }
                                     catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
-                                if (r?.success == true) showXray = false
+                                if (r?.success == true) { showXray = false; announceXraySaved() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
                             }
                         },
                         onCancel = { showXray = false; editorError = null },
+                        appliesOnSave = panelAppliesXrayOnSave(status?.panelVersion.orEmpty()),
                     )
                 } else if (showGeneralX) {
                     GeneralXrayScreen(
@@ -1056,7 +1071,7 @@ fun App() {
                         onSave = { saveXrayThen { showBalancersX = false } },
                         onCancel = { showBalancersX = false; editorError = null },
                         observatoryUnsaved = observatorySettingsChanged(xraySavedJson, xrayConfigJson),
-                        onSaveObservatory = { saveXrayThen {} },
+                        onSaveObservatory = { saveXrayThen(announce = false) {} },
                     )
                 } else if (showGroups && api != null) {
                     GroupsScreen(
@@ -1077,7 +1092,7 @@ fun App() {
                         error = editorError,
                         onConfigChange = { xrayConfigJson = it },
                         onSave = { saveXrayThen { showOutboundsX = false } },
-                        onSaveInPlace = { saveXrayThen {} },
+                        onSaveInPlace = { saveXrayThen(announce = false) {} },
                         onCancel = { showOutboundsX = false; editorError = null },
                         onTestOutbound = if (testApi != null) {
                             { ob, mode -> testApi.testOutbound(ob, mode).obj }
@@ -1115,6 +1130,7 @@ fun App() {
                     val icons = listOf("📊", "🔌", "👥", "🌐", "⚙️")
                     val traffic = trafficByNode(inbounds)
                     Scaffold(
+                        snackbarHost = { SnackbarHost(xraySavedSnackbar) },
                         bottomBar = {
                             // Icons only, with a single centred caption for the selected
                             // tab. A per-item label wrapped onto two lines (and pushed the
