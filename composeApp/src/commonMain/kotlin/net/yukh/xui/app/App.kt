@@ -47,7 +47,9 @@ import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.PanelFeatureUnsupportedException
 import net.yukh.xui.shared.api.UpdateChannel
 import net.yukh.xui.shared.api.UpdateChecker
+import net.yukh.xui.shared.api.panelVersionAtLeast
 import net.yukh.xui.shared.api.supportsPanel380
+import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.BulkAdjustRequest
 import net.yukh.xui.shared.dto.BulkAdjustResult
 import net.yukh.xui.shared.dto.BulkDelRequest
@@ -594,6 +596,7 @@ fun App() {
             // Panel v3.8.0 features follow the active panel's version from its last status
             // poll; before the first one they stay hidden.
             val panel380 = supportsPanel380(status?.panelVersion.orEmpty())
+            val panel3100 = panelVersionAtLeast(status?.panelVersion.orEmpty(), 3, 10, 0)
 
             CompositionLocalProvider(LocalAppLanguage provides lang, LocalSpeedInBits provides speedInBits) {
                 // The lock only gates the signed-in UI. When not connected the
@@ -854,6 +857,7 @@ fun App() {
                         initial = editingInbound!!,
                         isNew = editingInboundNew,
                         panel380 = panel380,
+                        panel3100 = panel3100,
                         saving = editorSaving,
                         error = editorError,
                         vlessEncAuths = vlessEncAuths,
@@ -883,8 +887,14 @@ fun App() {
                                 val r = try {
                                     if (editingInboundNew) api?.addInbound(model) else api?.updateInbound(model.id, model)
                                 } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                // The panel's update keeps the stored `enable`, so a flipped switch needs its own call.
+                                val toggleError = if (r?.success == true && !editingInboundNew && editingInbound?.enable != model.enable) {
+                                    val t = try { api?.setInboundEnable(model.id, model.enable) } catch (e: Throwable) { ApiAck(msg = e.message ?: "Network error") }
+                                    if (t?.success == true) null else tr(lang, "Inbound updated, but enabling/disabling failed:") + " " + t?.msg.orEmpty()
+                                } else null
                                 editorSaving = false
-                                if (r?.success == true) { editingInbound = null; refreshAll() }
+                                if (toggleError != null) { editorError = toggleError; refreshAll() }
+                                else if (r?.success == true) { editingInbound = null; refreshAll() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
                             }
                         },
@@ -1030,6 +1040,7 @@ fun App() {
                         },
                         onOutboundSubs = { showOutboundSubs = true },
                         panel380 = panel380,
+                        panel3100 = panel3100,
                     )
                 } else if (showPanelAdmin && api != null) {
                     PanelAdminScreen(api = api!!, lang = lang, onClose = { showPanelAdmin = false })

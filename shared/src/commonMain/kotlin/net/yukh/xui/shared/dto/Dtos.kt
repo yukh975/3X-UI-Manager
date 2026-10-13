@@ -130,7 +130,7 @@ data class ClientStat(
  * the parse target for GET /inbounds/get/:id. settings/streamSettings/sniffing
  * are kept as raw JsonElement so a basic-field edit round-trips the protocol
  * config untouched (the panel emits them as objects; unknown response-only
- * fields like up/down/tag/clientStats are dropped by ignoreUnknownKeys).
+ * fields like up/down/clientStats are dropped by ignoreUnknownKeys).
  */
 @Serializable
 data class InboundModel(
@@ -143,6 +143,12 @@ data class InboundModel(
     val expiryTime: Long = 0,
     val total: Long = 0,
     val trafficReset: String = "never",
+    // No editor field, but the panel's update overwrites these from the body, so an
+    // edit must send the loaded values back (an empty tag makes the panel generate one).
+    val trafficResetDay: Int = 1,
+    val tag: String = "",
+    val subSortIndex: Int = 1,
+    val excludeFromSub: Boolean = false,
     // Panel v3.7.0 (VLESS): opt this inbound out of automatic xtls-rprx-vision.
     val disableFlow: Boolean = false,
     val settings: JsonElement = JsonObject(emptyMap()),
