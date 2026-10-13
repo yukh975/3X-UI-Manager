@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.15.3] — 2026-10-13
+
+### Changed
+- **Balancers and the Observatory settings have their own «Balancers» menu item under Routing.** The Routing screen keeps the strategy, rules, route tester and the routing-script warning; rules can still target a balancer. The Observatory section has its own Save button, active only while its settings have unsaved changes.
+
+### Fixed
+- **Update notes now list the changes of every version since the installed one, not just the latest**, newest first, each under "Version X · date".
+- **After saving Xray settings the app no longer asks to restart Xray.** Since panel 3.3.1 the panel applies the change itself on save — live through the Xray API where it can, restarting Xray only when a change can't be applied live — so the app now says "Saved and applied". Outbound-subscription refreshes, moves and deletes are applied by the panel within 30 seconds; only editing a subscription still needs a restart, and the app says so.
+
 ## [0.15.2] — 2026-10-13
 
 ### Added

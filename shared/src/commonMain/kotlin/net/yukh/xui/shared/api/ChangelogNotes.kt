@@ -19,7 +19,7 @@ data class ChangelogSelection(
  * skipped version must not vanish. Pure, so the selection rules are testable.
  */
 object ChangelogNotes {
-    const val MAX_VERSION_CHARS = 2000
+    const val MAX_VERSION_CHARS = 4000
     const val MAX_TOTAL_CHARS = 8000
     const val UNKNOWN_INSTALLED_COUNT = 3
 
