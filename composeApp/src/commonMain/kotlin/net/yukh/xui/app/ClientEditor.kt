@@ -63,6 +63,9 @@ import net.yukh.xui.shared.dto.HAPP_SOURCE_TOO_LONG
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.QR_MAX_BYTES
 import net.yukh.xui.shared.dto.SubInfo
+import net.yukh.xui.shared.dto.isPostQuantumLink
+import net.yukh.xui.shared.dto.masqueEmailInvalid
+import net.yukh.xui.shared.dto.withRenewal
 import net.yukh.xui.shared.secureRandomIndex
 
 private const val GBC = 1_073_741_824.0
@@ -83,6 +86,8 @@ fun ClientEditorScreen(
     links: List<String>,
     linksLoading: Boolean,
     subUrl: String? = null,
+    /** JSON subscription URL (null when the panel doesn't serve one): MASQUE is only there. */
+    jsonSubUrl: String? = null,
     subInfo: SubInfo? = null,
     onShowLinks: () -> Unit,
     ips: List<ClientIpInfo>,
@@ -142,18 +147,16 @@ fun ClientEditorScreen(
     val isAmneziawg = "amneziawg" in selectedProtocols
     // Panel v3.8.0 serves TUIC outside Xray, so per-client traffic and IP limits don't apply.
     val isTuic = "tuic" in selectedProtocols
+    val emailInvalidForMasque = masqueEmailInvalid(email, selectedProtocols)
 
-    val canSave = !saving && email.isNotBlank() && (!isNew || selectedInbounds.isNotEmpty())
+    val canSave = !saving && email.isNotBlank() && (!isNew || selectedInbounds.isNotEmpty()) &&
+        !emailInvalidForMasque
     fun build(): ClientModel {
         val base = source.toModel().copy(
             email = email.trim(),
             enable = enable,
             totalGB = totalGb.trim().replace(',', '.').toDoubleOrNull()?.let { (it * GBC).toLong() } ?: 0L,
             limitIp = limitIp.toIntOrNull() ?: 0,
-            reset = reset.toIntOrNull() ?: 0,
-            // 3.7.0: a day of 0 keeps the old rolling interval, so the two
-            // coexist and the panel picks whichever is set.
-            resetDay = (resetDay.toIntOrNull() ?: 0).coerceIn(0, 31),
             resetMax = (resetMax.toIntOrNull() ?: 0).coerceAtLeast(0),
             trafficReset = trafficReset,
             trafficResetDay = (trafficResetDay.toIntOrNull() ?: 1).coerceIn(1, 31),
@@ -162,6 +165,11 @@ fun ClientEditorScreen(
             tgId = tgId.toLongOrNull() ?: 0L,
             group = group.trim(),
             comment = comment.trim(),
+        ).withRenewal(
+            reset = reset.toIntOrNull() ?: 0,
+            // 3.7.0: a day of 0 keeps the old rolling interval, so the two
+            // coexist and the panel picks whichever is set.
+            resetDay = (resetDay.toIntOrNull() ?: 0).coerceIn(0, 31),
         )
         return base.copy(
             // Mint the subscription id ourselves on create, in the panel's own
@@ -202,7 +210,19 @@ fun ClientEditorScreen(
         ) {
             if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
 
-            CField(email, { email = it }, tr("Email / name"))
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text(tr("Email / name")) },
+                singleLine = true,
+                isError = emailInvalidForMasque,
+                supportingText = if (emailInvalidForMasque) {
+                    { Text(tr("MASQUE: client email cannot contain \":\"")) }
+                } else {
+                    null
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
             CField(totalGb, { totalGb = it }, tr("Traffic limit (GB, 0 = unlimited)"), KeyboardType.Decimal)
             CField(limitIp, { limitIp = it.filter(Char::isDigit) }, tr("IP limit (0 = unlimited)"), KeyboardType.Number)
             if (isTuic) {
@@ -213,6 +233,13 @@ fun ClientEditorScreen(
                 )
             }
             CField(reset, { reset = it.filter(Char::isDigit) }, tr("Traffic reset period (days, 0 = off)"), KeyboardType.Number)
+            if (source.resetWeekday > 0) {
+                Text(
+                    tr("Weekly renewal is on (set in the web panel). A reset period or a renewal day turns it off."),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             // ---- Renewal, reset cycle and devices (panel v3.7.0) ----
             CField(resetDay, { resetDay = it.filter(Char::isDigit).take(2) }, tr("Renew on day (0 = interval)"), KeyboardType.Number)
             CField(resetMax, { resetMax = it.filter(Char::isDigit).take(4) }, tr("Max renewals (0 = ∞)"), KeyboardType.Number)
@@ -369,6 +396,7 @@ fun ClientEditorScreen(
                             SelectionContainer { Text(sub, style = MaterialTheme.typography.bodySmall) }
                             LinkActions(sub)
                             subInfo?.let { SubStatusRow(it) }
+                            jsonSubUrl?.let { JsonSubBlock(it) }
                             if (happLinkEnabled != null) {
                                 HappLinkBlock(
                                     enabled = happLinkEnabled,
@@ -540,6 +568,15 @@ private fun LinkActions(content: String) {
  *  that doesn't fit gets the copy/share note instead of crashing the screen. */
 @Composable
 private fun QrImage(content: String) {
+    // Post-quantum keys fit a QR only at a density phones can't scan; the panel hides it too.
+    if (isPostQuantumLink(content)) {
+        Text(
+            tr("This link carries post-quantum keys and is too dense for a QR code — copy or share it instead."),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
     val painter = remember(content) { runCatching { QrCodePainter(content, QrOptions {}) }.getOrNull() }
     if (painter != null) {
         Image(painter = painter, contentDescription = null, modifier = Modifier.size(200.dp))
@@ -555,6 +592,27 @@ private fun QrTooLongNote() {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/** The JSON subscription (Xray JSON configs); MASQUE is only offered there (panel 3.10.0). */
+@Composable
+private fun JsonSubBlock(url: String) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        HorizontalDivider()
+        Text(tr("JSON subscription"), style = MaterialTheme.typography.titleSmall)
+        Text(
+            tr("Xray JSON configs. MASQUE connections are only in this one."),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        QrImage(url)
+        SelectionContainer { Text(url, style = MaterialTheme.typography.bodySmall) }
+        LinkActions(url)
+    }
 }
 
 /** Encrypted Happ link for the subscription (panel v3.8.0). The panel builds it on

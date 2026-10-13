@@ -2,8 +2,11 @@ package net.yukh.xui.shared.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 // ---- Response envelopes (web/entity/Msg.go) ------------------------------
 
@@ -190,6 +193,10 @@ data class Client(
     // forwarded ports.
     val resetDay: Int = 0,
     val resetMax: Int = 0,
+    // Panel v3.9.0 weekly renewal (1-7 = Mon-Sun, 0 = off) and the VLESS simple
+    // reverse proxy ({"tag":…} or null). The panel's update overwrites both from the body.
+    val resetWeekday: Int = 0,
+    val reverse: JsonElement? = null,
     val trafficReset: String = "never",
     val trafficResetDay: Int = 1,
     val limitHwid: Int = 0,
@@ -217,6 +224,7 @@ data class Client(
         flow = flow, limitIp = limitIp, totalGB = totalGB, expiryTime = expiryTime,
         enable = enable, tgId = tgId, subId = subId, group = group, comment = comment,
         reset = reset, resetDay = resetDay, resetMax = resetMax,
+        resetWeekday = resetWeekday, reverse = reverseObject(reverse),
         trafficReset = trafficReset, trafficResetDay = trafficResetDay,
         limitHwid = limitHwid, forwardedPorts = forwardedPorts,
         createdAt = createdAt, updatedAt = updatedAt,
@@ -251,6 +259,9 @@ data class ClientModel(
     val reset: Int = 0,
     val resetDay: Int = 0,
     val resetMax: Int = 0,
+    val resetWeekday: Int = 0,
+    // Null leaves it out (explicitNulls = false); the panel then clears the reverse tag.
+    val reverse: JsonObject? = null,
     val trafficReset: String = "never",
     val trafficResetDay: Int = 1,
     val limitHwid: Int = 0,
@@ -258,6 +269,19 @@ data class ClientModel(
     @SerialName("created_at") val createdAt: Long = 0,
     @SerialName("updated_at") val updatedAt: Long = 0,
 )
+
+/** The stored reverse as the object the update body takes; an empty or tag-less one
+ *  is dropped (the panel clears it either way). Older panels sent it as JSON text. */
+private fun reverseObject(raw: JsonElement?): JsonObject? {
+    val obj = when (raw) {
+        is JsonObject -> raw
+        is JsonPrimitive -> raw.contentOrNull?.takeIf { raw.isString && it.isNotBlank() }
+            ?.let { runCatching { Json.parseToJsonElement(it) as? JsonObject }.getOrNull() }
+        else -> null
+    } ?: return null
+    val tag = (obj["tag"] as? JsonPrimitive)?.contentOrNull
+    return obj.takeIf { !tag.isNullOrBlank() }
+}
 
 @Serializable
 data class ClientCreatePayload(val client: ClientModel, val inboundIds: List<Int>)
@@ -325,6 +349,9 @@ data class Node(
     // Route the panel→node API connection through this Xray outbound tag
     // (empty = direct). Panel v3.4.0.
     val outboundTag: String = "",
+    // "all" or "selected" (only inboundTags are synced); the update overwrites both.
+    val inboundSyncMode: String = "all",
+    val inboundTags: List<String> = emptyList(),
     // The node's stable panelGuid — used to attribute online clients to the
     // server that physically hosts them (panel v3.4.0). Empty on older panels.
     val guid: String = "",
@@ -347,6 +374,7 @@ data class Node(
         port = port, basePath = basePath, apiToken = apiToken.ifBlank { null }, enable = enable,
         allowPrivateAddress = allowPrivateAddress, tlsVerifyMode = tlsVerifyMode,
         pinnedCertSha256 = pinnedCertSha256, outboundTag = outboundTag,
+        inboundSyncMode = inboundSyncMode, inboundTags = inboundTags,
     )
 }
 
@@ -366,6 +394,8 @@ data class NodeModel(
     val allowPrivateAddress: Boolean = false,
     val tlsVerifyMode: String = "verify",
     val pinnedCertSha256: String = "",
+    val inboundSyncMode: String = "all",
+    val inboundTags: List<String> = emptyList(),
     val outboundTag: String = "",
 )
 
