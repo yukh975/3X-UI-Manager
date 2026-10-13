@@ -38,6 +38,7 @@ import net.yukh.xui.shared.json.jsonPutString
 import net.yukh.xui.shared.json.jsonPutStrings
 import net.yukh.xui.shared.json.jsonRemove
 import net.yukh.xui.shared.json.jsonSetObjectList
+import net.yukh.xui.shared.json.dnsExpectedIpsKey
 import net.yukh.xui.shared.json.parseCsvList
 
 private val QUERY_STRATEGY = listOf("UseIP", "UseIPv4", "UseIPv6", "UseSystem")
@@ -92,6 +93,11 @@ fun DnsXrayScreen(
             XrayField(dnsStr("clientIp"), { putDnsStr("clientIp", it) }, tr("Client IP"))
             XrayLabel(tr("Query strategy"))
             XrayChips(QUERY_STRATEGY, dnsStr("queryStrategy").ifBlank { "UseIP" }) { putDnsStr("queryStrategy", it) }
+            // Panel 3.10: a blank script must be removed — Xray refuses to start on an empty path.
+            XrayField(dnsStr("script"), {
+                onConfigChange(if (it.isBlank()) jsonRemove(configJson, listOf("dns", "script")) else jsonPutString(configJson, listOf("dns", "script"), it))
+            }, tr("Lua Script"))
+            XrayHelp(tr("Path to a .lua file defining HandleDNSQuery, absolute or relative to the Xray bin folder. The script then answers every query and reaches the servers only through its own code. Xray will not start if the file is missing or invalid."))
             DNS_TOGGLES.forEach { (key, label) ->
                 XrayToggle(tr(label), jsonGetBool(configJson, listOf("dns", key))) {
                     onConfigChange(jsonPutBool(configJson, listOf("dns", key), it))
@@ -161,10 +167,13 @@ private fun DnsServerDialog(initial: String, onConfirm: (String) -> Unit, onDism
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 XrayField(g("address"), { p("address", it) }, tr("Address"))
                 XrayField(g("port"), { p("port", it.filter(Char::isDigit)) }, tr("Port (blank = 53)"))
+                XrayField(g("id"), { obj = if (it.isBlank()) jsonRemove(obj, listOf("id")) else jsonPutString(obj, listOf("id"), it) }, tr("ID"))
+                XrayHelp(tr("The name a Lua DNS script uses to pick this server"))
                 XrayLabel(tr("Query strategy"))
                 XrayChips(QUERY_STRATEGY, g("queryStrategy").ifBlank { "UseIP" }) { p("queryStrategy", it) }
                 XrayField(csv("domains"), { pcsv("domains", it) }, tr("Domains (comma-separated)"))
-                XrayField(csv("expectIPs"), { pcsv("expectIPs", it) }, tr("Expected IPs (comma-separated)"))
+                val ipsKey = dnsExpectedIpsKey(obj)
+                XrayField(csv(ipsKey), { pcsv(ipsKey, it) }, tr("Expected IPs (comma-separated)"))
                 XrayToggle(tr("Skip fallback"), jsonGetBool(obj, listOf("skipFallback"))) { obj = jsonPutBool(obj, listOf("skipFallback"), it) }
             }
         },

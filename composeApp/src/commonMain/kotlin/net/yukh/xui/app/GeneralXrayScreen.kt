@@ -28,6 +28,7 @@ import net.yukh.xui.shared.json.jsonGetBool
 import net.yukh.xui.shared.json.jsonGetString
 import net.yukh.xui.shared.json.jsonPutBool
 import net.yukh.xui.shared.json.jsonPutString
+import net.yukh.xui.shared.json.jsonRemove
 
 private val ROUTING_STRATEGY = listOf("AsIs", "IPIfNonMatch", "IPOnDemand")
 private val LOG_LEVELS = listOf("none", "debug", "info", "warning", "error")
@@ -70,6 +71,11 @@ fun GeneralXrayScreen(
             XraySection(tr("General"))
             XrayLabel(tr("Routing strategy"))
             XrayChips(ROUTING_STRATEGY, s("routing", "domainStrategy").ifBlank { "AsIs" }) { putS(it, "routing", "domainStrategy") }
+            // Panel 3.10: a blank script must be removed — Xray refuses to start on an empty path.
+            XrayField(s("routing", "script"), {
+                onConfigChange(if (it.isBlank()) jsonRemove(configJson, listOf("routing", "script")) else jsonPutString(configJson, listOf("routing", "script"), it))
+            }, tr("Routing Script"))
+            XrayHelp(tr("Path to a .lua file defining HandleRoute, absolute or relative to the Xray bin folder. The script then picks every route and Xray ignores all routing rules, the panel's api rule included: send the api inbound to the api outbound or traffic stats and live client changes stop. Xray will not start if the file is missing or invalid."))
             XrayField(testUrl, onTestUrlChange, tr("Outbound test URL"))
 
             XraySection(tr("Logs"))
@@ -121,6 +127,11 @@ fun XrayLabel(text: String) {
 @Composable
 fun XrayField(value: String, onChange: (String) -> Unit, label: String) {
     OutlinedTextField(value = value, onValueChange = onChange, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+}
+
+@Composable
+fun XrayHelp(text: String) {
+    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable

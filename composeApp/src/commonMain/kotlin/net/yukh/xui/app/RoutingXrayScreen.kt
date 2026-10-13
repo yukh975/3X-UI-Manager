@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -43,6 +44,7 @@ import net.yukh.xui.shared.json.jsonPutString
 import net.yukh.xui.shared.json.jsonPutStrings
 import net.yukh.xui.shared.json.jsonRemove
 import net.yukh.xui.shared.json.jsonSetObjectList
+import net.yukh.xui.shared.json.normalizeBalancer
 import net.yukh.xui.shared.json.parseCsvList
 
 private val ROUTING_STRATEGY = listOf("AsIs", "IPIfNonMatch", "IPOnDemand")
@@ -93,6 +95,15 @@ fun RoutingXrayScreen(
             modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (jsonGetString(configJson, listOf("routing", "script")).isNotBlank()) {
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                    Text(
+                        tr("A routing script is set under General / Logs, so Xray ignores these rules."),
+                        Modifier.padding(12.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
+            }
             XrayLabel(tr("Routing strategy"))
             XrayChips(ROUTING_STRATEGY, jsonGetString(configJson, listOf("routing", "domainStrategy")).ifBlank { "AsIs" }) {
                 onConfigChange(jsonPutString(configJson, listOf("routing", "domainStrategy"), it))
@@ -348,7 +359,7 @@ private fun BalancerDialog(initial: String, onConfirm: (String) -> Unit, onDismi
                 XrayField(g("fallbackTag"), { obj = if (it.isBlank()) jsonRemove(obj, listOf("fallbackTag")) else jsonPutString(obj, listOf("fallbackTag"), it) }, tr("Fallback tag"))
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(obj) }, enabled = g("tag").isNotBlank()) { Text(tr("Save")) } },
+        confirmButton = { TextButton(onClick = { onConfirm(normalizeBalancer(obj)) }, enabled = g("tag").isNotBlank()) { Text(tr("Save")) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
 }

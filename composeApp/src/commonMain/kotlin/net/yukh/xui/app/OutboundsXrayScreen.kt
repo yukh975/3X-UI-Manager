@@ -69,6 +69,8 @@ fun OutboundsXrayScreen(
     error: String?,
     onConfigChange: (String) -> Unit,
     onSave: () -> Unit,
+    /** Writes the config to the panel but keeps this screen open (the editor's Save). */
+    onSaveInPlace: () -> Unit,
     onCancel: () -> Unit,
     onTestOutbound: (suspend (String, String) -> TestOutboundResult?)? = null,
     onOutboundSubs: () -> Unit,
@@ -93,7 +95,8 @@ fun OutboundsXrayScreen(
             protocols = protocols,
             saving = saving,
             onCancel = { editing = null },
-            onDone = { obj -> val l = list().toMutableList(); if (idx >= 0) l[idx] = obj else l.add(obj); setList(l); editing = null },
+            // The editor's Save writes to the panel; it used to only stage the edit for the list's Save.
+            onDone = { obj -> val l = list().toMutableList(); if (idx >= 0) l[idx] = obj else l.add(obj); setList(l); editing = null; onSaveInPlace() },
         )
         return
     }

@@ -1022,6 +1022,7 @@ fun App() {
                         error = editorError,
                         onConfigChange = { xrayConfigJson = it },
                         onSave = { saveXrayThen { showOutboundsX = false } },
+                        onSaveInPlace = { saveXrayThen {} },
                         onCancel = { showOutboundsX = false; editorError = null },
                         onTestOutbound = if (testApi != null) {
                             { ob, mode -> testApi.testOutbound(ob, mode).obj }

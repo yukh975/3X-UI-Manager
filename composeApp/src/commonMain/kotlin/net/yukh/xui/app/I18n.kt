@@ -684,4 +684,16 @@ val ruStrings: Map<String, String> = mapOf(
         "перезапишет базу панели и перезапустит Xray. Отменить нельзя.",
     "Restored — Xray restarted" to "Восстановлено — Xray перезапущен",
     "Restore failed" to "Не удалось восстановить",
+
+    // 0.15.1 — xray editors
+    "ID" to "ID",
+    "The name a Lua DNS script uses to pick this server" to "Имя, по которому DNS-скрипт на Lua выбирает этот сервер",
+    "Lua Script" to "Lua-скрипт",
+    "Path to a .lua file defining HandleDNSQuery, absolute or relative to the Xray bin folder. The script then answers every query and reaches the servers only through its own code. Xray will not start if the file is missing or invalid." to
+        "Путь к файлу .lua с функцией HandleDNSQuery — абсолютный или относительно папки bin Xray. Скрипт отвечает на все запросы и обращается к серверам только из своего кода. Xray не запустится, если файл отсутствует или содержит ошибки.",
+    "Routing Script" to "Скрипт маршрутизации",
+    "Path to a .lua file defining HandleRoute, absolute or relative to the Xray bin folder. The script then picks every route and Xray ignores all routing rules, the panel's api rule included: send the api inbound to the api outbound or traffic stats and live client changes stop. Xray will not start if the file is missing or invalid." to
+        "Путь к файлу .lua с функцией HandleRoute — абсолютный или относительно папки bin Xray. Скрипт выбирает каждый маршрут, а Xray игнорирует все правила маршрутизации, включая правило api панели: направляйте inbound api на outbound api, иначе остановятся статистика трафика и применение изменений клиентов на лету. Xray не запустится, если файл отсутствует или содержит ошибки.",
+    "A routing script is set under General / Logs, so Xray ignores these rules." to
+        "В разделе «Общее / Логи» задан скрипт маршрутизации, поэтому Xray игнорирует эти правила.",
 )
