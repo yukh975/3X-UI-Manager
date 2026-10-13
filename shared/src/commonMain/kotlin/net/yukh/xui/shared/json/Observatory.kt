@@ -159,3 +159,16 @@ fun putBurstPingField(config: String, key: String, value: String): String =
 
 fun putBurstPingSampling(config: String, value: Int): String =
     patchPingConfig(config, "sampling", JsonPrimitive(value))
+
+private fun probeSettings(config: String, view: String): JsonObject {
+    val current = parseConfig(config)?.get(view).asObj()
+    return if (view == BURST) mergedBurst(current, JsonObject(emptyMap()))[PING].asObj()
+    else mergeOver(DEFAULT_OBSERVATORY, current).with("subjectSelector", null)
+}
+
+/** Whether the shown observer's probe settings differ from those in [saved]. Missing
+ *  values count as the panel defaults; watched outbounds follow the balancers, so not compared. */
+fun observatorySettingsChanged(saved: String, current: String): Boolean {
+    val view = observatoryActiveView(current) ?: return false
+    return probeSettings(saved, view) != probeSettings(current, view)
+}

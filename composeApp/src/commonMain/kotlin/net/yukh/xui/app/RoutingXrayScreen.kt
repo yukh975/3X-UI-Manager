@@ -44,13 +44,10 @@ import net.yukh.xui.shared.json.jsonPutString
 import net.yukh.xui.shared.json.jsonPutStrings
 import net.yukh.xui.shared.json.jsonRemove
 import net.yukh.xui.shared.json.jsonSetObjectList
-import net.yukh.xui.shared.json.normalizeBalancer
 import net.yukh.xui.shared.json.parseCsvList
-import net.yukh.xui.shared.json.syncObservatories
 
 private val ROUTING_STRATEGY = listOf("AsIs", "IPIfNonMatch", "IPOnDemand")
 private val NETWORKS = listOf("", "tcp", "udp", "tcp,udp")
-private val BALANCER_STRATEGY = listOf("random", "roundRobin", "leastLoad", "leastPing")
 private val RULE_CSV = listOf(
     "inboundTag" to "Inbound tags",
     "domain" to "Domains",
@@ -60,8 +57,8 @@ private val RULE_CSV = listOf(
     "protocol" to "Protocols",
 )
 
-/** Structured Routing section: domainStrategy + rules + balancers, all edited on
- *  the one config JSON string. Rules/balancers are object arrays. */
+/** Structured Routing section: domainStrategy + rules, edited on the one config
+ *  JSON string. Balancers + observatory have their own screen (BalancersXrayScreen). */
 @Composable
 fun RoutingXrayScreen(
     configJson: String,
@@ -77,14 +74,10 @@ fun RoutingXrayScreen(
     panel380: Boolean = false,
 ) {
     var editRule by remember { mutableStateOf<Int?>(null) }
-    var editBal by remember { mutableStateOf<Int?>(null) }
     var showRouteTest by remember { mutableStateOf(false) }
 
     fun rules() = jsonGetObjectList(configJson, listOf("routing", "rules"))
     fun setRules(l: List<String>) = onConfigChange(jsonSetObjectList(configJson, listOf("routing", "rules"), l))
-    fun bals() = jsonGetObjectList(configJson, listOf("routing", "balancers"))
-    // Like the panel, every balancer change re-syncs the observers Xray needs to start.
-    fun setBals(l: List<String>) = onConfigChange(syncObservatories(jsonSetObjectList(configJson, listOf("routing", "balancers"), l)))
 
     Column(Modifier.fillMaxSize()) {
         XrayEditHeader(tr("Routing"), saving, onCancel, onSave, canSave = !loading)
@@ -165,20 +158,6 @@ fun RoutingXrayScreen(
                 }
             }
             OutlinedButton(onClick = { editRule = -1 }, modifier = Modifier.fillMaxWidth()) { Text(tr("Add rule")) }
-
-            XraySection(tr("Balancers"))
-            bals().forEachIndexed { i, bal ->
-                Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                        Text(jsonGetString(bal, listOf("tag")).ifBlank { "#${i + 1}" }, Modifier.weight(1f))
-                        TextButton(onClick = { editBal = i }) { Text(tr("Edit")) }
-                        TextButton(onClick = { setBals(bals().filterIndexed { j, _ -> j != i }) }) { Text(tr("Delete"), color = MaterialTheme.colorScheme.error) }
-                    }
-                }
-            }
-            OutlinedButton(onClick = { editBal = -1 }, modifier = Modifier.fillMaxWidth()) { Text(tr("Add balancer")) }
-
-            ObservatorySection(configJson, onConfigChange)
         }
     }
 
@@ -188,13 +167,6 @@ fun RoutingXrayScreen(
             showComment = panel380,
             onConfirm = { obj -> val l = rules().toMutableList(); if (idx >= 0) l[idx] = obj else l.add(obj); setRules(l); editRule = null },
             onDismiss = { editRule = null },
-        )
-    }
-    editBal?.let { idx ->
-        BalancerDialog(
-            initial = if (idx >= 0) bals().getOrElse(idx) { "{}" } else "{}",
-            onConfirm = { obj -> val l = bals().toMutableList(); if (idx >= 0) l[idx] = obj else l.add(obj); setBals(l); editBal = null },
-            onDismiss = { editBal = null },
         )
     }
     if (showRouteTest && onRouteTest != null) {
@@ -339,31 +311,6 @@ private fun RuleDialog(initial: String, showComment: Boolean, onConfirm: (String
             }
         },
         confirmButton = { TextButton(onClick = { onConfirm(jsonPutString(obj, listOf("type"), "field")) }) { Text(tr("Save")) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
-    )
-}
-
-@Composable
-private fun BalancerDialog(initial: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
-    var obj by remember { mutableStateOf(initial) }
-    fun g(k: String) = jsonGetString(obj, listOf(k))
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(tr("Balancer")) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                XrayField(g("tag"), { obj = jsonPutString(obj, listOf("tag"), it) }, tr("Tag"))
-                XrayLabel(tr("Strategy"))
-                XrayChips(BALANCER_STRATEGY, jsonGetString(obj, listOf("strategy", "type")).ifBlank { "random" }) {
-                    obj = jsonPutString(obj, listOf("strategy", "type"), it)
-                }
-                XrayField(jsonGetStrings(obj, listOf("selector")).joinToString(", "), {
-                    val p = parseCsvList(it); obj = if (p.isEmpty()) jsonRemove(obj, listOf("selector")) else jsonPutStrings(obj, listOf("selector"), p)
-                }, tr("Selector (comma-separated)"))
-                XrayField(g("fallbackTag"), { obj = if (it.isBlank()) jsonRemove(obj, listOf("fallbackTag")) else jsonPutString(obj, listOf("fallbackTag"), it) }, tr("Fallback tag"))
-            }
-        },
-        confirmButton = { TextButton(onClick = { onConfirm(normalizeBalancer(obj)) }, enabled = g("tag").isNotBlank()) { Text(tr("Save")) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
 }

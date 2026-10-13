@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +34,15 @@ private val HTTP_METHODS = listOf("HEAD", "GET")
 /** Observer probe settings under the balancers, like the panel's Observatory tab:
  *  the observers themselves come and go with the balancers (syncObservatories). */
 @Composable
-fun ObservatorySection(configJson: String, onConfigChange: (String) -> Unit) {
+fun ObservatorySection(
+    configJson: String,
+    onConfigChange: (String) -> Unit,
+    /** Probe settings edited but not yet written to the panel. */
+    unsaved: Boolean,
+    saving: Boolean,
+    /** Writes the whole template right away, like the screen's own Save. */
+    onSave: () -> Unit,
+) {
     XraySection(tr("Observatory"))
     val view = observatoryActiveView(configJson)
     if (view == null) {
@@ -104,6 +113,9 @@ fun ObservatorySection(configJson: String, onConfigChange: (String) -> Unit) {
             XrayLabel(tr("HTTP Method"))
             XrayChips(HTTP_METHODS, ping("httpMethod")) { put("httpMethod", it) }
         }
+    }
+    OutlinedButton(onClick = onSave, enabled = unsaved && !saving, modifier = Modifier.fillMaxWidth()) {
+        Text(if (saving && unsaved) "…" else tr("Save"))
     }
 }
 

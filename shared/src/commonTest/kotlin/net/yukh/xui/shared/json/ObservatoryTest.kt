@@ -109,4 +109,24 @@ class ObservatoryTest {
         assertEquals("false", jsonGetChild(putObservatoryConcurrency(cfg, false), listOf("observatory", "enableConcurrency")))
         assertNull(observatoryWithDefaults(config("")))
     }
+
+    @Test
+    fun onlyProbeSettingEditsMakeTheObservatoryUnsaved() {
+        val saved = config("""{"tag":"lp","selector":["a"],"strategy":{"type":"leastPing"}}""", ""","observatory":{"subjectSelector":["a"]}""")
+        assertFalse(observatorySettingsChanged(saved, saved))
+        val edited = putObservatoryField(saved, "probeInterval", "30s")
+        assertTrue(observatorySettingsChanged(saved, edited))
+        assertFalse(observatorySettingsChanged(edited, edited))
+        assertFalse(observatorySettingsChanged(saved, putObservatoryField(edited, "probeInterval", "1m")))
+        // A balancer change re-scopes or adds the observer with defaults: not an observatory edit.
+        val rescoped = syncObservatories(jsonSetObjectList(saved, listOf("routing", "balancers"),
+            listOf("""{"tag":"lp","selector":["a","b"],"strategy":{"type":"leastPing"}}""")))
+        assertFalse(observatorySettingsChanged(saved, rescoped))
+        val noObserver = config("""{"tag":"r","selector":["a"]}""")
+        val added = syncObservatories(jsonSetObjectList(noObserver, listOf("routing", "balancers"),
+            listOf("""{"tag":"ll","selector":["a"],"strategy":{"type":"leastLoad"}}""")))
+        assertFalse(observatorySettingsChanged(noObserver, added))
+        assertTrue(observatorySettingsChanged(noObserver, putBurstPingSampling(added, 5)))
+        assertFalse(observatorySettingsChanged(noObserver, noObserver))
+    }
 }

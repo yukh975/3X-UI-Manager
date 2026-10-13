@@ -46,6 +46,7 @@ import net.yukh.xui.shared.api.AuthExpiredException
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.PanelFeatureUnsupportedException
 import net.yukh.xui.shared.api.UpdateChannel
+import net.yukh.xui.shared.json.observatorySettingsChanged
 import net.yukh.xui.shared.api.UpdateChecker
 import net.yukh.xui.shared.api.panelVersionAtLeast
 import net.yukh.xui.shared.api.supportsPanel380
@@ -134,6 +135,7 @@ fun App() {
             var showGeodataX by remember { mutableStateOf(false) }
             var showDnsX by remember { mutableStateOf(false) }
             var showRoutingX by remember { mutableStateOf(false) }
+            var showBalancersX by remember { mutableStateOf(false) }
             var showOutboundsX by remember { mutableStateOf(false) }
             var metricChart by remember { mutableStateOf<MetricChartState?>(null) }
             var showBackup by remember { mutableStateOf(false) }
@@ -149,6 +151,8 @@ fun App() {
             // Pre-sign-in settings, reached from the Connect screen's gear.
             var showConnectSettings by remember { mutableStateOf(false) }
             var xrayConfigJson by remember { mutableStateOf("") }
+            // The template as last loaded from / written to the panel, to tell unsaved edits.
+            var xraySavedJson by remember { mutableStateOf("") }
             var xrayTestUrl by remember { mutableStateOf("") }
             var xrayLoading by remember { mutableStateOf(false) }
             var editingClient by remember { mutableStateOf<Client?>(null) }
@@ -451,7 +455,7 @@ fun App() {
                 val r = try { a.getXraySetting() } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                 if (r?.success == true && r.obj != null) {
                     val parsed = parseXrayObj(r.obj!!)
-                    if (parsed != null) { xrayConfigJson = parsed.configJson; xrayTestUrl = parsed.testUrl }
+                    if (parsed != null) { xrayConfigJson = parsed.configJson; xraySavedJson = parsed.configJson; xrayTestUrl = parsed.testUrl }
                     else editorError = "Couldn't parse Xray config"
                 } else if (r != null) {
                     editorError = r.msg.ifBlank { "Xray config unavailable (needs panel v3.3.0+)" }
@@ -484,10 +488,11 @@ fun App() {
             fun saveXrayThen(close: () -> Unit) {
                 scope.launch {
                     editorSaving = true; editorError = null
-                    val r = try { api?.updateXraySetting(xrayConfigJson, xrayTestUrl) }
+                    val sent = xrayConfigJson
+                    val r = try { api?.updateXraySetting(sent, xrayTestUrl) }
                         catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                     editorSaving = false
-                    if (r?.success == true) close()
+                    if (r?.success == true) { xraySavedJson = sent; close() }
                     else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
                 }
             }
@@ -1030,6 +1035,18 @@ fun App() {
                         },
                         panel380 = panel380,
                     )
+                } else if (showBalancersX) {
+                    BalancersXrayScreen(
+                        configJson = xrayConfigJson,
+                        loading = xrayLoading,
+                        saving = editorSaving,
+                        error = editorError,
+                        onConfigChange = { xrayConfigJson = it },
+                        onSave = { saveXrayThen { showBalancersX = false } },
+                        onCancel = { showBalancersX = false; editorError = null },
+                        observatoryUnsaved = observatorySettingsChanged(xraySavedJson, xrayConfigJson),
+                        onSaveObservatory = { saveXrayThen {} },
+                    )
                 } else if (showGroups && api != null) {
                     GroupsScreen(
                         api = api!!,
@@ -1292,6 +1309,7 @@ fun App() {
                                     onDnsX = { showDnsX = true; editorError = null; scope.launch { loadXray() } },
                                     onGeodataX = { showGeodataX = true; editorError = null; scope.launch { loadXray() } },
                                     onRoutingX = { showRoutingX = true; editorError = null; scope.launch { loadXray() } },
+                                    onBalancersX = { showBalancersX = true; editorError = null; scope.launch { loadXray() } },
                                     onOutboundsX = { showOutboundsX = true; editorError = null; scope.launch { loadXray() } },
                                     onPanelAdmin = { showPanelAdmin = true },
                                     onNodeMtls = { showMtls = true },

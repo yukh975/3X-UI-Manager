@@ -57,6 +57,7 @@ fun MoreScreen(
     onDnsX: () -> Unit,
     onGeodataX: () -> Unit,
     onRoutingX: () -> Unit,
+    onBalancersX: () -> Unit,
     onOutboundsX: () -> Unit,
     onPanelAdmin: () -> Unit,
     onNodeMtls: () -> Unit,
@@ -180,6 +181,7 @@ fun MoreScreen(
         NavCard(tr("DNS"), onDnsX)
         NavCard(tr("Geodata auto-update"), onGeodataX)
         NavCard(tr("Routing"), onRoutingX)
+        NavCard(tr("Balancers"), onBalancersX)
 
         // ---- Panel admin ----
         NavCard(tr("Panel admin"), onPanelAdmin)
