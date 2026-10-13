@@ -756,4 +756,7 @@ val ruStrings: Map<String, String> = mapOf(
         "Сколько последних результатов проб хранится для оценки каждого outbound.",
     "HTTP Method" to "Метод HTTP",
     "HTTP method used for probes." to "Метод HTTP, используемый для проб.",
+
+    // update changelog
+    "Changes in earlier versions are on the release page." to "Изменения более ранних версий — на странице релиза.",
 )

@@ -43,6 +43,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.yukh.xui.shared.api.AppUpdate
 import net.yukh.xui.shared.api.AuthExpiredException
+import net.yukh.xui.shared.api.ChangelogNotes
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.PanelFeatureUnsupportedException
 import net.yukh.xui.shared.api.UpdateChannel
@@ -216,11 +217,21 @@ fun App() {
             // Newest release any check has seen — survives dialog dismissal so the
             // Dashboard app-version card keeps hinting until the user updates.
             var lastAvailableUpdate by remember { mutableStateOf<AppUpdate?>(null) }
-            // Swap the English release body for the changelog section in the UI
-            // language (falls back to the release body when the fetch fails).
+            // Swap the English release body for the changelog sections in the UI
+            // language — every version since the installed one, not just the latest
+            // (falls back to the release body when the fetch or parse fails).
             suspend fun localizedUpdate(u: AppUpdate): AppUpdate {
-                val notes = UpdateChecker.localizedNotes(u.version, lang == LANG_RU, UpdateChannel.from(updateChannel)) ?: u.notes
-                return u.copy(notes = UpdateChecker.reflowNotes(notes))
+                val changelog = UpdateChecker.localizedChangelog(u.version, lang == LANG_RU, UpdateChannel.from(updateChannel))
+                val picked = changelog?.let {
+                    ChangelogNotes.select(ChangelogNotes.parse(it), appVersionName(), u.version)
+                }
+                if (picked == null || picked.versions.isEmpty()) {
+                    return u.copy(notes = UpdateChecker.reflowNotes(u.notes))
+                }
+                return u.copy(
+                    versions = picked.versions.map { it.copy(body = UpdateChecker.reflowNotes(it.body)) },
+                    olderOmitted = picked.olderOmitted,
+                )
             }
             fun checkUpdatesManual() {
                 updateState = UpdateUiState.Checking

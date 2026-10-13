@@ -43,13 +43,33 @@ fun UpdateDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        "${tr("Version")} ${state.update.version}",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    val notes = state.update.notes.trim()
-                    if (notes.isNotBlank()) {
-                        Text(notes, style = MaterialTheme.typography.bodySmall)
+                    val versions = state.update.versions
+                    if (versions.isEmpty()) {
+                        Text(
+                            "${tr("Version")} ${state.update.version}",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        val notes = state.update.notes.trim()
+                        if (notes.isNotBlank()) {
+                            Text(notes, style = MaterialTheme.typography.bodySmall)
+                        }
+                    } else {
+                        // Every version since the installed one, newest first.
+                        versions.forEach { v ->
+                            val date = if (v.date.isNotBlank()) " · ${v.date}" else ""
+                            Text(
+                                "${tr("Version")} ${v.version}$date",
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(v.body, style = MaterialTheme.typography.bodySmall)
+                        }
+                        if (state.update.olderOmitted) {
+                            Text(
+                                tr("Changes in earlier versions are on the release page."),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     Text(
                         tr("Open the release page to download and reinstall the app."),
