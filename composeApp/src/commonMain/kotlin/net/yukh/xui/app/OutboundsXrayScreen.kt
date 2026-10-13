@@ -47,9 +47,12 @@ import net.yukh.xui.shared.dto.parseVlessLink
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import net.yukh.xui.shared.json.jsonGetBool
+import net.yukh.xui.shared.json.jsonGetChild
 import net.yukh.xui.shared.json.jsonGetObjectList
 import net.yukh.xui.shared.json.jsonGetString
 import net.yukh.xui.shared.json.jsonGetStringMap
+import net.yukh.xui.shared.json.jsonPutBool
 import net.yukh.xui.shared.json.jsonPutString
 import net.yukh.xui.shared.json.jsonPutStringMap
 import net.yukh.xui.shared.json.jsonRemove
@@ -75,6 +78,8 @@ fun OutboundsXrayScreen(
     onTestOutbound: (suspend (String, String) -> TestOutboundResult?)? = null,
     onOutboundSubs: () -> Unit,
     panel380: Boolean = false,
+    /** Panel v3.10.0+: its xray-core knows the outbound TLS `useSystemCA`. */
+    panel3100: Boolean = false,
 ) {
     var editing by remember { mutableStateOf<Int?>(null) } // index, -1 = new
     var showAdd by remember { mutableStateOf(false) }
@@ -93,6 +98,7 @@ fun OutboundsXrayScreen(
         OutboundEditor(
             initial = initial,
             protocols = protocols,
+            panel3100 = panel3100,
             saving = saving,
             onCancel = { editing = null },
             // The editor's Save writes to the panel; it used to only stage the edit for the list's Save.
@@ -235,7 +241,7 @@ private fun TestOutboundDialog(
 }
 
 @Composable
-private fun OutboundEditor(initial: String, protocols: List<String>, saving: Boolean, onCancel: () -> Unit, onDone: (String) -> Unit) {
+private fun OutboundEditor(initial: String, protocols: List<String>, panel3100: Boolean, saving: Boolean, onCancel: () -> Unit, onDone: (String) -> Unit) {
     var obj by remember { mutableStateOf(initial) }
     var raw by remember { mutableStateOf(false) }
     val protocol = jsonGetString(obj, listOf("protocol")).ifBlank { "freedom" }
@@ -265,7 +271,7 @@ private fun OutboundEditor(initial: String, protocols: List<String>, saving: Boo
                 ProtocolForm(protocol, obj) { obj = it }
                 if (protocol in PROXY_PROTOCOLS) {
                     XraySection(tr("Transport / security"))
-                    TransportForm(obj) { obj = it }
+                    TransportForm(obj, panel3100) { obj = it }
                 }
             }
 
@@ -351,7 +357,7 @@ private fun HttpHeadersEditor(initial: List<Pair<String, String>>, onChange: (Li
 }
 
 @Composable
-private fun TransportForm(obj: String, onChange: (String) -> Unit) {
+private fun TransportForm(obj: String, panel3100: Boolean, onChange: (String) -> Unit) {
     fun g(vararg p: String) = jsonGetString(obj, p.toList())
     fun p(value: String, vararg path: String) = onChange(jsonPutString(obj, path.toList(), value))
     val network = g("streamSettings", "network").ifBlank { "tcp" }
@@ -364,7 +370,21 @@ private fun TransportForm(obj: String, onChange: (String) -> Unit) {
     val security = g("streamSettings", "security").ifBlank { "none" }
     XrayLabel(tr("Security")); XrayChips(SECURITIES, security) { p(it, "streamSettings", "security") }
     when (security) {
-        "tls" -> XrayField(g("streamSettings", "tlsSettings", "serverName"), { p(it, "streamSettings", "tlsSettings", "serverName") }, tr("SNI (server name)"))
+        "tls" -> {
+            XrayField(g("streamSettings", "tlsSettings", "serverName"), { p(it, "streamSettings", "tlsSettings", "serverName") }, tr("SNI (server name)"))
+            // xray-core 26.10.10 (panel 3.10.0) verifies against its bundled Mozilla roots unless this is set.
+            val systemCaPath = listOf("streamSettings", "tlsSettings", "useSystemCA")
+            if (panel3100 || jsonGetChild(obj, systemCaPath) != "null") {
+                XrayToggle(tr("Use system CA"), jsonGetBool(obj, systemCaPath)) { on ->
+                    onChange(if (on) jsonPutBool(obj, systemCaPath, true) else jsonRemove(obj, systemCaPath))
+                }
+                Text(
+                    tr("Verify the server against the server OS's CA store instead of Xray's bundled roots — needed for a private CA. Needs panel v3.10.0."),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         "reality" -> {
             XrayField(g("streamSettings", "realitySettings", "serverName"), { p(it, "streamSettings", "realitySettings", "serverName") }, tr("SNI (server name)"))
             XrayField(g("streamSettings", "realitySettings", "publicKey"), { p(it, "streamSettings", "realitySettings", "publicKey") }, tr("Public key"))
