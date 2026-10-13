@@ -48,6 +48,7 @@ import net.yukh.xui.shared.api.PanelFeatureUnsupportedException
 import net.yukh.xui.shared.api.UpdateChannel
 import net.yukh.xui.shared.api.UpdateChecker
 import net.yukh.xui.shared.api.supportsPanel380
+import net.yukh.xui.shared.dto.ApiAck
 import net.yukh.xui.shared.dto.BulkAdjustRequest
 import net.yukh.xui.shared.dto.BulkAdjustResult
 import net.yukh.xui.shared.dto.BulkDelRequest
@@ -154,6 +155,7 @@ fun App() {
             var clientLinks by remember { mutableStateOf<List<String>>(emptyList()) }
             var clientLinksLoading by remember { mutableStateOf(false) }
             var clientSubUrl by remember { mutableStateOf<String?>(null) }
+            var clientJsonSubUrl by remember { mutableStateOf<String?>(null) }
             var clientIps by remember { mutableStateOf<List<ClientIpInfo>>(emptyList()) }
             var clientIpsLoading by remember { mutableStateOf(false) }
             var clientIpsLoaded by remember { mutableStateOf(false) }
@@ -647,6 +649,7 @@ fun App() {
                         links = clientLinks,
                         linksLoading = clientLinksLoading,
                         subUrl = clientSubUrl,
+                        jsonSubUrl = clientJsonSubUrl,
                         subInfo = clientSubInfo,
                         onShowLinks = {
                             scope.launch {
@@ -663,6 +666,10 @@ fun App() {
                                 clientSubUrl =
                                     if (c != null && s?.success == true && s.obj != null)
                                         s.obj!!.subscriptionUrl(PanelSubSettings.hostOf(baseUrl), c.subId)
+                                    else null
+                                clientJsonSubUrl =
+                                    if (c != null && s?.success == true && s.obj != null)
+                                        s.obj!!.jsonSubscriptionUrl(PanelSubSettings.hostOf(baseUrl), c.subId)
                                     else null
                                 // Encrypted Happ link (panel v3.8.0): offered once the panel's switch
                                 // is known, read fresh so a switch flipped a moment ago counts.
@@ -751,6 +758,7 @@ fun App() {
                         onSave = { model, inboundIds ->
                             scope.launch {
                                 editorSaving = true; editorError = null
+                                var membershipError: String? = null
                                 val r = try {
                                     if (editingClientNew) {
                                         api?.addClient(ClientCreatePayload(model, inboundIds))
@@ -766,14 +774,24 @@ fun App() {
                                                 val selected = inboundIds.toSet()
                                                 val added = (selected - original).toList()
                                                 val removed = (original - selected).toList()
-                                                if (added.isNotEmpty()) api?.attachClient(newEmail, added)
-                                                if (removed.isNotEmpty()) api?.detachClient(newEmail, removed)
+                                                suspend fun membership(call: suspend () -> ApiAck?): String? =
+                                                    try { call()?.takeIf { !it.success }?.msg?.ifBlank { "Request rejected" } }
+                                                    catch (e: Throwable) { e.message ?: "Network error" }
+                                                membershipError = listOfNotNull(
+                                                    if (added.isNotEmpty()) membership { api?.attachClient(newEmail, added) } else null,
+                                                    if (removed.isNotEmpty()) membership { api?.detachClient(newEmail, removed) } else null,
+                                                ).firstOrNull()
                                             }
                                         }
                                     }
                                 } catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
-                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); clearClientHappLink(); refreshAll() }
+                                if (r?.success == true) {
+                                    // The edit itself is saved and the editor closes; the panel refused only the
+                                    // inbound change, so say so on the clients list.
+                                    membershipError?.let { bulkMessage = null; bulkError = "${tr(lang, "Client updated, but the inbound change failed")}: $it" }
+                                    editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); refreshAll()
+                                }
                                 else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
                             }
                         },
@@ -783,11 +801,11 @@ fun App() {
                                 val r = try { api?.deleteClient(editingClient!!.email) }
                                     catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
                                 editorSaving = false
-                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); clearClientHappLink(); refreshAll() }
+                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); refreshAll() }
                                 else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
                             }
                         },
-                        onCancel = { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); clientIpsLoaded = false; editorError = null; clearClientHappLink() },
+                        onCancel = { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clientIpsLoaded = false; editorError = null; clearClientHappLink() },
                     )
                     if (showHwids) {
                         val hwidEmail = editingClient?.email.orEmpty()
@@ -1009,7 +1027,7 @@ fun App() {
                         lang = lang,
                         onClose = { showGroups = false },
                         // The client editor branch comes first, so closing it returns to the groups.
-                        onOpenClient = { c -> editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = false; editingClient = c },
+                        onOpenClient = { c -> editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = false; editingClient = c },
                     )
                 } else if (showOutboundSubs && api != null) {
                     OutboundSubsScreen(api = api!!, lang = lang, onClose = { showOutboundSubs = false })
@@ -1163,8 +1181,8 @@ fun App() {
                                     clients,
                                     speeds = clientSpeeds,
                                     onlineEmails = onlines.toSet(),
-                                    onAdd = { editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = true; editingClient = Client() },
-                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = false; editingClient = c },
+                                    onAdd = { editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = true; editingClient = Client() },
+                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = false; editingClient = c },
                                     onToggle = { c, en -> scope.launch { api?.updateClient(c.email, c.toModel().copy(enable = en)); refreshAll() } },
                                     onExport = {
                                         scope.launch {

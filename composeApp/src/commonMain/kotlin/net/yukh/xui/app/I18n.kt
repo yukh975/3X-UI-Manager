@@ -684,4 +684,17 @@ val ruStrings: Map<String, String> = mapOf(
         "перезапишет базу панели и перезапустит Xray. Отменить нельзя.",
     "Restored — Xray restarted" to "Восстановлено — Xray перезапущен",
     "Restore failed" to "Не удалось восстановить",
+
+    // 0.15.1 — clients & nodes
+    "MASQUE: client email cannot contain \":\"" to "MASQUE: email клиента не может содержать «:»",
+    "Weekly renewal is on (set in the web panel). A reset period or a renewal day turns it off." to
+        "Включено еженедельное продление (задано в веб-панели). Период сброса или день продления его отключат.",
+    "Client updated, but the inbound change failed" to "Клиент обновлён, но изменить inbounds не удалось",
+    "JSON subscription" to "JSON-подписка",
+    "Xray JSON configs. MASQUE connections are only in this one." to
+        "Конфигурации Xray в JSON. Подключения MASQUE есть только в ней.",
+    "This link carries post-quantum keys and is too dense for a QR code — copy or share it instead." to
+        "В ссылке постквантовые ключи, QR-код получится слишком плотным — скопируйте её или отправьте.",
+    "Certificate SHA-256 pin" to "Отпечаток SHA-256 сертификата",
+    "SHA-256 of the node's certificate, hex or base64." to "SHA-256 сертификата узла, hex или base64.",
 )

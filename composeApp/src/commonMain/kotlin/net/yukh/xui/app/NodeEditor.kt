@@ -56,19 +56,23 @@ fun NodeEditorScreen(
     var allowPrivate by remember { mutableStateOf(initial.allowPrivateAddress) }
     var tlsMode by remember { mutableStateOf(initial.tlsVerifyMode.ifBlank { "verify" }) }
     var outboundTag by remember { mutableStateOf(initial.outboundTag) }
+    var pinnedCert by remember { mutableStateOf(initial.pinnedCertSha256) }
 
     // mTLS authenticates the panel→node link with a client cert, so the API
     // token is optional in that mode (matches the Android editor).
     val canSave = !saving && name.isNotBlank() && address.isNotBlank() &&
         (port.toIntOrNull() ?: 0) in 1..65535 &&
         // An existing node keeps its stored token when the field is left empty.
-        (apiToken.isNotBlank() || tlsMode == "mtls" || !isNew)
+        (apiToken.isNotBlank() || tlsMode == "mtls" || !isNew) &&
+        // The panel refuses pin mode without a decodable certificate pin.
+        (tlsMode != "pin" || pinnedCert.isNotBlank())
 
     fun build() = initial.copy(
         name = name.trim(), remark = remark.trim(), scheme = scheme, address = address.trim(),
         port = port.toIntOrNull() ?: 443, basePath = basePath.trim().ifBlank { "/" },
         apiToken = apiToken.trim().ifBlank { null }, enable = enable, allowPrivateAddress = allowPrivate,
         tlsVerifyMode = tlsMode,
+        pinnedCertSha256 = pinnedCert.trim(),
         outboundTag = outboundTag.trim(),
     )
 
@@ -126,6 +130,17 @@ fun NodeEditorScreen(
                 listOf("verify", "skip", "pin", "mtls").forEach { mode ->
                     FilterChip(selected = tlsMode == mode, onClick = { tlsMode = mode }, label = { Text(mode) })
                 }
+            }
+            if (tlsMode == "pin") {
+                OutlinedTextField(
+                    value = pinnedCert,
+                    onValueChange = { pinnedCert = it },
+                    label = { Text(tr("Certificate SHA-256 pin")) },
+                    singleLine = true,
+                    isError = pinnedCert.isBlank(),
+                    supportingText = { Text(tr("SHA-256 of the node's certificate, hex or base64.")) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
             if (tlsMode == "mtls") {
                 Text(
