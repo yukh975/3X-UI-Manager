@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.15.2] — 2026-10-13
+
+### Added
+- **Observatory settings under Routing → Balancers**, as in panel 3.10.0: for the active observer the probe URL, interval, timeout, sampling and HTTP method, plus the outbounds it watches. Which observer exists is managed automatically; you tune how it probes.
+
+### Fixed
+- **A balancer that needs an observatory made Xray fail to start.** Least Load, and Random / Round-robin with a fallback, need a connection observer; the app never created one. The observer is now created, kept in sync with the balancers and removed when nothing needs it, exactly as the panel does it.
+
 ## [0.15.1] — 2026-10-13
 
 ### Added
