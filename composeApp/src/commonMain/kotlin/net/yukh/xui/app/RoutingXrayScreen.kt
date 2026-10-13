@@ -46,6 +46,7 @@ import net.yukh.xui.shared.json.jsonRemove
 import net.yukh.xui.shared.json.jsonSetObjectList
 import net.yukh.xui.shared.json.normalizeBalancer
 import net.yukh.xui.shared.json.parseCsvList
+import net.yukh.xui.shared.json.syncObservatories
 
 private val ROUTING_STRATEGY = listOf("AsIs", "IPIfNonMatch", "IPOnDemand")
 private val NETWORKS = listOf("", "tcp", "udp", "tcp,udp")
@@ -82,7 +83,8 @@ fun RoutingXrayScreen(
     fun rules() = jsonGetObjectList(configJson, listOf("routing", "rules"))
     fun setRules(l: List<String>) = onConfigChange(jsonSetObjectList(configJson, listOf("routing", "rules"), l))
     fun bals() = jsonGetObjectList(configJson, listOf("routing", "balancers"))
-    fun setBals(l: List<String>) = onConfigChange(jsonSetObjectList(configJson, listOf("routing", "balancers"), l))
+    // Like the panel, every balancer change re-syncs the observers Xray needs to start.
+    fun setBals(l: List<String>) = onConfigChange(syncObservatories(jsonSetObjectList(configJson, listOf("routing", "balancers"), l)))
 
     Column(Modifier.fillMaxSize()) {
         XrayEditHeader(tr("Routing"), saving, onCancel, onSave, canSave = !loading)
@@ -175,6 +177,8 @@ fun RoutingXrayScreen(
                 }
             }
             OutlinedButton(onClick = { editBal = -1 }, modifier = Modifier.fillMaxWidth()) { Text(tr("Add balancer")) }
+
+            ObservatorySection(configJson, onConfigChange)
         }
     }
 

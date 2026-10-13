@@ -723,4 +723,37 @@ val ruStrings: Map<String, String> = mapOf(
     "Use system CA" to "Использовать системные CA",
     "Verify the server against the server OS's CA store instead of Xray's bundled roots — needed for a private CA. Needs panel v3.10.0." to
         "Проверять сервер по хранилищу CA операционной системы сервера, а не по встроенным корням Xray — нужно для частного CA. Требуется панель v3.10.0.",
+    // observatory
+    "Observatory" to "Обсерватория",
+    "No connection observer is active. One is added automatically when you create a Least Ping or Least Load balancer — or a Random / Round-robin balancer with a fallback — so observer-backed balancers can check outbound health before choosing a target." to
+        "Нет активного наблюдателя соединений. Он добавляется автоматически при создании балансировщика Least Ping или Least Load — либо Random / Round-robin с fallback — чтобы балансировщики с наблюдателем могли проверять состояние outbound перед выбором цели.",
+    "Observers are managed automatically from your balancers. Tune how they probe below — the watched outbounds follow your balancer selectors." to
+        "Наблюдатели управляются автоматически на основе ваших балансировщиков. Ниже можно настроить, как они опрашивают; отслеживаемые outbound следуют за селекторами балансировщика.",
+    "This config contains both Observatory and Burst Observatory. Xray uses one global observer, so this mixed legacy state is not supported; saving balancers will normalize it to one observer." to
+        "В этой конфигурации одновременно есть Observatory и Burst Observatory. Xray использует один глобальный наблюдатель, поэтому такое устаревшее смешанное состояние не поддерживается; сохранение балансировщиков нормализует его до одного наблюдателя.",
+    "Watched Outbounds" to "Отслеживаемые outbound",
+    "Outbound tags this observer probes. Managed automatically from your balancers." to
+        "Теги outbound, которые опрашивает этот наблюдатель. Управляется автоматически на основе ваших балансировщиков.",
+    "Probe URL" to "URL пробы",
+    "URL fetched to measure each outbound. Should return HTTP 204." to
+        "URL, запрашиваемый для измерения каждого outbound. Должен возвращать HTTP 204.",
+    "Probe Interval" to "Интервал пробы",
+    "How often to probe each outbound, e.g. 30s, 1m, 2h45m." to "Как часто опрашивать каждый outbound, например 30s, 1m, 2h45m.",
+    "Concurrent Probing" to "Параллельные пробы",
+    "Probe all watched outbounds at once instead of one-by-one. Faster, but more visible on the network." to
+        "Опрашивать все отслеживаемые outbound сразу, а не по одному. Быстрее, но заметнее в сети.",
+    "Probe Destination" to "Назначение пробы",
+    "Connectivity Check" to "Проверка связи",
+    "Optional local-network check URL, tried only after the destination fails. Leave empty to skip." to
+        "Необязательный URL проверки локальной сети, используется только после сбоя назначения. Оставьте пустым, чтобы пропустить.",
+    "Average time between probes per outbound, e.g. 1m. Minimum 10s." to
+        "Среднее время между пробами для каждого outbound, например 1m. Минимум 10s.",
+    "Probe Timeout" to "Тайм-аут пробы",
+    "How long to wait for a probe before it counts as failed, e.g. 5s." to
+        "Сколько ждать ответа на пробу, прежде чем считать её неуспешной, например 5s.",
+    "Sampling Count" to "Размер выборки",
+    "Number of recent probe results kept to score each outbound." to
+        "Сколько последних результатов проб хранится для оценки каждого outbound.",
+    "HTTP Method" to "Метод HTTP",
+    "HTTP method used for probes." to "Метод HTTP, используемый для проб.",
 )

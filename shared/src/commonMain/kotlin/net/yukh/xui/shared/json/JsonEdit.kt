@@ -19,7 +19,7 @@ import kotlinx.serialization.json.contentOrNull
  * mirroring the Android editor's immutable JsonObject helpers.
  */
 
-private val parseJson = Json { ignoreUnknownKeys = true; isLenient = true }
+internal val parseJson = Json { ignoreUnknownKeys = true; isLenient = true }
 private val prettyJson = Json {
     ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true
     prettyPrint = true; prettyPrintIndent = "  "
@@ -50,7 +50,7 @@ private fun JsonObject.withPut(path: List<String>, value: JsonElement?): JsonObj
     }
 }
 
-private fun encode(obj: JsonObject): String = prettyJson.encodeToString(JsonElement.serializer(), obj)
+internal fun encode(obj: JsonObject): String = prettyJson.encodeToString(JsonElement.serializer(), obj)
 
 fun jsonGetString(obj: String, path: List<String>): String {
     if (path.isEmpty()) return ""
