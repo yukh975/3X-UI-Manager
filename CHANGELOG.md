@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [0.15.4] — 2026-10-17
 
 ### Added
 - **Chinese user manual (`docs/3X-UI-MANAGER.zh.md` + PDF) and a Chinese row in every language table.** Thanks to [@venti1112](https://github.com/venti1112) — [PR #10](https://github.com/yukh975/3X-UI-Manager/pull/10).

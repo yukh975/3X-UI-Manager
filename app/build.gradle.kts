@@ -106,8 +106,8 @@ android {
         applicationId = "net.yukh.xui"
         minSdk = 24
         targetSdk = 35
-        versionCode = 150300
-        versionName = "0.15.3"
+        versionCode = 150400
+        versionName = "0.15.4"
         // GitLab tag pipeline overrides the literals above from the tag. These
         // lines don't match F-Droid's versionCode/versionName scanner (no bare
         // literal), so the values above remain what it reads.

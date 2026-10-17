@@ -6,7 +6,7 @@
 
 🇬🇧 [English version](CHANGELOG.md)
 
-## [Не выпущено]
+## [0.15.4] — 2026-10-17
 
 ### Добавлено
 - **Руководство пользователя на китайском (`docs/3X-UI-MANAGER.zh.md` + PDF) и строка 🇨🇳 во всех таблицах языков.** Спасибо [@venti1112](https://github.com/venti1112) — [PR #10](https://github.com/yukh975/3X-UI-Manager/pull/10).

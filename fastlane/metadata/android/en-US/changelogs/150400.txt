@@ -1,0 +1,1 @@
+Chinese user manual (Markdown + PDF) and 中文 in every language list. The 20 UI strings that were still falling back to English are now translated, so the Chinese interface has no gaps left against the Russian one. Thanks to @venti1112.
