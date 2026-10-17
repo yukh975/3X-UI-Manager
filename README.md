@@ -34,6 +34,7 @@ an API token, every screen, alerts, privacy, and troubleshooting.
 | --- | --- | --- |
 | **[3X-UI-MANAGER.en.md](docs/3X-UI-MANAGER.en.md)** · [PDF](docs/pdf/3X-UI-MANAGER.en.pdf) | 🇬🇧 English | Markdown + PDF |
 | **[3X-UI-MANAGER.ru.md](docs/3X-UI-MANAGER.ru.md)** · [PDF](docs/pdf/3X-UI-MANAGER.ru.pdf) | 🇷🇺 Русский | Markdown + PDF |
+| **[3X-UI-MANAGER.zh.md](docs/3X-UI-MANAGER.zh.md)** · [PDF](docs/pdf/3X-UI-MANAGER.zh.pdf) | 🇨🇳 中文 (Simplified) | Markdown + PDF |
 
 ---
 
@@ -152,7 +153,7 @@ The `subId` is unique per client (the app already has it), so each client gets i
 
 ## Contributors
 
-- [@venti1112](https://github.com/venti1112) — Simplified Chinese translation of the app and README ([#9](https://github.com/yukh975/3X-UI-Manager/pull/9))
+- [@venti1112](https://github.com/venti1112) — Simplified Chinese translation of the app, the READMEs and the user manual ([#9](https://github.com/yukh975/3X-UI-Manager/pull/9), [#10](https://github.com/yukh975/3X-UI-Manager/pull/10))
 
 ---
 

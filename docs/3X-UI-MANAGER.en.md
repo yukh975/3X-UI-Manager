@@ -1,6 +1,6 @@
 # 3X-UI Manager — User Manual
 
-🇬🇧 English · 🇷🇺 [Русский](3X-UI-MANAGER.ru.md)
+🇬🇧 English · 🇷🇺 [Русский](3X-UI-MANAGER.ru.md) · 🇨🇳 [中文](3X-UI-MANAGER.zh.md)
 
 **App version: 0.12.2.** This manual is based on and current for that version.
 
@@ -715,7 +715,7 @@ Individual inbounds are added to monitoring from their editor — see
 
 ## 14. App settings
 
-- **Language** — **System default** (the default), English or Русский. In system
+- **Language** — **System default** (the default), English, Русский or 中文. In system
   mode the app follows the phone's language and switches as soon as you change it,
   without a restart. An explicit choice always wins over the system one.
 - **Speed units** — bytes (KB/s) or bits (Kbit/s). Applies to inbound and client

@@ -35,6 +35,7 @@
 | --- | --- | --- |
 | **[3X-UI-MANAGER.ru.md](docs/3X-UI-MANAGER.ru.md)** · [PDF](docs/pdf/3X-UI-MANAGER.ru.pdf) | 🇷🇺 Русский | Markdown + PDF |
 | **[3X-UI-MANAGER.en.md](docs/3X-UI-MANAGER.en.md)** · [PDF](docs/pdf/3X-UI-MANAGER.en.pdf) | 🇬🇧 English | Markdown + PDF |
+| **[3X-UI-MANAGER.zh.md](docs/3X-UI-MANAGER.zh.md)** · [PDF](docs/pdf/3X-UI-MANAGER.zh.pdf) | 🇨🇳 中文 (упрощённый) | Markdown + PDF |
 
 ---
 
@@ -152,7 +153,7 @@
 
 ## Участники
 
-- [@venti1112](https://github.com/venti1112) — перевод приложения и README на китайский (упрощённый) ([#9](https://github.com/yukh975/3X-UI-Manager/pull/9))
+- [@venti1112](https://github.com/venti1112) — перевод приложения, README и руководства пользователя на китайский (упрощённый) ([#9](https://github.com/yukh975/3X-UI-Manager/pull/9), [#10](https://github.com/yukh975/3X-UI-Manager/pull/10))
 
 ---
 

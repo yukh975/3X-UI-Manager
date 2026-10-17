@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [Unreleased]
+
+### Added
+- **Chinese user manual (`docs/3X-UI-MANAGER.zh.md` + PDF) and a Chinese row in every language table.** Thanks to [@venti1112](https://github.com/venti1112) — [PR #10](https://github.com/yukh975/3X-UI-Manager/pull/10).
+- **The 20 UI strings that were still missing in Chinese** (`Outbounds`, `RAM`, `Endpoint`, `PSK`, `Target Strategy`, `Real delay`, `unreachable`, …) — the Chinese UI now has no gaps left against the Russian one.
+
 ## [0.15.3] — 2026-10-13
 
 ### Changed

@@ -6,8 +6,10 @@ The 3X-UI Manager user manual, written from the app's source code.
 |---|---|---|
 | **[3X-UI-MANAGER.en.md](3X-UI-MANAGER.en.md)** · [PDF](pdf/3X-UI-MANAGER.en.pdf) | 🇬🇧 English | Markdown + PDF |
 | **[3X-UI-MANAGER.ru.md](3X-UI-MANAGER.ru.md)** · [PDF](pdf/3X-UI-MANAGER.ru.pdf) | 🇷🇺 Русский | Markdown + PDF |
+| **[3X-UI-MANAGER.zh.md](3X-UI-MANAGER.zh.md)** · [PDF](pdf/3X-UI-MANAGER.zh.pdf) | 🇨🇳 中文 (Simplified) | Markdown + PDF |
 
-Russian is the source language; the English version is translated from it.
+Russian is the source language; the English version is translated from it, and the
+Chinese version from the English one.
 
 Rebuild the PDFs with `./scripts/build-pdf.sh` (needs pandoc and WeasyPrint), and
 check that every in-page anchor resolves with `python3 scripts/checklinks.py`.

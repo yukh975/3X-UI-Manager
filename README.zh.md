@@ -33,6 +33,7 @@
 | --- | --- | --- |
 | **[3X-UI-MANAGER.en.md](docs/3X-UI-MANAGER.en.md)** · [PDF](docs/pdf/3X-UI-MANAGER.en.pdf) | 🇬🇧 English | Markdown + PDF |
 | **[3X-UI-MANAGER.ru.md](docs/3X-UI-MANAGER.ru.md)** · [PDF](docs/pdf/3X-UI-MANAGER.ru.pdf) | 🇷🇺 Русский | Markdown + PDF |
+| **[3X-UI-MANAGER.zh.md](docs/3X-UI-MANAGER.zh.md)** · [PDF](docs/pdf/3X-UI-MANAGER.zh.pdf) | 🇨🇳 中文（简体） | Markdown + PDF |
 
 ---
 
@@ -151,7 +152,7 @@
 
 ## 贡献者
 
-- [@venti1112](https://github.com/venti1112) — 应用及 README 的简体中文翻译（[#9](https://github.com/yukh975/3X-UI-Manager/pull/9)）
+- [@venti1112](https://github.com/venti1112) — 应用、README 及用户手册的简体中文翻译（[#9](https://github.com/yukh975/3X-UI-Manager/pull/9)、[#10](https://github.com/yukh975/3X-UI-Manager/pull/10)）
 
 ---
 
