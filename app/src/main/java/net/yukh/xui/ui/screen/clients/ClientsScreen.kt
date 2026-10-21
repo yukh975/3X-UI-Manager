@@ -97,6 +97,7 @@ fun ClientsScreen(
     var showFilters by remember { mutableStateOf(false) }
     var showAdjust by remember { mutableStateOf(false) }
     var confirmBulkDelete by remember { mutableStateOf(false) }
+    var confirmBulkReset by remember { mutableStateOf(false) }
     var clientsMenu by remember { mutableStateOf(false) }
     var showImportClients by remember { mutableStateOf(false) }
     var confirmDeleteOrphans by remember { mutableStateOf(false) }
@@ -159,6 +160,7 @@ fun ClientsScreen(
                         onEnable = { vm.bulkSetEnabled(true) },
                         onDisable = { vm.bulkSetEnabled(false) },
                         onAdjust = { showAdjust = true },
+                        onResetTraffic = { confirmBulkReset = true },
                         onDelete = { confirmBulkDelete = true },
                     )
                 } else {
@@ -278,6 +280,7 @@ fun ClientsScreen(
             onEdit = { vm.openEditEditor(selectedEmail) },
             onDelete = { vm.deleteClient(selectedEmail) },
             onIpLog = { vm.openIpLog(selectedEmail); vm.closeShareSheet() },
+            onResetTraffic = { vm.resetClientTraffic(selectedEmail) },
         )
     }
 
@@ -388,6 +391,25 @@ fun ClientsScreen(
                 showAdjust = false
             },
             onDismiss = { showAdjust = false },
+        )
+    }
+
+    if (confirmBulkReset) {
+        AlertDialog(
+            onDismissRequest = { confirmBulkReset = false },
+            title = { Text(tr("Reset traffic of the selected clients?")) },
+            text = {
+                Text(
+                    "${state.selectedEmails.size} ${tr("selected")}\n\n" +
+                        tr("Used traffic starts from zero, and a client its quota switched off is enabled again."),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { vm.bulkResetTraffic(); confirmBulkReset = false }) {
+                    Text(tr("Reset traffic"), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmBulkReset = false }) { Text(tr("Cancel")) } },
         )
     }
 
@@ -542,6 +564,7 @@ private fun SelectionBar(
     onEnable: () -> Unit,
     onDisable: () -> Unit,
     onAdjust: () -> Unit,
+    onResetTraffic: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
@@ -565,6 +588,7 @@ private fun SelectionBar(
                 DropdownMenuItem(text = { Text(tr("Enable")) }, onClick = { menu = false; onEnable() })
                 DropdownMenuItem(text = { Text(tr("Disable")) }, onClick = { menu = false; onDisable() })
                 DropdownMenuItem(text = { Text(tr("Adjust") + "…") }, onClick = { menu = false; onAdjust() })
+                DropdownMenuItem(text = { Text(tr("Reset traffic")) }, onClick = { menu = false; onResetTraffic() })
                 DropdownMenuItem(text = { Text(tr("Delete")) }, onClick = { menu = false; onDelete() })
             }
         }

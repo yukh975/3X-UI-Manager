@@ -19,6 +19,8 @@ data class ConnectUiState(
     val token: String = "",
     val allowInsecureTls: Boolean = false,
     val subBaseUrl: String = "",
+    val name: String = "",
+    val editingId: String? = null,
     val submitting: Boolean = false,
     val error: String? = null,
 ) {
@@ -43,14 +45,17 @@ class ConnectViewModel @Inject constructor(
         }
     }
 
-    private fun initialState(): ConnectUiState {
-        val stored = store.getProfile() ?: return ConnectUiState()
-        val auth = stored.auth as? ConnectionAuth.Token ?: return ConnectUiState()
+    private fun initialState(): ConnectUiState =
+        store.getProfile()?.let(::formOf) ?: ConnectUiState()
+
+    private fun formOf(p: ConnectionProfile): ConnectUiState? {
+        val auth = p.auth as? ConnectionAuth.Token ?: return null
         return ConnectUiState(
-            url = stored.baseUrl,
-            allowInsecureTls = stored.allowInsecureTls,
-            subBaseUrl = stored.subBaseUrl,
+            url = p.baseUrl,
+            allowInsecureTls = p.allowInsecureTls,
+            subBaseUrl = p.subBaseUrl,
             token = auth.token,
+            name = p.customName,
         )
     }
 
@@ -58,10 +63,15 @@ class ConnectViewModel @Inject constructor(
      *  which pre-fills the active profile for a quick reconnect). */
     fun clearForm() = _state.update { ConnectUiState() }
 
+    /** Fill the form from a saved profile; submit then saves into that profile. */
+    fun startEdit(profile: ConnectionProfile) =
+        _state.update { formOf(profile)?.copy(editingId = profile.id) ?: ConnectUiState() }
+
     fun setUrl(value: String) = _state.update { it.copy(url = value, error = null) }
     fun setToken(value: String) = _state.update { it.copy(token = value, error = null) }
     fun setAllowInsecureTls(value: Boolean) = _state.update { it.copy(allowInsecureTls = value, error = null) }
     fun setSubBaseUrl(value: String) = _state.update { it.copy(subBaseUrl = value, error = null) }
+    fun setName(value: String) = _state.update { it.copy(name = value, error = null) }
 
     fun submit(onSuccess: () -> Unit) {
         val s = _state.value
@@ -70,12 +80,25 @@ class ConnectViewModel @Inject constructor(
         _state.update { it.copy(submitting = true, error = null) }
 
         viewModelScope.launch {
-            repo.connectWithToken(
-                baseUrl = normalizedUrl,
-                allowInsecureTls = s.allowInsecureTls,
-                token = s.token.trim(),
-                subBaseUrl = s.subBaseUrl.trim(),
-            )
+            val result = if (s.editingId != null) {
+                repo.updateProfile(
+                    id = s.editingId,
+                    baseUrl = normalizedUrl,
+                    allowInsecureTls = s.allowInsecureTls,
+                    token = s.token.trim(),
+                    subBaseUrl = s.subBaseUrl.trim(),
+                    name = s.name,
+                )
+            } else {
+                repo.connectWithToken(
+                    baseUrl = normalizedUrl,
+                    allowInsecureTls = s.allowInsecureTls,
+                    token = s.token.trim(),
+                    subBaseUrl = s.subBaseUrl.trim(),
+                    name = s.name,
+                ).map { }
+            }
+            result
                 .onSuccess {
                     _state.update { it.copy(submitting = false) }
                     onSuccess()

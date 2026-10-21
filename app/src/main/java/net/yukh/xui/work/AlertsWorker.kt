@@ -67,7 +67,7 @@ class AlertsWorker @AssistedInject constructor(
     private suspend fun checkPanel(profile: ConnectionProfile) {
         val token = (profile.auth as? ConnectionAuth.Token)?.token ?: return
         val api = XuiApiFactory.tokenAuthed(profile.baseUrl, profile.allowInsecureTls, token, json)
-        val panelName = profile.name.ifBlank { profile.baseUrl }
+        val panelName = profile.label
         val host = PanelSettings.hostOf(profile.baseUrl)
 
         // 1a. Panel host reachability on the configured port (default 443 — the

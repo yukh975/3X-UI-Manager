@@ -1,0 +1,1 @@
+Saved panels can be edited and renamed from the panel switcher (name, URL, API token, TLS check, subscription address), and the Connect screen has an optional Name field (#11, thanks @m0nty81). Reset a client's traffic from its sheet, or of the selected clients from the multi-select menu. MTProto inbounds get a "Max pending handshakes per IP" field (panel 3.10.2).

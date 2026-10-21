@@ -90,6 +90,11 @@ val zhStrings: Map<String, String> = mapOf(
     "Add panel" to "添加面板",
     "Switch panel" to "切换面板",
     "Sign out" to "退出登录",
+    "Edit panel" to "编辑面板",
+    "Name (optional)" to "名称（可选）",
+    "Shown in the panel switcher instead of the host." to "在面板切换器中代替主机地址显示。",
+    "Saving…" to "正在保存…",
+    "Another saved panel already uses this URL" to "另一个已保存的面板已使用此 URL",
     "Sign out of this panel?" to "退出此面板？",
     "The app will forget its saved URL and token." to
         "应用将忘记已保存的 URL 和令牌。",
@@ -910,4 +915,11 @@ val zhStrings: Map<String, String> = mapOf(
     "Saved — the panel applies it within 30 s" to "已保存——面板会在 30 秒内应用",
     "Done — the panel applies it within 30 s" to "完成——面板会在 30 秒内应用",
     "Refreshed — the panel applies it within 30 s" to "已刷新——面板会在 30 秒内应用",
+    "Reset this client's traffic?" to "重置此客户端的流量？",
+    "Reset traffic of the selected clients?" to "重置所选客户端的流量？",
+    "Used traffic starts from zero, and a client its quota switched off is enabled again." to
+        "已用流量将从零开始，因配额用尽而被停用的客户端会重新启用。",
+    "Max pending handshakes per IP" to "每个 IP 的最大未完成握手数",
+    "Close new connections from an IP that already has this many unfinished handshakes. Clients behind a shared IP (carrier NAT) share the limit. 0 disables it. Needs mtg-multi 1.16.0 or newer (panel 3.10.2)." to
+        "若某个 IP 的未完成握手数已达到此值，则关闭来自该 IP 的新连接。共享 IP（运营商 NAT）后的客户端共用此限制。0 表示禁用。需要 mtg-multi 1.16.0 或更高版本（面板 3.10.2）。",
 )

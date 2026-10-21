@@ -465,6 +465,7 @@ fun MainScreen(
             activeId = activeProfileId,
             onSwitch = vm::switchProfile,
             onAdd = { showProfiles = false; connectVm.clearForm(); showAddPanel = true },
+            onEdit = { showProfiles = false; connectVm.startEdit(it); showAddPanel = true },
             onDelete = vm::deleteProfile,
             onDismiss = { showProfiles = false },
         )

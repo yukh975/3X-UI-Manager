@@ -6,9 +6,17 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.15.5] — 2026-10-21
+
+### Added
+- **Edit and rename saved panels.** Each panel in the ⇄ switcher has an Edit button: change its name, URL, API token, TLS check or subscription address without removing and re-adding it. A rename alone saves at once; a new URL, token or TLS setting is checked against the panel first. The Connect screen has an optional **Name** field, so a panel can be named when it is added; a panel without a name still shows its host. Thanks to [@m0nty81](https://github.com/m0nty81) — [#11](https://github.com/yukh975/3X-UI-Manager/issues/11).
+- **Reset a client's traffic** from its sheet, and **reset traffic of the selected clients** from the multi-select menu. Used traffic starts from zero, and a client its quota switched off is enabled again.
+- **MTProto: «Max pending handshakes per IP»** in the inbound editor (panel 3.10.2, needs mtg-multi 1.16.0+): new connections from an IP that already has this many unfinished handshakes are closed; 0 turns it off.
+
 ## [0.15.4] — 2026-10-17
 
 ### Added
+- **Simplified Chinese interface** (Settings → Language). Thanks to [@venti1112](https://github.com/venti1112) — [PR #9](https://github.com/yukh975/3X-UI-Manager/pull/9).
 - **Chinese user manual (`docs/3X-UI-MANAGER.zh.md` + PDF) and a Chinese row in every language table.** Thanks to [@venti1112](https://github.com/venti1112) — [PR #10](https://github.com/yukh975/3X-UI-Manager/pull/10).
 - **The 20 UI strings that were still missing in Chinese** (`Outbounds`, `RAM`, `Endpoint`, `PSK`, `Target Strategy`, `Real delay`, `unreachable`, …) — the Chinese UI now has no gaps left against the Russian one.
 

@@ -739,6 +739,19 @@ class ClientsViewModel @Inject constructor(
 
     fun bulkDelete() = runBulk("Deleted") { repo.bulkDeleteClients(it) }
 
+    fun bulkResetTraffic() = runBulk("Traffic reset") { repo.bulkResetClientsTraffic(it) }
+
+    fun resetClientTraffic(email: String) {
+        viewModelScope.launch {
+            repo.resetClientTraffic(email)
+                .onSuccess {
+                    _state.update { it.copy(transientMessage = "Traffic reset: $email") }
+                    load(force = true)
+                }
+                .onFailure { e -> _state.update { it.copy(transientMessage = "Reset failed: ${e.message}") } }
+        }
+    }
+
     // ---- Export / import / delete-unbound (panel 3.4.0) -------------------
 
     fun exportClients() {

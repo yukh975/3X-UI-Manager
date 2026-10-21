@@ -50,6 +50,7 @@ import net.yukh.xui.data.api.dto.XraySettingEnvelope
 import net.yukh.xui.data.prefs.ConnectionAuth
 import net.yukh.xui.data.prefs.ConnectionProfile
 import net.yukh.xui.data.prefs.ConnectionStore
+import net.yukh.xui.data.prefs.urlTakenByOther
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -115,6 +116,7 @@ class PanelRepository @Inject constructor(
         allowInsecureTls: Boolean,
         token: String,
         subBaseUrl: String = "",
+        name: String = "",
     ): Result<ServerStatus> {
         val candidate = XuiApiFactory.tokenAuthed(baseUrl, allowInsecureTls, token, json)
         return safeData { candidate.getServerStatus() }.onSuccess {
@@ -125,7 +127,7 @@ class PanelRepository @Inject constructor(
                 auth = ConnectionAuth.Token(token),
                 subBaseUrl = subBaseUrl,
                 id = existing?.id ?: java.util.UUID.randomUUID().toString(),
-                name = existing?.name ?: ConnectionProfile.hostLabel(baseUrl),
+                name = ConnectionProfile.storedName(name, baseUrl),
             )
             val updated = if (existing != null) _profiles.value.map { if (it.id == profile.id) profile else it }
             else _profiles.value + profile
@@ -134,6 +136,39 @@ class PanelRepository @Inject constructor(
             bindProfile(profile)
             lastPanelVersion = it.panelVersion
         }
+    }
+
+    /** Save edits to a saved profile, keeping its id. A changed URL, TLS mode or
+     *  token is checked against the panel first; a rename alone is saved offline. */
+    suspend fun updateProfile(
+        id: String,
+        baseUrl: String,
+        allowInsecureTls: Boolean,
+        token: String,
+        subBaseUrl: String,
+        name: String,
+    ): Result<Unit> {
+        val old = _profiles.value.firstOrNull { it.id == id } ?: return Result.failure(PanelError.NotConnected)
+        if (_profiles.value.urlTakenByOther(id, baseUrl)) {
+            return Result.failure(PanelError.Rejected("Another saved panel already uses this URL"))
+        }
+        val profile = old.edited(baseUrl, allowInsecureTls, token, subBaseUrl, name)
+        var checkedVersion: String? = null
+        if (profile.connectionDiffersFrom(old)) {
+            val candidate = XuiApiFactory.tokenAuthed(baseUrl, allowInsecureTls, token, json)
+            val status = safeData { candidate.getServerStatus() }
+            status.exceptionOrNull()?.let { return Result.failure(it) }
+            checkedVersion = status.getOrNull()?.panelVersion
+        }
+        val updated = _profiles.value.map { if (it.id == id) profile else it }
+        _profiles.value = updated
+        store.saveProfiles(updated)
+        if (_activeProfileId.value == id && profile != old) {
+            val version = checkedVersion ?: lastPanelVersion
+            bindProfile(profile)
+            lastPanelVersion = version
+        }
+        return Result.success(Unit)
     }
 
     /** Switch the active connection to a saved profile, rebuilding the API client.
@@ -384,6 +419,13 @@ class PanelRepository @Inject constructor(
             val body = BulkEmailsRequest(emails)
             if (enable) it.bulkEnableClients(body) else it.bulkDisableClients(body)
         }
+
+    /** Zero the client's used traffic; the panel also re-enables a client its quota switched off. */
+    suspend fun resetClientTraffic(email: String): Result<Unit> =
+        authedAck { it.resetClientTraffic(email) }
+
+    suspend fun bulkResetClientsTraffic(emails: List<String>): Result<Unit> =
+        authedAck { it.bulkResetClientsTraffic(BulkEmailsRequest(emails)) }
 
     /** Bulk adjust (panel v3.4.1; [limitHwid] and [adTag] need v3.8.0). Returns the
      *  panel's report; a panel that acks without one counts every client as adjusted. */

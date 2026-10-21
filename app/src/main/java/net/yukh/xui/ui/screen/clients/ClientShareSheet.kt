@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -81,8 +82,10 @@ fun ClientShareSheet(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onIpLog: () -> Unit,
+    onResetTraffic: () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    var confirmReset by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     ModalBottomSheet(
@@ -194,11 +197,34 @@ fun ClientShareSheet(
                 Icon(Icons.Outlined.History, contentDescription = null)
                 Text("  " + tr("IP log"))
             }
+            OutlinedButton(onClick = { confirmReset = true }, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Outlined.RestartAlt, contentDescription = null)
+                Text("  " + tr("Reset traffic"))
+            }
             OutlinedButton(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(tr("Close")) }
         }
+    }
+
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            title = { Text(tr("Reset this client's traffic?")) },
+            text = {
+                Text("$email\n\n" + tr("Used traffic starts from zero, and a client its quota switched off is enabled again."))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmReset = false
+                    onResetTraffic()
+                }) { Text(tr("Reset traffic"), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmReset = false }) { Text(tr("Cancel")) }
+            },
+        )
     }
 
     if (confirmDelete) {

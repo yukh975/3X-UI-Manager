@@ -509,6 +509,19 @@ private fun ProtocolSettingsFields(state: InboundEditorState, vm: InboundsViewMo
                 }
             }
         }
+        "mtproto" -> {
+            Field(
+                tr("Max pending handshakes per IP"),
+                settings.int("pendingHandshakesMaxPerIp")?.toString().orEmpty(),
+                vm::setMtgPendingHandshakesMaxPerIp,
+                placeholder = "0", numeric = true,
+            )
+            Text(
+                tr("Close new connections from an IP that already has this many unfinished handshakes. Clients behind a shared IP (carrier NAT) share the limit. 0 disables it. Needs mtg-multi 1.16.0 or newer (panel 3.10.2)."),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         "masque" -> {
             // Local text keeps a half-typed separator from being parsed away while typing.
             var pool by remember { mutableStateOf(settings.strings("address").joinToString(", ")) }

@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.yukh.xui.data.prefs.ConnectionProfile
 import net.yukh.xui.i18n.tr
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,12 +53,19 @@ fun ConnectScreen(
     vm: ConnectViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val editing = state.editingId != null
     var tokenVisible by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(tr(if (addMode) "Add panel" else "Connect to panel")) },
+                title = {
+                    Text(tr(when {
+                        editing -> "Edit panel"
+                        addMode -> "Add panel"
+                        else -> "Connect to panel"
+                    }))
+                },
                 navigationIcon = {
                     if (onClose != null) {
                         IconButton(onClick = onClose) {
@@ -101,6 +109,16 @@ fun ConnectScreen(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                 supportingText = { Text(tr("Include the webBasePath if your admin set one")) },
+            )
+
+            OutlinedTextField(
+                value = state.name,
+                onValueChange = vm::setName,
+                label = { Text(tr("Name (optional)")) },
+                placeholder = { Text(ConnectionProfile.hostLabel(ConnectionProfile.normalizeUrl(state.url))) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = { Text(tr("Shown in the panel switcher instead of the host.")) },
             )
 
             OutlinedTextField(
@@ -178,9 +196,9 @@ fun ConnectScreen(
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
-                    Text("  " + tr("Connecting…"))
+                    Text("  " + tr(if (editing) "Saving…" else "Connecting…"))
                 } else {
-                    Text(tr("Connect"))
+                    Text(tr(if (editing) "Save" else "Connect"))
                 }
             }
 

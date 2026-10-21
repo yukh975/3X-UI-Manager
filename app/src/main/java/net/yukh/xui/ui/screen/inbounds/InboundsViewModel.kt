@@ -379,6 +379,11 @@ class InboundsViewModel @Inject constructor(
         val digits = v.filter(Char::isDigit)
         if (digits.isEmpty()) s.put("mtu", null) else s.putInt("mtu", digits.take(5).toInt())
     }
+    fun setMtgPendingHandshakesMaxPerIp(v: String) = editSettings { s ->
+        val digits = v.filter(Char::isDigit)
+        if (digits.isEmpty()) s.put("pendingHandshakesMaxPerIp", null)
+        else s.putInt("pendingHandshakesMaxPerIp", digits.take(6).toInt())
+    }
     fun setMasquePath(v: String) = editStream { it.put("masqueSettings", it.child("masqueSettings").putString("path", v)) }
 
     // ---- Editor: structured transport / security --------------------------

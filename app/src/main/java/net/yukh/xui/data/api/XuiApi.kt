@@ -176,6 +176,12 @@ interface XuiApi {
     @POST("panel/api/clients/bulkDisable")
     suspend fun bulkDisableClients(@Body body: BulkEmailsRequest): ApiAck
 
+    @POST("panel/api/clients/resetTraffic/{email}")
+    suspend fun resetClientTraffic(@Path("email") email: String): ApiAck
+
+    @POST("panel/api/clients/bulkResetTraffic")
+    suspend fun bulkResetClientsTraffic(@Body body: BulkEmailsRequest): ApiAck
+
     // obj is the {adjusted, skipped[]} report on panels that send one.
     @POST("panel/api/clients/bulkAdjust")
     suspend fun bulkAdjustClients(@Body body: BulkAdjustRequest): ApiResponse<BulkAdjustResult>

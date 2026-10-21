@@ -34,6 +34,27 @@ data class ConnectionProfile(
     /** Label shown in the profile switcher — the saved name, else the host. */
     val label: String get() = name.ifBlank { hostLabel(baseUrl) }
 
+    // Before 0.15.5 every connect stored the host itself as the name; that is not
+    // an alias and must not survive a URL edit as a stale label.
+    val customName: String get() = name.takeUnless { it == hostLabel(baseUrl) } ?: ""
+
+    fun edited(
+        baseUrl: String,
+        allowInsecureTls: Boolean,
+        token: String,
+        subBaseUrl: String,
+        name: String,
+    ): ConnectionProfile = copy(
+        baseUrl = baseUrl,
+        allowInsecureTls = allowInsecureTls,
+        auth = ConnectionAuth.Token(token),
+        subBaseUrl = subBaseUrl,
+        name = storedName(name, baseUrl),
+    )
+
+    fun connectionDiffersFrom(other: ConnectionProfile): Boolean =
+        baseUrl != other.baseUrl || allowInsecureTls != other.allowInsecureTls || auth != other.auth
+
     companion object {
         fun normalizeUrl(input: String): String {
             val trimmed = input.trim()
@@ -42,11 +63,17 @@ data class ConnectionProfile(
             return if (withScheme.endsWith("/")) withScheme else "$withScheme/"
         }
 
+        fun storedName(input: String, baseUrl: String): String =
+            input.trim().takeUnless { it == hostLabel(baseUrl) } ?: ""
+
         /** host[:port] from a base URL, for a default profile label. */
         fun hostLabel(url: String): String =
             url.substringAfter("://", url).substringBefore("/").ifBlank { url }
     }
 }
+
+fun List<ConnectionProfile>.urlTakenByOther(id: String, baseUrl: String): Boolean =
+    any { it.id != id && it.baseUrl == baseUrl }
 
 /**
  * Auth is a long-lived API token (created in the panel under Settings → Security

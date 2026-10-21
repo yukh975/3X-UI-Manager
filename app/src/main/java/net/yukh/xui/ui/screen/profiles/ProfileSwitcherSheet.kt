@@ -2,16 +2,19 @@ package net.yukh.xui.ui.screen.profiles
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,7 +36,7 @@ import net.yukh.xui.i18n.tr
 
 /**
  * Bottom sheet listing the saved panel profiles. Tap one to make it active
- * (switches the connection), add another, or sign out of one.
+ * (switches the connection), add another, edit one, or sign out of one.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +45,7 @@ fun ProfileSwitcherSheet(
     activeId: String?,
     onSwitch: (String) -> Unit,
     onAdd: () -> Unit,
+    onEdit: (ConnectionProfile) -> Unit,
     onDelete: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -80,10 +85,15 @@ fun ProfileSwitcherSheet(
                             style = MaterialTheme.typography.labelMedium)
                     },
                     trailingContent = {
-                        // Always available — signing out of the last panel returns to
-                        // the Connect screen (this replaces the old Disconnect item).
-                        TextButton(onClick = { confirmDelete = p }) {
-                            Text(tr("Sign out"), color = MaterialTheme.colorScheme.error)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { onEdit(p) }) {
+                                Icon(Icons.Outlined.Edit, contentDescription = tr("Edit"))
+                            }
+                            // Always available — signing out of the last panel returns to
+                            // the Connect screen (this replaces the old Disconnect item).
+                            TextButton(onClick = { confirmDelete = p }) {
+                                Text(tr("Sign out"), color = MaterialTheme.colorScheme.error)
+                            }
                         }
                     },
                 )
