@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -23,7 +21,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -33,9 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -168,13 +163,19 @@ fun App() {
             var xrayLoading by remember { mutableStateOf(false) }
             var editingClient by remember { mutableStateOf<Client?>(null) }
             var editingClientNew by remember { mutableStateOf(false) }
+            // The client the card opened with: async loads compare against it by identity.
+            var cardClient by remember { mutableStateOf<Client?>(null) }
+            var cardBusy by remember { mutableStateOf(false) }
+            var cardError by remember { mutableStateOf<String?>(null) }
             var clientLinks by remember { mutableStateOf<List<String>>(emptyList()) }
             var clientLinksLoading by remember { mutableStateOf(false) }
+            var clientLinksError by remember { mutableStateOf<String?>(null) }
+            var clientSubChecked by remember { mutableStateOf(false) }
             var clientSubUrl by remember { mutableStateOf<String?>(null) }
             var clientJsonSubUrl by remember { mutableStateOf<String?>(null) }
             var clientIps by remember { mutableStateOf<List<ClientIpInfo>>(emptyList()) }
             var clientIpsLoading by remember { mutableStateOf(false) }
-            var clientIpsLoaded by remember { mutableStateOf(false) }
+            var showIpLog by remember { mutableStateOf(false) }
             // Subscription devices (panel v3.7.0), same shape as the IP log.
             var clientHwids by remember { mutableStateOf<List<ClientHwid>>(emptyList()) }
             var clientHwidsLoading by remember { mutableStateOf(false) }
@@ -190,7 +191,7 @@ fun App() {
             // Outcome of the last bulk adjust (the panel's report), shown on the Clients tab.
             var bulkMessage by remember { mutableStateOf<String?>(null) }
             var bulkError by remember { mutableStateOf<String?>(null) }
-            // Encrypted Happ link (panel v3.8.0) in the client editor. The switch stays
+            // Encrypted Happ link (panel v3.8.0) in the client card. The switch stays
             // null until the panel's settings have been read.
             var clientHappEnabled by remember { mutableStateOf<Boolean?>(null) }
             var clientHappLink by remember { mutableStateOf<String?>(null) }
@@ -555,6 +556,7 @@ fun App() {
             fun clearPanelData() {
                 status = null
                 inbounds = emptyList(); clients = emptyList(); nodes = emptyList()
+                cardClient = null
                 onlines = emptyList(); onlineGroups = emptyList()
                 inboundSpeeds = emptyMap()
                 clientSpeeds = emptyMap()
@@ -566,12 +568,56 @@ fun App() {
                 bulkError = null
             }
 
-            // Forget the client editor's Happ link state before another client (or panel).
-            fun clearClientHappLink() {
-                clientHappEnabled = null
-                clientHappLink = null
-                clientHappLoading = false
-                clientHappError = null
+            fun closeClientCard() {
+                cardClient = null; cardBusy = false; cardError = null
+                showIpLog = false; showHwids = false
+                clientLinks = emptyList(); clientLinksLoading = false; clientLinksError = null
+                clientSubChecked = false; clientSubUrl = null; clientJsonSubUrl = null; clientSubInfo = null
+                clientIps = emptyList(); clientIpsLoading = false
+                clientHwids = emptyList(); clientHwidsLoading = false; clientHwidsUnsupported = false
+                clientHappEnabled = null; clientHappLink = null; clientHappLoading = false; clientHappError = null
+            }
+
+            fun openClientCard(c: Client) {
+                closeClientCard()
+                cardClient = c
+                clientLinksLoading = true
+                scope.launch {
+                    var links: List<String> = emptyList()
+                    var failure: String? = null
+                    try {
+                        val r = api?.clientLinks(c.email)
+                        when {
+                            r == null -> failure = "Network error"
+                            !r.success -> failure = r.msg.ifBlank { "Request rejected" }
+                            else -> links = r.obj ?: emptyList()
+                        }
+                    } catch (e: Throwable) {
+                        failure = e.message ?: "Network error"
+                    }
+                    if (cardClient === c) { clientLinks = links; clientLinksError = failure; clientLinksLoading = false }
+                }
+                // Subscription URL needs panel settings (token-readable v3.3.0+) — fetch in parallel, degrade silently.
+                scope.launch {
+                    val s = try { api?.subSettings() } catch (e: Throwable) { null }
+                    val settings = s?.obj?.takeIf { s.success }
+                    val host = PanelSubSettings.hostOf(baseUrl)
+                    if (cardClient !== c) return@launch
+                    clientSubUrl = settings?.subscriptionUrl(host, c.subId)
+                    clientJsonSubUrl = settings?.jsonSubscriptionUrl(host, c.subId)
+                    // Read fresh on every open so a Happ switch flipped on the panel a moment ago counts.
+                    clientHappEnabled = if (supportsPanel380(status?.panelVersion.orEmpty())) settings?.happLinkEnable else null
+                    clientSubChecked = true
+                    // The customer's-eye status (panel v3.6.0+); an unreachable or older sub server omits it.
+                    val info = clientSubUrl?.let { url -> try { api?.subInfo(url) } catch (e: Throwable) { null } }
+                    if (cardClient === c) clientSubInfo = info
+                }
+            }
+
+            fun openClientEditor(c: Client, isNew: Boolean) {
+                editorError = null
+                editingClientNew = isNew
+                editingClient = c
             }
 
             // Switch the active connection to another saved panel and refresh all screens.
@@ -729,115 +775,7 @@ fun App() {
                             .sortedBy { it.lowercase() },
                         saving = editorSaving,
                         error = editorError,
-                        links = clientLinks,
-                        linksLoading = clientLinksLoading,
-                        subUrl = clientSubUrl,
-                        jsonSubUrl = clientJsonSubUrl,
-                        subInfo = clientSubInfo,
-                        onShowLinks = {
-                            scope.launch {
-                                clientLinksLoading = true
-                                val r = try { api?.clientLinks(editingClient!!.email) } catch (e: Throwable) { null }
-                                clientLinks = r?.obj ?: emptyList()
-                                clientLinksLoading = false
-                            }
-                            // Subscription URL needs panel settings (token-readable
-                            // v3.3.0+) — fetch in parallel, degrade silently.
-                            scope.launch {
-                                val c = editingClient
-                                val s = try { api?.subSettings() } catch (e: Throwable) { null }
-                                clientSubUrl =
-                                    if (c != null && s?.success == true && s.obj != null)
-                                        s.obj!!.subscriptionUrl(PanelSubSettings.hostOf(baseUrl), c.subId)
-                                    else null
-                                clientJsonSubUrl =
-                                    if (c != null && s?.success == true && s.obj != null)
-                                        s.obj!!.jsonSubscriptionUrl(PanelSubSettings.hostOf(baseUrl), c.subId)
-                                    else null
-                                // Encrypted Happ link (panel v3.8.0): offered once the panel's switch
-                                // is known, read fresh so a switch flipped a moment ago counts.
-                                if (editingClient === c) {
-                                    clientHappEnabled = if (panel380 && s?.success == true) s.obj?.happLinkEnable else null
-                                }
-                                // The customer's-eye status (panel v3.6.0+). The sub
-                                // server may be unreachable from the phone or predate
-                                // the endpoint — then the readout is simply omitted.
-                                clientSubInfo = clientSubUrl?.let { url ->
-                                    try { api?.subInfo(url) } catch (e: Throwable) { null }
-                                }
-                            }
-                        },
-                        ips = clientIps,
-                        ipsLoading = clientIpsLoading,
-                        ipsLoaded = clientIpsLoaded,
-                        onShowIps = {
-                            scope.launch {
-                                clientIpsLoading = true
-                                val r = try { api?.clientIps(editingClient!!.email) } catch (e: Throwable) { null }
-                                clientIps = r?.obj ?: emptyList()
-                                clientIpsLoaded = true
-                                clientIpsLoading = false
-                            }
-                        },
-                        onClearIps = {
-                            scope.launch {
-                                clientIpsLoading = true
-                                try { api?.clearClientIps(editingClient!!.email) } catch (e: Throwable) {}
-                                clientIps = emptyList()
-                                clientIpsLoaded = true
-                                clientIpsLoading = false
-                            }
-                        },
                         panelTimeZone = panelTimeZone,
-                        happLinkEnabled = clientHappEnabled,
-                        happLink = clientHappLink,
-                        happLinkLoading = clientHappLoading,
-                        happLinkError = clientHappError,
-                        onGenerateHappLink = {
-                            val target = editingClient
-                            if (target != null && !clientHappLoading) {
-                                clientHappLoading = true
-                                clientHappError = null
-                                scope.launch {
-                                    var link: String? = null
-                                    var failure: String? = null
-                                    try {
-                                        val r = api?.happLink(target.id)
-                                        val encrypted = r?.obj?.encryptedLink.orEmpty()
-                                        when {
-                                            r == null -> failure = "Network error"
-                                            !r.success -> failure = r.msg.ifBlank { "Request rejected" }
-                                            encrypted.isBlank() -> failure = "empty Happ link"
-                                            else -> link = encrypted
-                                        }
-                                    } catch (e: Throwable) {
-                                        failure = e.message ?: "Network error"
-                                    }
-                                    // The editor may have moved on to another client; its link must not show there.
-                                    if (editingClient === target) {
-                                        if (link != null) clientHappLink = link
-                                        clientHappError = failure
-                                        clientHappLoading = false
-                                    }
-                                }
-                            }
-                        },
-                        onShowDevices = {
-                            showHwids = true
-                            scope.launch {
-                                clientHwidsLoading = true
-                                clientHwidsUnsupported = false
-                                try {
-                                    clientHwids = api?.listClientHwids(editingClient!!.email)?.obj ?: emptyList()
-                                } catch (e: PanelFeatureUnsupportedException) {
-                                    clientHwidsUnsupported = true
-                                    clientHwids = emptyList()
-                                } catch (e: Throwable) {
-                                    clientHwids = emptyList()
-                                }
-                                clientHwidsLoading = false
-                            }
-                        },
                         onSave = { model, inboundIds ->
                             scope.launch {
                                 editorSaving = true; editorError = null
@@ -873,97 +811,13 @@ fun App() {
                                     // The edit itself is saved and the editor closes; the panel refused only the
                                     // inbound change, so say so on the clients list.
                                     membershipError?.let { bulkMessage = null; bulkError = "${tr(lang, "Client updated, but the inbound change failed")}: $it" }
-                                    editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); refreshAll()
+                                    editingClient = null; refreshAll()
                                 }
                                 else if (r != null) editorError = r.msg.ifBlank { "Save failed" }
                             }
                         },
-                        onDelete = {
-                            scope.launch {
-                                editorSaving = true; editorError = null
-                                val r = try { api?.deleteClient(editingClient!!.email) }
-                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
-                                editorSaving = false
-                                if (r?.success == true) { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); refreshAll() }
-                                else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
-                            }
-                        },
-                        onResetTraffic = {
-                            scope.launch {
-                                val email = editingClient!!.email
-                                editorSaving = true; editorError = null
-                                val r = try { api?.resetClientTraffic(email) }
-                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
-                                editorSaving = false
-                                if (r?.success == true) {
-                                    editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink()
-                                    bulkError = null; bulkMessage = "${tr(lang, "Traffic reset")}: $email"
-                                    refreshAll()
-                                } else if (r != null) editorError = r.msg.ifBlank { tr(lang, "Action failed") }
-                            }
-                        },
-                        onCancel = { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clientIpsLoaded = false; editorError = null; clearClientHappLink() },
+                        onCancel = { editingClient = null; editorError = null },
                     )
-                    if (showHwids) {
-                        val hwidEmail = editingClient?.email.orEmpty()
-                        AlertDialog(
-                            onDismissRequest = { showHwids = false },
-                            title = { Text(tr("Devices") + " · " + hwidEmail) },
-                            text = {
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    when {
-                                        clientHwidsLoading -> CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                                        clientHwidsUnsupported -> Text(
-                                            tr("Your panel version doesn't support this yet. Update the panel to the latest version to use it."),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                        clientHwids.isEmpty() -> Text(
-                                            tr("No devices registered."),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                        else -> clientHwids.forEach { d ->
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Column(Modifier.weight(1f)) {
-                                                    Text(d.label.ifBlank { "#" + d.id }, style = MaterialTheme.typography.bodyMedium)
-                                                    Text(
-                                                        tr("Last seen") + ": " + formatDayMonth(d.lastSeen),
-                                                        style = MaterialTheme.typography.labelMedium,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    )
-                                                    if (d.fingerprint.isNotBlank()) {
-                                                        Text(
-                                                            tr("Device fingerprint") + ": " + d.fingerprint,
-                                                            style = MaterialTheme.typography.labelMedium,
-                                                            fontFamily = FontFamily.Monospace,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        )
-                                                    }
-                                                }
-                                                TextButton(onClick = {
-                                                    scope.launch {
-                                                        try { api?.deleteClientHwid(hwidEmail, d.id) } catch (e: Throwable) {}
-                                                        clientHwids = clientHwids.filterNot { it.id == d.id }
-                                                    }
-                                                }) { Text(tr("Remove")) }
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        scope.launch {
-                                            try { api?.clearClientHwids(hwidEmail) } catch (e: Throwable) {}
-                                            clientHwids = emptyList()
-                                        }
-                                    },
-                                    enabled = clientHwids.isNotEmpty(),
-                                ) { Text(tr("Clear")) }
-                            },
-                            dismissButton = { TextButton(onClick = { showHwids = false }) { Text(tr("Close")) } },
-                        )
-                    }
                 } else if (editingInbound != null) {
                     InboundEditorScreen(
                         initial = editingInbound!!,
@@ -1143,8 +997,8 @@ fun App() {
                         api = api!!,
                         lang = lang,
                         onClose = { showGroups = false },
-                        // The client editor branch comes first, so closing it returns to the groups.
-                        onOpenClient = { c -> editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = false; editingClient = c },
+                        // The card overlays this screen and the editor branch comes first, so both return here.
+                        onOpenClient = { c -> openClientCard(c) },
                     )
                 } else if (showOutboundSubs && api != null) {
                     OutboundSubsScreen(api = api!!, lang = lang, onClose = { showOutboundSubs = false })
@@ -1304,8 +1158,8 @@ fun App() {
                                     clients,
                                     speeds = clientSpeeds,
                                     onlineEmails = onlines.toSet(),
-                                    onAdd = { editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = true; editingClient = Client() },
-                                    onEdit = { c -> editorError = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink(); editingClientNew = false; editingClient = c },
+                                    onAdd = { openClientEditor(Client(), isNew = true) },
+                                    onOpen = { c -> openClientCard(c) },
                                     onToggle = { c, en -> scope.launch { api?.updateClient(c.email, c.toModel().copy(enable = en)); refreshAll() } },
                                     onExport = {
                                         scope.launch {
@@ -1434,6 +1288,142 @@ fun App() {
                             delay(5_000)
                             refreshAll()
                         }
+                    }
+                }
+
+                val card = cardClient
+                if (card != null && connected && !locked && editingClient == null) {
+                    val live = clients.firstOrNull { it.email == card.email } ?: card
+                    ClientCardSheet(
+                        client = live,
+                        online = live.email in onlines,
+                        links = clientLinks,
+                        linksLoading = clientLinksLoading,
+                        linksError = clientLinksError,
+                        subChecked = clientSubChecked,
+                        subUrl = clientSubUrl,
+                        jsonSubUrl = clientJsonSubUrl,
+                        subInfo = clientSubInfo,
+                        happLinkEnabled = clientHappEnabled,
+                        happLink = clientHappLink,
+                        happLinkLoading = clientHappLoading,
+                        happLinkError = clientHappError,
+                        onGenerateHappLink = {
+                            if (!clientHappLoading) {
+                                clientHappLoading = true
+                                clientHappError = null
+                                scope.launch {
+                                    var link: String? = null
+                                    var failure: String? = null
+                                    try {
+                                        val r = api?.happLink(card.id)
+                                        val encrypted = r?.obj?.encryptedLink.orEmpty()
+                                        when {
+                                            r == null -> failure = "Network error"
+                                            !r.success -> failure = r.msg.ifBlank { "Request rejected" }
+                                            encrypted.isBlank() -> failure = "empty Happ link"
+                                            else -> link = encrypted
+                                        }
+                                    } catch (e: Throwable) {
+                                        failure = e.message ?: "Network error"
+                                    }
+                                    // The card may have moved on to another client; its link must not show there.
+                                    if (cardClient === card) {
+                                        if (link != null) clientHappLink = link
+                                        clientHappError = failure
+                                        clientHappLoading = false
+                                    }
+                                }
+                            }
+                        },
+                        busy = cardBusy,
+                        error = cardError,
+                        onDismiss = { closeClientCard() },
+                        onEdit = { closeClientCard(); openClientEditor(live, isNew = false) },
+                        onDelete = {
+                            scope.launch {
+                                cardBusy = true; cardError = null
+                                val r = try { api?.deleteClient(card.email) }
+                                    catch (e: Throwable) { cardError = e.message ?: "Network error"; null }
+                                cardBusy = false
+                                if (r?.success == true) { if (cardClient === card) closeClientCard(); refreshAll() }
+                                else if (r != null) cardError = r.msg.ifBlank { "Delete failed" }
+                            }
+                        },
+                        onResetTraffic = {
+                            scope.launch {
+                                cardBusy = true; cardError = null
+                                val r = try { api?.resetClientTraffic(card.email) }
+                                    catch (e: Throwable) { cardError = e.message ?: "Network error"; null }
+                                cardBusy = false
+                                if (r?.success == true) {
+                                    if (cardClient === card) closeClientCard()
+                                    bulkError = null; bulkMessage = "${tr(lang, "Traffic reset")}: ${card.email}"
+                                    refreshAll()
+                                } else if (r != null) cardError = r.msg.ifBlank { tr(lang, "Action failed") }
+                            }
+                        },
+                        onIpLog = {
+                            showIpLog = true
+                            scope.launch {
+                                clientIpsLoading = true
+                                val r = try { api?.clientIps(card.email) } catch (e: Throwable) { null }
+                                if (cardClient === card) { clientIps = r?.obj ?: emptyList(); clientIpsLoading = false }
+                            }
+                        },
+                        onDevices = {
+                            showHwids = true
+                            scope.launch {
+                                clientHwidsLoading = true
+                                clientHwidsUnsupported = false
+                                var unsupported = false
+                                val list = try {
+                                    api?.listClientHwids(card.email)?.obj ?: emptyList()
+                                } catch (e: PanelFeatureUnsupportedException) {
+                                    unsupported = true
+                                    emptyList()
+                                } catch (e: Throwable) {
+                                    emptyList()
+                                }
+                                if (cardClient === card) { clientHwids = list; clientHwidsUnsupported = unsupported; clientHwidsLoading = false }
+                            }
+                        },
+                    )
+                    if (showIpLog) {
+                        ClientIpLogDialog(
+                            email = card.email,
+                            ips = clientIps,
+                            loading = clientIpsLoading,
+                            onClear = {
+                                scope.launch {
+                                    clientIpsLoading = true
+                                    try { api?.clearClientIps(card.email) } catch (e: Throwable) {}
+                                    if (cardClient === card) { clientIps = emptyList(); clientIpsLoading = false }
+                                }
+                            },
+                            onDismiss = { showIpLog = false },
+                        )
+                    }
+                    if (showHwids) {
+                        ClientDevicesDialog(
+                            email = card.email,
+                            hwids = clientHwids,
+                            loading = clientHwidsLoading,
+                            unsupported = clientHwidsUnsupported,
+                            onRemove = { d ->
+                                scope.launch {
+                                    try { api?.deleteClientHwid(card.email, d.id) } catch (e: Throwable) {}
+                                    clientHwids = clientHwids.filterNot { it.id == d.id }
+                                }
+                            },
+                            onClear = {
+                                scope.launch {
+                                    try { api?.clearClientHwids(card.email) } catch (e: Throwable) {}
+                                    clientHwids = emptyList()
+                                }
+                            },
+                            onDismiss = { showHwids = false },
+                        )
                     }
                 }
 

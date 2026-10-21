@@ -126,7 +126,7 @@ fun ClientsListScreen(
     items: List<Client>,
     onlineEmails: Set<String>,
     onAdd: () -> Unit,
-    onEdit: (Client) -> Unit,
+    onOpen: (Client) -> Unit,
     onToggle: (Client, Boolean) -> Unit,
     onSearch: () -> Unit = {},
     onExport: () -> Unit,
@@ -267,7 +267,7 @@ fun ClientsListScreen(
                     }
                     Card(
                         modifier = Modifier.fillMaxWidth().combinedClickable(
-                            onClick = { if (selectionMode) toggleSel() else onEdit(c) },
+                            onClick = { if (selectionMode) toggleSel() else onOpen(c) },
                             onLongClick = { if (!selectionMode) { selectionMode = true; onDismissBulkMessage() }; toggleSel() },
                         ),
                         colors = if (isSel) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer) else CardDefaults.cardColors(),
