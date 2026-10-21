@@ -16,8 +16,13 @@ import platform.Foundation.NSDate
 import platform.Foundation.NSDateFormatter
 import platform.Foundation.dateWithTimeIntervalSince1970
 
-actual fun appVersionName(): String =
-    (NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String) ?: "—"
+// Info.plist can't hold "26.10.21 build 78": the date is the short version, the build is CFBundleVersion.
+actual fun appVersionName(): String {
+    val info = NSBundle.mainBundle
+    val date = info.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String ?: return "—"
+    val build = info.objectForInfoDictionaryKey("CFBundleVersion") as? String
+    return if (build.isNullOrEmpty()) date else "$date build $build"
+}
 
 private val dayMonthFormatter = NSDateFormatter().apply { dateFormat = "dd.MM" }
 

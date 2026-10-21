@@ -1202,7 +1202,7 @@ fun App() {
                                         metricChart = MetricChartState(block = block, bucket = 2, loading = true)
                                         scope.launch { loadMetricSeries() }
                                     },
-                                    appUpdateVersion = lastAvailableUpdate?.version,
+                                    appUpdateVersion = lastAvailableUpdate?.version?.let(UpdateChecker::displayVersion),
                                     onAppUpdate = {
                                         lastAvailableUpdate?.let { updateState = UpdateUiState.Available(it) }
                                     },

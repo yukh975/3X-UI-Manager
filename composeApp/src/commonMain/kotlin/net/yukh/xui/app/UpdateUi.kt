@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import net.yukh.xui.shared.api.AppUpdate
+import net.yukh.xui.shared.api.UpdateChecker
 
 /** Update-check UI state. iOS can't install an unsigned .ipa itself, so an
  *  available update opens the release page rather than installing in-app. */
@@ -46,7 +47,7 @@ fun UpdateDialog(
                     val versions = state.update.versions
                     if (versions.isEmpty()) {
                         Text(
-                            "${tr("Version")} ${state.update.version}",
+                            "${tr("Version")} ${UpdateChecker.displayVersion(state.update.version)}",
                             style = MaterialTheme.typography.titleMedium,
                         )
                         val notes = state.update.notes.trim()

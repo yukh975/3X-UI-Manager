@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 
 /** A release published on one of the update channels. */
 data class AppUpdate(
-    val version: String,   // tag without the leading "v", e.g. "0.5.5"
+    val version: String,   // tag without the leading "v", e.g. "26.10.21b78"
     val notes: String,     // release description (markdown)
     val pageUrl: String,   // release web page (opened in the browser)
     // Per-version changelog sections since the installed build; empty → show [notes].
@@ -156,7 +156,7 @@ object UpdateChecker {
         }
     }
 
-    /** true if [latest] > [current] by numeric semver (non-digit suffixes ignored). */
+    /** true if [latest] > [current]: date, then build number ("26.10.21b78" > "26.10.21 build 77" > "0.15.3"). */
     fun isNewer(latest: String, current: String): Boolean {
         val a = versionParts(latest)
         val b = versionParts(current)
@@ -168,8 +168,19 @@ object UpdateChecker {
         return false
     }
 
-    internal fun versionParts(v: String): List<Int> =
-        v.trim().removePrefix("v").split('.', '-', '+').mapNotNull { part ->
-            part.takeWhile(Char::isDigit).toIntOrNull()
-        }
+    /** "26.10.21b78" → "26.10.21 build 78"; any other version unchanged. */
+    fun displayVersion(v: String): String = TAG_BUILD.replace(v) { "${it.groupValues[1]} build ${it.groupValues[2]}" }
+
+    private val TAG_BUILD = Regex("""^(\d+\.\d+\.\d+)b(\d+)$""")
+
+    // The app shows "26.10.21 build 77", the tag carries "26.10.21b77".
+    private val VERSION = Regex("""^v?(\d+(?:\.\d+)*)(?:(?:b| build )(\d+))?""")
+
+    /** Dotted part plus build ("26.10.21 build 77" → [26, 10, 21, 77], "0.15.3-debug" → [0, 15, 3]); empty if none. */
+    internal fun versionParts(v: String): List<Int> {
+        val m = VERSION.find(v.trim()) ?: return emptyList()
+        val dotted = m.groupValues[1].split('.').map { it.toIntOrNull() ?: return emptyList() }
+        val build = m.groupValues[2].ifEmpty { return dotted }.toIntOrNull() ?: return emptyList()
+        return dotted + build
+    }
 }
