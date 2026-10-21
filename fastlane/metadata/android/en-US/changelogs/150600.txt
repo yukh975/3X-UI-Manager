@@ -1,0 +1,1 @@
+The Russian interface no longer mixes in English: inbounds and outbounds are «Входящие»/«Исходящие» everywhere, the 21 strings only the Chinese UI had are translated, and Russian labels fit on one line (the Outbounds test-mode chip, the geodata title).

@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [0.15.6] — 2026-10-21
+
+### Fixed
+- **The Russian interface no longer mixes in English words.** Inbounds and outbounds are «Входящие» and «Исходящие» everywhere — tab, screen titles, dialogs, field labels and hints — instead of «inbound»/«outbound» or the slang «инбаунд». The 21 strings only the Chinese UI had (`RAM`, `Test mode`, `Real delay`, `unreachable`, …) are now translated too.
+- **Russian labels fit on a phone screen:** the «Real delay» chip on the Outbounds screen no longer wraps onto two lines, and the geodata screen title fits on one line.
+
 ## [0.15.5] — 2026-10-21
 
 ### Added
