@@ -44,6 +44,13 @@ fun isPostQuantumLink(link: String): Boolean {
     return authKey.length > MLKEM768_MIN_KEY_LENGTH
 }
 
+/** A share link's name in the client card: its scheme plus the `#remark`, else its position. */
+fun connectionLabel(link: String, index: Int): String {
+    val scheme = link.substringBefore("://", "").uppercase().ifBlank { "Link" }
+    val remark = decodeQueryComponent(link.substringAfter("#", "").substringBefore("\n").trim())
+    return if (remark.isNotBlank()) "$scheme · $remark" else "$scheme · #${index + 1}"
+}
+
 /** application/x-www-form-urlencoded decoding, as URLSearchParams does it; bad escapes stay as is. */
 private fun decodeQueryComponent(s: String): String {
     if ('%' !in s && '+' !in s) return s
