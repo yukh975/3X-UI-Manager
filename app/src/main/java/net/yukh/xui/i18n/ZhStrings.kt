@@ -664,9 +664,6 @@ val zhStrings: Map<String, String> = mapOf(
     "total" to "总计",
     "offline" to "离线",
     "Ping" to "延迟",
-    "CPU " to "CPU ",
-    "RAM " to "RAM ",
-    "up " to "运行 ",
 
     // Node editor (additional)
     "Scheme" to "协议",

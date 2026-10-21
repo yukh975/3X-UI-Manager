@@ -389,7 +389,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Workers" to "Воркеры",
     "Reserved" to "Зарезервировано",
     "UoT version" to "Версия UoT",
-    "Keep alive" to "Keep-alive",
+    "Keep alive" to "Интервал keep-alive",
     // Routing / DNS / General editor sections
     "Routing" to "Маршрутизация",
     "Routing strategy" to "Стратегия маршрутизации",
@@ -423,13 +423,13 @@ val ruStrings: Map<String, String> = mapOf(
     "Source port" to "Source-порт",
     "Protocol (comma-separated)" to "Протокол (через запятую)",
     "User (comma-separated)" to "Пользователь (через запятую)",
-    "VLESS route" to "VLESS route",
+    "VLESS route" to "Маршрут VLESS",
     "Selector (comma-separated)" to "Селектор (через запятую)",
     "Fallback" to "Fallback",
     // DNS
     "Enable DNS" to "Включить DNS",
     "DNS tag" to "Тег DNS",
-    "Client IP" to "Client IP",
+    "Client IP" to "IP клиента",
     "Query strategy" to "Стратегия запросов",
     "Disable cache" to "Отключить кэш",
     "Disable fallback" to "Отключить fallback",
@@ -645,9 +645,6 @@ val ruStrings: Map<String, String> = mapOf(
     "total" to "всего",
     "offline" to "офлайн",
     "Ping" to "Пинг",
-    "CPU " to "CPU ",
-    "RAM " to "RAM ",
-    "up " to "аптайм ",
 
     // Node editor (additional)
     "Scheme" to "Схема",
@@ -899,7 +896,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Max pending handshakes per IP" to "Макс. незавершённых рукопожатий на IP",
     "Close new connections from an IP that already has this many unfinished handshakes. Clients behind a shared IP (carrier NAT) share the limit. 0 disables it. Needs mtg-multi 1.16.0 or newer (panel 3.10.2)." to
         "Новые подключения с IP, у которого уже столько незавершённых рукопожатий, закрываются. Клиенты за общим IP (NAT оператора) делят этот лимит. 0 — отключено. Нужен mtg-multi 1.16.0 или новее (панель 3.10.2).",
-    "Outbounds" to "Outbounds",
+    "Outbounds" to "Исходящие",
     "From outbound subscriptions" to "Из подписок на исходящие",
     "Fetched by the panel and merged into the config — testable and usable in routing, but edited through the subscription, not here." to
         "Панель загружает его из подписки и добавляет в конфиг — его можно проверять и использовать в маршрутизации, но правится он через подписку, а не здесь.",
