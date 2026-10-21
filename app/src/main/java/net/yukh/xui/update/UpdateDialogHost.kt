@@ -38,7 +38,7 @@ fun UpdateDialogHost(vm: UpdateViewModel) {
                 ) {
                     if (s.release.changes.isEmpty()) {
                         Text(
-                            "${tr("Version")} ${s.release.version}",
+                            "${tr("Version")} ${ChangelogNotes.displayVersion(s.release.version)}",
                             style = MaterialTheme.typography.titleMedium,
                         )
                         val notes = s.release.notes.trim()

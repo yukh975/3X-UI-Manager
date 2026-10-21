@@ -13,7 +13,7 @@ plugins {
 //
 // The 1_000_000 offset keeps every code above the semver era (0.15.6 = 150600),
 // otherwise Android and F-Droid treat the update as a downgrade.
-/** "v2026.10.21b77" → 1_000_077, or null for any other tag. */
+/** "v26.10.21b77" → 1_000_077, or null for any other tag. */
 fun buildVersionCode(tag: String): Int? =
     Regex("""^v\d+\.\d+\.\d+b(\d+)$""").find(tag)?.groupValues?.get(1)?.toIntOrNull()?.let { 1_000_000 + it }
 
@@ -95,7 +95,7 @@ android {
         versionCode = 150600
         versionName = "0.15.6"
         System.getenv("CI_COMMIT_TAG")?.let { tag ->
-            check(tag == "v$versionName" && versionCode == buildVersionCode(tag)) {
+            check(tag == "v" + versionName?.replace(" build ", "b") && versionCode == buildVersionCode(tag)) {
                 "tag $tag does not match versionName $versionName / versionCode $versionCode; run scripts/stamp-version.sh"
             }
         }

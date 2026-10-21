@@ -92,20 +92,26 @@ class ChangelogNotesTest {
     fun `same-day builds are told apart by the build number`() {
         val dated = ChangelogNotes.parse(
             """
-            ## [2026.10.21b79] — 2026-10-21
+            ## [26.10.21 build 79] — 2026-10-21
             - c
-            ## [2026.10.21b78] — 2026-10-21
+            ## [26.10.21 build 78] — 2026-10-21
             - b
-            ## [2026.10.21b77] — 2026-10-21
+            ## [26.10.21 build 77] — 2026-10-21
             - a
             ## [0.15.6] — 2026-10-21
             - old
             """.trimIndent(),
         )
         assertEquals(
-            listOf("2026.10.21b79", "2026.10.21b78"),
-            ChangelogNotes.select(dated, "2026.10.21b77", "2026.10.21b79").map { it.version },
+            listOf("26.10.21 build 79", "26.10.21 build 78"),
+            ChangelogNotes.select(dated, "26.10.21 build 77", "26.10.21b79").map { it.version },
         )
+    }
+
+    @Test
+    fun `the short b of a tag is shown as build`() {
+        assertEquals("26.10.21 build 77", ChangelogNotes.displayVersion("26.10.21b77"))
+        assertEquals("0.15.6", ChangelogNotes.displayVersion("0.15.6"))
     }
 
     @Test

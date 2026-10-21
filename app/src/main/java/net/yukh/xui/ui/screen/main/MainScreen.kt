@@ -92,6 +92,7 @@ import net.yukh.xui.ui.screen.xrayedit.DnsScreen
 import net.yukh.xui.ui.screen.xrayedit.GeneralScreen
 import net.yukh.xui.ui.screen.xrayedit.GeodataScreen
 import net.yukh.xui.ui.screen.xrayedit.RoutingScreen
+import net.yukh.xui.update.ChangelogNotes
 import net.yukh.xui.update.UpdateDialogHost
 import net.yukh.xui.update.UpdateViewModel
 
@@ -313,7 +314,7 @@ fun MainScreen(
             composable(MainTabs.Dashboard) {
                 val latestApp by updateVm.latestAvailable.collectAsStateWithLifecycle()
                 DashboardScreen(
-                    appUpdateVersion = latestApp?.version,
+                    appUpdateVersion = latestApp?.version?.let(ChangelogNotes::displayVersion),
                     onAppUpdate = updateVm::reshow,
                 )
             }

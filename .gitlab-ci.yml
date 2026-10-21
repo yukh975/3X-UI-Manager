@@ -143,13 +143,14 @@ release:publish:
     - PKG_VERSION="${CI_COMMIT_TAG#v}"
     - PKG_BASE="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android/$PKG_VERSION"
     - APK="3x-ui-manager-$PKG_VERSION.apk"
+    - VER_NAME="$(printf '%s' "$PKG_VERSION" | sed -E 's/b([0-9]+)$/ build \1/')"
     - echo "Publishing GitLab Release for $CI_COMMIT_TAG (package version $PKG_VERSION)"
     # The release description (and thus the Releases page) is in English and is
     # built from this version's section of the English changelog — i.e. the diff
     # against the previous version. The section body is extracted with awk
     # (everything between "## [VERSION]" and the next "## [" header).
     - |
-      NOTES="$(awk -v ver="$PKG_VERSION" '
+      NOTES="$(awk -v ver="$VER_NAME" '
         $0 ~ "^## \\[" ver "\\]" { grab=1; next }
         grab && /^## \[/ { exit }
         grab { print }
@@ -162,12 +163,12 @@ release:publish:
       # Build the description with printf (not a heredoc) so every line of this
       # job stays indented inside the YAML block scalar — a column-0 heredoc
       # body would terminate the block and break YAML parsing.
-      HEADER="## What's new in $CI_COMMIT_TAG"
+      HEADER="## What's new in $VER_NAME"
       FOOTER="$(printf '### Download\n- `%s` — signed APK, ready to install on a phone.\n\n📝 Full [changelog](%s/-/blob/%s/CHANGELOG.md).\n\nBuilt by [pipeline #%s](%s) from %s.' "$APK" "$CI_PROJECT_URL" "$CI_COMMIT_TAG" "$CI_PIPELINE_ID" "$CI_PIPELINE_URL" "$CI_COMMIT_SHORT_SHA")"
       DESC="$(printf '%s\n\n%s\n\n%s\n' "$HEADER" "$NOTES" "$FOOTER")"
       release-cli create \
         --tag-name "$CI_COMMIT_TAG" \
-        --name "$CI_COMMIT_TAG" \
+        --name "$VER_NAME" \
         --description "$DESC" \
         --assets-link "{\"name\":\"$APK (signed)\",\"url\":\"$PKG_BASE/$APK\",\"link_type\":\"package\"}"
 
@@ -201,6 +202,7 @@ publish:github:
     - PKG_VERSION="${CI_COMMIT_TAG#v}"
     - APK_LOCAL="app/build/outputs/apk/standard/release/3x-ui-manager-standard-release.apk"
     - APK_NAME="3x-ui-manager-$PKG_VERSION.apk"
+    - VER_NAME="$(printf '%s' "$PKG_VERSION" | sed -E 's/b([0-9]+)$/ build \1/')"
     - API="https://api.github.com/repos/$GH_REPO"
     - 'AUTH="Authorization: Bearer $GITHUB_TOKEN"'
     - 'ACCEPT="Accept: application/vnd.github+json"'
@@ -208,15 +210,15 @@ publish:github:
       RID="$(curl --silent --header "$AUTH" --header "$ACCEPT" "$API/releases/tags/$CI_COMMIT_TAG" | jq -r '.id // empty')"
       if [ -z "$RID" ]; then
         echo ">>> Creating GitHub release $CI_COMMIT_TAG"
-        NOTES="$(awk -v ver="$PKG_VERSION" '
+        NOTES="$(awk -v ver="$VER_NAME" '
           $0 ~ "^## \\[" ver "\\]" { grab=1; next }
           grab && /^## \[/ { exit }
           grab { print }
         ' CHANGELOG.md)"
         NOTES="$(printf '%s\n' "$NOTES" | sed -e '/./,$!d')"
         [ -z "$NOTES" ] && NOTES="See CHANGELOG.md at tag $CI_COMMIT_TAG."
-        BODY="$(jq -n --arg tag "$CI_COMMIT_TAG" --arg sha "$CI_COMMIT_SHA" --arg body "$NOTES" \
-          '{tag_name:$tag, target_commitish:$sha, name:$tag, body:$body}')"
+        BODY="$(jq -n --arg tag "$CI_COMMIT_TAG" --arg name "$VER_NAME" --arg sha "$CI_COMMIT_SHA" --arg body "$NOTES" \
+          '{tag_name:$tag, target_commitish:$sha, name:$name, body:$body}')"
         RID="$(curl --fail --silent --show-error --request POST --header "$AUTH" --header "$ACCEPT" \
           --data "$BODY" "$API/releases" | jq -r '.id')"
       else
