@@ -8,6 +8,11 @@ resets: `26.10.21 build 77` = built on 21 October 2026, build 77 (tag
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [26.10.21 build 78] — 2026-10-21
+
+### Changed
+- **First public build on the new version format.** The same app as 26.10.21 build 77; it brings everything from 0.15.5, 0.15.6 and build 77 to GitHub and F-Droid.
+
 ## [26.10.21 build 77] — 2026-10-21
 
 ### Changed
