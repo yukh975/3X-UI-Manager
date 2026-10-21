@@ -1,10 +1,42 @@
 # Changelog
 
 All notable changes to the 3X-UI Manager app are documented here.
-Format based on [Keep a Changelog](https://keepachangelog.com/); the project
-uses [Semantic Versioning](https://semver.org/).
+Format based on [Keep a Changelog](https://keepachangelog.com/). Since the
+build after 0.15.6 a version is the build date plus a build number that never
+resets: `26.10.21 build 77` = built on 21 October 2026, build 77 (tag
+`v26.10.21b77`).
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
+
+## [26.10.21 build 78] — 2026-10-21
+
+### Changed
+- **First public build on the new version format.** The same app as 26.10.21 build 77; it brings everything from 0.15.5, 0.15.6 and build 77 to GitHub and F-Droid.
+
+## [26.10.21 build 77] — 2026-10-21
+
+### Changed
+- **New version format: build date + build number**, e.g. `26.10.21 build 77`. The number counts every build since the first one and never resets. Installed 0.15.x versions see it as an update as usual.
+
+## [0.15.6] — 2026-10-21
+
+### Fixed
+- **The Russian interface no longer mixes in English words.** Inbounds and outbounds are «Входящие» and «Исходящие» everywhere — tab, screen titles, dialogs, field labels and hints — instead of «inbound»/«outbound» or the slang «инбаунд». The 21 strings only the Chinese UI had (`RAM`, `Test mode`, `Real delay`, `unreachable`, …) are now translated too.
+- **Russian labels fit on a phone screen:** the «Real delay» chip on the Outbounds screen no longer wraps onto two lines, and the geodata screen title fits on one line.
+
+## [0.15.5] — 2026-10-21
+
+### Added
+- **Edit and rename saved panels.** Each panel in the ⇄ switcher has an Edit button: change its name, URL, API token, TLS check or subscription address without removing and re-adding it. A rename alone saves at once; a new URL, token or TLS setting is checked against the panel first. The Connect screen has an optional **Name** field, so a panel can be named when it is added; a panel without a name still shows its host. Thanks to [@m0nty81](https://github.com/m0nty81) — [#11](https://github.com/yukh975/3X-UI-Manager/issues/11).
+- **Reset a client's traffic** from its sheet, and **reset traffic of the selected clients** from the multi-select menu. Used traffic starts from zero, and a client its quota switched off is enabled again.
+- **MTProto: «Max pending handshakes per IP»** in the inbound editor (panel 3.10.2, needs mtg-multi 1.16.0+): new connections from an IP that already has this many unfinished handshakes are closed; 0 turns it off.
+
+## [0.15.4] — 2026-10-17
+
+### Added
+- **Simplified Chinese interface** (Settings → Language). Thanks to [@venti1112](https://github.com/venti1112) — [PR #9](https://github.com/yukh975/3X-UI-Manager/pull/9).
+- **Chinese user manual (`docs/3X-UI-MANAGER.zh.md` + PDF) and a Chinese row in every language table.** Thanks to [@venti1112](https://github.com/venti1112) — [PR #10](https://github.com/yukh975/3X-UI-Manager/pull/10).
+- **The 20 UI strings that were still missing in Chinese** (`Outbounds`, `RAM`, `Endpoint`, `PSK`, `Target Strategy`, `Real delay`, `unreachable`, …) — the Chinese UI now has no gaps left against the Russian one.
 
 ## [0.15.3] — 2026-10-13
 
