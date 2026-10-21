@@ -209,6 +209,14 @@ class PanelApi(baseUrl: String, private val token: String, private val allowInse
             auth(); contentType(ContentType.Application.Json); setBody(BulkEmailsRequest(emails))
         }.body()
 
+    suspend fun resetClientTraffic(email: String): ApiAck =
+        client.post("$base/panel/api/clients/resetTraffic/$email") { auth() }.body()
+
+    suspend fun bulkResetClientsTraffic(emails: List<String>): ApiAck =
+        client.post("$base/panel/api/clients/bulkResetTraffic") {
+            auth(); contentType(ContentType.Application.Json); setBody(BulkEmailsRequest(emails))
+        }.body()
+
     /** obj is the {adjusted, skipped[]} report (every panel since v3.4.1 sends one). */
     suspend fun bulkAdjustClients(req: BulkAdjustRequest): ApiResponse<BulkAdjustResult> =
         client.post("$base/panel/api/clients/bulkAdjust") {

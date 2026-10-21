@@ -108,11 +108,13 @@ fun ClientEditorScreen(
     onGenerateHappLink: () -> Unit = {},
     onSave: (ClientModel, List<Int>) -> Unit,
     onDelete: () -> Unit,
+    onResetTraffic: () -> Unit,
     onCancel: () -> Unit,
 ) {
     // Pre-select the client's current inbound membership (empty for a new client).
     var selectedInbounds by remember { mutableStateOf(source.inboundIds.toSet()) }
     var email by remember { mutableStateOf(source.email) }
+    var confirmReset by remember { mutableStateOf(false) }
     var enable by remember { mutableStateOf(source.enable) }
     var totalGb by remember { mutableStateOf(gbStr(source.totalGB)) }
     var limitIp by remember { mutableStateOf(if (source.limitIp > 0) source.limitIp.toString() else "") }
@@ -476,6 +478,9 @@ fun ClientEditorScreen(
                 }
 
                 Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = { confirmReset = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) {
+                    Text(tr("Reset traffic"))
+                }
                 Button(
                     onClick = onDelete,
                     enabled = !saving,
@@ -488,6 +493,20 @@ fun ClientEditorScreen(
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            title = { Text(tr("Reset this client's traffic?")) },
+            text = { Text("${source.email}\n\n${tr("Used traffic starts from zero, and a client its quota switched off is enabled again.")}") },
+            confirmButton = {
+                TextButton(onClick = { confirmReset = false; onResetTraffic() }) {
+                    Text(tr("Reset traffic"), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(tr("Cancel")) } },
+        )
     }
 }
 

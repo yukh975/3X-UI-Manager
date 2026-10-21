@@ -138,6 +138,7 @@ fun ClientsListScreen(
     onBulkDisable: (List<String>) -> Unit = {},
     onBulkAdjust: (List<String>, Int, Long, String, Int?, String) -> Unit = { _, _, _, _, _, _ -> },
     onBulkDelete: (List<String>) -> Unit = {},
+    onBulkResetTraffic: (List<String>) -> Unit = {},
     speeds: Map<String, Pair<Long, Long>> = emptyMap(),
     /** Panel v3.8.0+: bulk adjust also sets the device limit and the MTProto ad tag. */
     panel380: Boolean = false,
@@ -154,6 +155,7 @@ fun ClientsListScreen(
     var selected by remember { mutableStateOf<Set<String>>(emptySet()) }
     var showAdjust by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
+    var showReset by remember { mutableStateOf(false) }
     fun exitSelection() { selectionMode = false; selected = emptySet() }
 
     val groups = remember(items) { items.mapNotNull { it.group.ifBlank { null } }.distinct().sorted() }
@@ -188,6 +190,7 @@ fun ClientsListScreen(
                 onEnable = { onBulkEnable(selected.toList()); exitSelection() },
                 onDisable = { onBulkDisable(selected.toList()); exitSelection() },
                 onAdjust = { showAdjust = true },
+                onResetTraffic = { showReset = true },
                 onDelete = { showDelete = true },
             )
         } else {
@@ -310,6 +313,19 @@ fun ClientsListScreen(
             onDismiss = { showAdjust = false },
         )
     }
+    if (showReset) {
+        AlertDialog(
+            onDismissRequest = { showReset = false },
+            title = { Text(tr("Reset traffic of the selected clients?")) },
+            text = { Text("${selected.size} ${tr("selected")}\n\n${tr("Used traffic starts from zero, and a client its quota switched off is enabled again.")}") },
+            confirmButton = {
+                TextButton(onClick = { onBulkResetTraffic(selected.toList()); showReset = false; exitSelection() }) {
+                    Text(tr("Reset traffic"), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { showReset = false }) { Text(tr("Cancel")) } },
+        )
+    }
     if (showDelete) {
         AlertDialog(
             onDismissRequest = { showDelete = false },
@@ -330,6 +346,7 @@ private fun ClientSelectionBar(
     onEnable: () -> Unit,
     onDisable: () -> Unit,
     onAdjust: () -> Unit,
+    onResetTraffic: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
@@ -344,6 +361,7 @@ private fun ClientSelectionBar(
                 DropdownMenuItem(text = { Text(tr("Enable")) }, onClick = { menu = false; onEnable() })
                 DropdownMenuItem(text = { Text(tr("Disable")) }, onClick = { menu = false; onDisable() })
                 DropdownMenuItem(text = { Text(tr("Adjust") + "…") }, onClick = { menu = false; onAdjust() })
+                DropdownMenuItem(text = { Text(tr("Reset traffic")) }, onClick = { menu = false; onResetTraffic() })
                 DropdownMenuItem(text = { Text(tr("Delete")) }, onClick = { menu = false; onDelete() })
             }
         }

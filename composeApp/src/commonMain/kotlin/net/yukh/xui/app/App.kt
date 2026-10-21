@@ -888,6 +888,20 @@ fun App() {
                                 else if (r != null) editorError = r.msg.ifBlank { "Delete failed" }
                             }
                         },
+                        onResetTraffic = {
+                            scope.launch {
+                                val email = editingClient!!.email
+                                editorSaving = true; editorError = null
+                                val r = try { api?.resetClientTraffic(email) }
+                                    catch (e: Throwable) { editorError = e.message ?: "Network error"; null }
+                                editorSaving = false
+                                if (r?.success == true) {
+                                    editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clearClientHappLink()
+                                    bulkError = null; bulkMessage = "${tr(lang, "Traffic reset")}: $email"
+                                    refreshAll()
+                                } else if (r != null) editorError = r.msg.ifBlank { tr(lang, "Action failed") }
+                            }
+                        },
                         onCancel = { editingClient = null; clientLinks = emptyList(); clientSubUrl = null; clientJsonSubUrl = null; clientIps = emptyList(); clientIpsLoaded = false; editorError = null; clearClientHappLink() },
                     )
                     if (showHwids) {
@@ -1349,6 +1363,19 @@ fun App() {
                                     },
                                     onBulkDelete = { emails ->
                                         scope.launch { bulkBusy = true; try { api?.bulkDelClients(BulkDelRequest(emails)) } catch (e: Throwable) {}; bulkBusy = false; refreshAll() }
+                                    },
+                                    onBulkResetTraffic = { emails ->
+                                        scope.launch {
+                                            bulkBusy = true; bulkMessage = null; bulkError = null
+                                            try {
+                                                val r = api?.bulkResetClientsTraffic(emails)
+                                                if (r != null && r.success) bulkMessage = "${tr(lang, "Traffic reset")}: ${emails.size}"
+                                                else if (r != null) bulkError = "${tr(lang, "Action failed")}: ${r.msg}"
+                                            } catch (e: Throwable) {
+                                                bulkError = "${tr(lang, "Action failed")}: ${e.message.orEmpty()}"
+                                            }
+                                            bulkBusy = false; refreshAll()
+                                        }
                                     },
                                     panel380 = panel380,
                                     bulkMessage = bulkMessage,
