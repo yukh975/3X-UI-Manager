@@ -5,13 +5,13 @@ package net.yukh.xui.i18n
  * Missing keys fall back to English, so this can grow incrementally.
  */
 val ruStrings: Map<String, String> = mapOf(
-    "On a TUIC inbound the panel can't enforce a per-client traffic limit or IP limit — limit traffic on the TUIC inbound itself." to "На TUIC-inbound панель не может ограничить трафик и число IP отдельного клиента — лимит трафика задайте на самом TUIC-inbound.",
+    "On a TUIC inbound the panel can't enforce a per-client traffic limit or IP limit — limit traffic on the TUIC inbound itself." to "На TUIC-входящем панель не может ограничить трафик и число IP отдельного клиента — лимит трафика задайте на самом TUIC-входящем.",
     "Keepalive (seconds)" to "Keepalive (секунды)",
     "How often the client sends a keepalive. 25 keeps NAT open and brings an idle peer back after any drop; 0 turns it off." to "Как часто клиент отправляет keepalive. 25 держит NAT открытым и возвращает простаивающий пир после любого обрыва; 0 — выключено.",
     "Device fingerprint" to "Отпечаток устройства",
     "Empty keeps each client's limit. Lowering it removes the extra registered devices." to "Пусто — лимит каждого клиента не меняется. При снижении лишние зарегистрированные устройства удаляются.",
     "MTProto ad tag" to "Рекламный тег MTProto",
-    "32 hex characters to set, none to clear, empty to keep. MTProto inbounds only." to "32 hex-символа — задать, none — очистить, пусто — не менять. Только для MTProto-inbound.",
+    "32 hex characters to set, none to clear, empty to keep. MTProto inbounds only." to "32 hex-символа — задать, none — очистить, пусто — не менять. Только для MTProto-входящих.",
     "Encrypted Happ link" to "Зашифрованная ссылка Happ",
     "Turned off on the panel. Enable \"Encrypted subscription links\" in the panel's settings: Subscription → Happ → Subscription links." to "Выключено на панели. Включите «Зашифрованные ссылки подписки» в настройках панели: Подписка → Happ → Ссылки подписки.",
     "Too long for a QR code — copy or share the link instead." to "Слишком длинная для QR-кода — скопируйте ссылку или поделитесь ею.",
@@ -31,12 +31,12 @@ val ruStrings: Map<String, String> = mapOf(
     "Pick date & time" to "Выбрать дату и время",
     "Expiry time" to "Время окончания",
     "The panel keeps an address for 30 minutes after the last connection, so this stays empty for anyone who hasn't connected recently." to "Панель хранит адрес 30 минут после последнего подключения — поэтому у тех, кто давно не подключался, здесь пусто.",
-    "Geodata auto-update" to "Автообновление гео-баз",
+    "Geodata auto-update" to "Обновление гео-баз",
     "Xray downloads these files on schedule and reloads them without a restart. URLs must be HTTPS, and each file has to exist in the panel's bin folder once before Xray can update it." to "Xray скачивает эти файлы по расписанию и перечитывает их без перезапуска. Адреса — только HTTPS, и каждый файл должен один раз появиться в папке bin панели, иначе обновлять будет нечего.",
     "Schedule" to "Расписание",
     "Cron (5 fields)" to "Cron (5 полей)",
     "Cron must have 5 fields, e.g. 0 4 * * *" to "В cron должно быть 5 полей, например 0 4 * * *",
-    "Download through outbound (optional)" to "Скачивать через outbound (необязательно)",
+    "Download through outbound (optional)" to "Через исходящий (необязательно)",
     "Files" to "Файлы",
     "No files configured. Reference them in routing rules as ext:geosite_custom.dat:category." to "Файлы не заданы. В правилах маршрутизации на них ссылаются как ext:geosite_custom.dat:категория.",
     "File name" to "Имя файла",
@@ -55,14 +55,14 @@ val ruStrings: Map<String, String> = mapOf(
     "No devices registered." to "Устройств пока нет.",
     "Remove" to "Удалить",
     "Disable XTLS flow" to "Отключить XTLS flow",
-    "Stops the panel injecting xtls-rprx-vision into this inbound. Vision keeps working on your other inbounds. Needs panel v3.7.0." to "Запрещает панели подставлять xtls-rprx-vision этому inbound. На остальных ваших inbound Vision продолжит работать. Нужна панель v3.7.0.",
+    "Stops the panel injecting xtls-rprx-vision into this inbound. Vision keeps working on your other inbounds. Needs panel v3.7.0." to "Запрещает панели подставлять xtls-rprx-vision этому входящему. На остальных ваших входящих Vision продолжит работать. Нужна панель v3.7.0.",
     "Scope" to "Область действия",
     "Admin (full access)" to "Admin (полный доступ)",
     "Monitor (read-only)" to "Monitor (только чтение)",
     "Node sync" to "Node sync (синхронизация узлов)",
     "Everything the panel API can do." to "Всё, что умеет API панели.",
     "Server status and metric history only." to "Только состояние сервера и история метрик.",
-    "What a central panel needs: inbounds, clients, restart Xray." to "То, что нужно центральной панели: inbound, клиенты, перезапуск Xray.",
+    "What a central panel needs: inbounds, clients, restart Xray." to "То, что нужно центральной панели: входящие, клиенты, перезапуск Xray.",
     "Expires in, days (0 = never)" to "Истекает через, дней (0 — никогда)",
     "Scope and expiry need panel v3.7.0. An older panel ignores them and issues a full-access token." to "Область действия и срок требуют панель v3.7.0. Панель постарее их игнорирует и выдаёт токен с полным доступом.",
     "until" to "до",
@@ -133,7 +133,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Notifications" to "Уведомления",
     "Panel alerts" to "Оповещения панели",
     "Client expiry, traffic limits, inbounds & node status" to
-        "Истечение клиентов, лимиты трафика, доступность инбаундов и узлов",
+        "Истечение клиентов, лимиты трафика, доступность входящих и узлов",
     "Days before expiry" to "Дней до истечения",
     "Traffic threshold (%)" to "Порог трафика (%)",
     "Checks all saved panels every 30 minutes." to
@@ -141,15 +141,15 @@ val ruStrings: Map<String, String> = mapOf(
     "Client alerts" to "Оповещения о клиентах",
     "Client expiry and traffic limits" to "Истечение клиентов и лимиты трафика",
     "Panel, Xray and node status" to "Состояние панели, Xray и узлов",
-    "Inbounds unreachable" to "Инбаунды недоступны",
-    "Inbound unreachable" to "Инбаунд недоступен",
+    "Inbounds unreachable" to "Входящие недоступны",
+    "Inbound unreachable" to "Входящий недоступен",
     "Panel unreachable" to "Панель недоступна",
     "Panel port" to "Порт панели",
     "This port on the panel host is probed for reachability (default 443). Per-inbound ports are monitored separately, from each inbound's editor." to
-        "Этот порт на хосте панели проверяется на доступность (по умолчанию 443). Порты отдельных инбаундов мониторятся отдельно — из редактора каждого инбаунда.",
+        "Этот порт на хосте панели проверяется на доступность (по умолчанию 443). Порты входящих мониторятся отдельно — из редактора каждого входящего.",
     "Monitor reachability" to "Мониторить доступность",
     "Panel alerts notify you if this inbound's port stops answering (for inbounds exposed directly, without a reverse proxy)." to
-        "Оповещения панели сообщат, если порт этого инбаунда перестанет отвечать (для инбаундов с прямым доступом, без реверс-прокси).",
+        "Оповещения панели сообщат, если порт этого входящего перестанет отвечать (для входящих с прямым доступом, без реверс-прокси).",
     "Xray is down" to "Xray остановлен",
     "Client expired" to "Клиент истёк",
     "Client expires soon" to "Клиент скоро истечёт",
@@ -223,9 +223,9 @@ val ruStrings: Map<String, String> = mapOf(
     "Test route" to "Тест маршрута",
     "Domain or IP" to "Домен или IP",
     "Port (optional)" to "Порт (необязательно)",
-    "default outbound" to "outbound по умолчанию",
+    "default outbound" to "исходящий по умолчанию",
     "via" to "через",
-    "No rule matched — uses the default outbound." to "Ни одно правило не сработало — используется outbound по умолчанию.",
+    "No rule matched — uses the default outbound." to "Ни одно правило не сработало — используется исходящий по умолчанию.",
     "No clients yet." to "Пока нет клиентов.",
     "Subscription" to "Подписка",
     "Auto-updating link for all configs" to "Авто-обновляемая ссылка на все конфиги",
@@ -243,10 +243,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Traffic reset" to "Сброс трафика",
     "Expiry" to "Срок действия",
     "Sniffing" to "Sniffing",
-    "New inbound" to "Новый inbound",
-    "Edit inbound" to "Изменить inbound",
-    "Delete inbound" to "Удалить inbound",
-    "Delete inbound?" to "Удалить inbound?",
+    "New inbound" to "Новый входящий",
+    "Edit inbound" to "Изменить входящий",
+    "Delete inbound" to "Удалить входящий",
+    "Delete inbound?" to "Удалить входящий?",
     "Add node" to "Добавить узел",
     "Edit node" to "Изменить узел",
     "Delete node" to "Удалить узел",
@@ -326,15 +326,15 @@ val ruStrings: Map<String, String> = mapOf(
     "Update available:" to "Доступно обновление:",
     "Traffic this month" to "Трафик за месяц",
     "since" to "с",
-    "not all inbounds reset monthly" to "не все inbounds сбрасываются ежемесячно",
+    "not all inbounds reset monthly" to "не все входящие сбрасываются ежемесячно",
     "Geo databases" to "Гео-базы",
     "Update all" to "Обновить все",
-    // Outbounds editor (the word "outbound" is left untranslated in RU)
-    "Add outbound" to "Добавить outbound",
-    "New outbound" to "Новый outbound",
-    "Edit outbound" to "Изменить outbound",
-    "Delete outbound?" to "Удалить outbound?",
-    "This outbound" to "Этот outbound",
+    // Outbounds editor
+    "Add outbound" to "Добавить исходящий",
+    "New outbound" to "Новый исходящий",
+    "Edit outbound" to "Изменить исходящий",
+    "Delete outbound?" to "Удалить исходящий?",
+    "This outbound" to "Этот исходящий",
     "Done" to "Готово",
     "Tag" to "Тег",
     "Address" to "Адрес",
@@ -398,8 +398,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Export" to "Экспорт",
     "Export rules" to "Экспорт правил",
     "Import rules" to "Импорт правил",
-    "Export outbounds" to "Экспорт outbounds",
-    "Import outbounds" to "Импорт outbounds",
+    "Export outbounds" to "Экспорт исходящих",
+    "Import outbounds" to "Импорт исходящих",
     "Export DNS servers" to "Экспорт DNS-серверов",
     "Import DNS servers" to "Импорт DNS-серверов",
     "Paste JSON" to "Вставьте JSON",
@@ -416,7 +416,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Match" to "Условия",
     "Outbound tag" to "Тег исходящего",
     "Balancer tag" to "Тег балансировщика",
-    "Inbound tags (comma-separated)" to "Теги inbound (через запятую)",
+    "Inbound tags (comma-separated)" to "Теги входящих (через запятую)",
     "Domain (comma-separated)" to "Домены (через запятую)",
     "Destination IP (comma-separated)" to "IP назначения (через запятую)",
     "Source IPs (comma-separated)" to "Source IP (через запятую)",
@@ -459,10 +459,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Error log (path, empty = off)" to "Error-лог (путь, пусто = выкл)",
     "Mask address" to "Маскировать адрес",
     "DNS log" to "DNS-лог",
-    "Inbound uplink stats" to "Статистика inbound ↑",
-    "Inbound downlink stats" to "Статистика inbound ↓",
-    "Outbound uplink stats" to "Статистика outbound ↑",
-    "Outbound downlink stats" to "Статистика outbound ↓",
+    "Inbound uplink stats" to "Статистика входящих ↑",
+    "Inbound downlink stats" to "Статистика входящих ↓",
+    "Outbound uplink stats" to "Статистика исходящих ↑",
+    "Outbound downlink stats" to "Статистика исходящих ↓",
     "Update geo database?" to "Обновить гео-базу?",
     "Update all geo databases?" to "Обновить все гео-базы?",
     "Downloads the latest database and restarts Xray, " +
@@ -514,7 +514,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Delete unbound clients" to "Удалить несвязанных клиентов",
     "Delete unbound clients?" to "Удалить несвязанных клиентов?",
     "Removes every client not attached to any inbound, with their traffic and links. This can't be undone." to
-        "Удаляет всех клиентов без привязки к inbound — вместе с их трафиком и ссылками. Отменить нельзя.",
+        "Удаляет всех клиентов без привязки к входящим — вместе с их трафиком и ссылками. Отменить нельзя.",
 
     // Client groups
     "Groups" to "Группы",
@@ -548,7 +548,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Add to group" to "Добавить в группу",
     "Remove from group" to "Убрать из группы",
     "Clients already in this group are not listed. Their inbounds stay as they are — only the group changes." to
-        "Клиенты, которые уже в этой группе, здесь не показаны. Привязки к inbound'ам не меняются — меняется только группа.",
+        "Клиенты, которые уже в этой группе, здесь не показаны. Привязки к входящим не меняются — меняется только группа.",
     "The clients stay on the panel — they only leave the group." to
         "Клиенты остаются в панели — они только выходят из группы.",
     "Search clients" to "Поиск клиентов",
@@ -581,8 +581,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Apply changes to" to "Применить изменения к",
 
     // Inbounds list & rows
-    "No inbounds yet." to "Пока нет inbound'ов.",
-    "Add inbound" to "Добавить inbound",
+    "No inbounds yet." to "Пока нет входящих.",
+    "Add inbound" to "Добавить входящий",
     "of " to "из ",
     "Expires " to "Истекает ",
 
@@ -611,13 +611,13 @@ val ruStrings: Map<String, String> = mapOf(
     "Insert decryption" to "Вставить decryption",
     "No keys returned." to "Ключи не получены.",
     "Decryption goes on this inbound; encryption goes to the clients." to
-        "Decryption — на этот inbound; encryption — клиентам.",
+        "Decryption — на этот входящий; encryption — клиентам.",
     "Clients are managed on the Clients tab and are kept as-is." to
         "Клиентами управляет вкладка Clients, здесь они не затрагиваются.",
-    "Create inbound?" to "Создать inbound?",
-    "Apply changes to this inbound?" to "Применить изменения к этому inbound?",
+    "Create inbound?" to "Создать входящий?",
+    "Apply changes to this inbound?" to "Применить изменения к этому входящему?",
     "This removes the inbound and all its clients. This can't be undone." to
-        "Это удалит inbound и всех его клиентов. Отменить нельзя.",
+        "Это удалит входящий и всех его клиентов. Отменить нельзя.",
 
     // Nodes list & rows
     "No nodes. Tap + to add a remote panel." to
@@ -628,8 +628,8 @@ val ruStrings: Map<String, String> = mapOf(
         "Узел перезапускается во время обновления. Если приложение подключено к панели через этот узел, соединение прервётся — переподключитесь вручную.",
     "If the app reaches the panel through it, the connection will drop — reconnect manually." to
         "Если приложение подключено к панели через неё, соединение прервётся — переподключитесь вручную.",
-    "Connection outbound (empty = direct)" to "Outbound для подключения (пусто = напрямую)",
-    "Detach its inbounds first" to "Сначала отвяжите его inbound'ы",
+    "Connection outbound (empty = direct)" to "Через исходящий (пусто = напрямую)",
+    "Detach its inbounds first" to "Сначала отвяжите его входящие",
     "Node mTLS" to "mTLS узлов",
     "Mutual TLS: the API token is optional. Register this panel's CA on the node (menu → Node mTLS)." to
         "Mutual TLS: API-токен необязателен. Зарегистрируйте CA этой панели на узле (меню → mTLS узлов).",
@@ -662,17 +662,17 @@ val ruStrings: Map<String, String> = mapOf(
     "On panel v3.3.0+ the Xray config works with an API token. On older panels it's only exposed to a login session — reconnect with login/password." to
         "На панели v3.3.0+ конфиг Xray работает по API-токену. На более старых панелях он доступен только сессии по логину — переподключитесь по логину/паролю.",
     "Full Xray config — outbounds, routing, DNS, etc. Same as the " to
-        "Полный конфиг Xray — outbounds, routing, DNS и т.д. То же, что ",
+        "Полный конфиг Xray — исходящие, маршрутизация, DNS и т.д. То же, что ",
     "panel's Xray Configuration page. Save, then restart Xray to apply." to
         "страница Xray Configuration в панели. Сохраните и перезапустите Xray.",
-    "Outbound test URL" to "URL для теста outbound",
+    "Outbound test URL" to "URL теста исходящих",
     "xray config (JSON)" to "конфиг xray (JSON)",
     "Save Xray config?" to "Сохранить конфиг Xray?",
 
     // Client share sheet
     "No connection links for this client." to "Нет ссылок-соединений у этого клиента.",
     "will be removed from every attached inbound." to
-        "будет удалён из всех привязанных inbound'ов.",
+        "будет удалён из всех привязанных входящих.",
     "No subscription URL. On panel v3.3.0+ the app reads the " +
         "base automatically (token or login). Otherwise set the " +
         "\"Subscription base URL\" on the connect screen " +
@@ -717,7 +717,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Download the database and save it to a file on this device." to
         "Скачать базу и сохранить в файл на этом устройстве.",
     "The backup is the panel's whole database — settings, inbounds, clients and the Xray config. The panel saves SQLite as x-ui.db and PostgreSQL as x-ui.dump; either restores back here." to
-        "Бэкап — это вся база панели: настройки, inbounds, клиенты и конфиг Xray. " +
+        "Бэкап — это вся база панели: настройки, входящие, клиенты и конфиг Xray. " +
         "Панель сохраняет SQLite как x-ui.db, а PostgreSQL как x-ui.dump; и то, и другое восстанавливается обратно сюда.",
     "Restore" to "Восстановить",
     "Restore from file" to "Восстановить из файла",
@@ -794,8 +794,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Sender name" to "Имя отправителя",
     "Email settings saved" to "Настройки почты сохранены",
     "Consecutive failed probes before an \"outbound down\" alert fires. 1 = alert on the first failure." to
-        "Сколько подряд неудачных проверок до оповещения «outbound недоступен». 1 = оповещать при первой неудаче.",
-    "Outbound-down threshold" to "Порог оповещения outbound",
+        "Сколько подряд неудачных проверок до оповещения «исходящий недоступен». 1 = оповещать при первой неудаче.",
+    "Outbound-down threshold" to "Порог сбоя исходящего",
     "Notification settings saved" to "Настройки уведомлений сохранены",
     "Panel" to "Панель",
     "Restart the panel service. The app's connection drops for a few seconds while it comes back." to
@@ -901,7 +901,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Fetched by the panel and merged into the config — testable and usable in routing, but edited through the subscription, not here." to
         "Панель загружает его из подписки и добавляет в конфиг — его можно проверять и использовать в маршрутизации, но правится он через подписку, а не здесь.",
     "Test mode" to "Режим проверки",
-    "Real delay" to "Реальная задержка",
+    "Real delay" to "Задержка",
     "unreachable" to "недоступен",
     "RAM" to "ОЗУ",
     "Flow" to "Flow",
