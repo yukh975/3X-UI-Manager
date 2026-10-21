@@ -1,5 +1,7 @@
 package net.yukh.xui.app
 
+import net.yukh.xui.shared.profile.SavedSession
+
 import net.yukh.xui.shared.api.PanelApi
 import net.yukh.xui.shared.api.tcpReachable
 import net.yukh.xui.shared.dto.PanelSubSettings
