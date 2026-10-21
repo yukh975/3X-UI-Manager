@@ -49,7 +49,7 @@ fun SessionStore.activeProfile(): SavedSession? {
     return all.firstOrNull { it.id == activeId() } ?: all.firstOrNull()
 }
 
-/** Add the profile (or replace the one with the same URL), keeping order, and make it active. */
+/** Add the profile (or replace the one with the same id), keeping order, and make it active. */
 fun SessionStore.upsertActive(session: SavedSession) {
     val all = loadProfiles()
     val updated = if (all.any { it.id == session.id }) all.map { if (it.id == session.id) session else it }
@@ -57,6 +57,9 @@ fun SessionStore.upsertActive(session: SavedSession) {
     saveProfiles(updated)
     setActiveId(session.id)
 }
+
+fun SessionStore.replaceProfile(session: SavedSession) =
+    saveProfiles(loadProfiles().map { if (it.id == session.id) session else it })
 
 /** Remove a profile; returns the remaining list. */
 fun SessionStore.removeProfile(id: String): List<SavedSession> {

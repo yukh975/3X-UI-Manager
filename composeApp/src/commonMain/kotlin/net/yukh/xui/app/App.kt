@@ -1,6 +1,8 @@
 package net.yukh.xui.app
 
 import net.yukh.xui.shared.profile.SavedSession
+import net.yukh.xui.shared.profile.idFor
+import net.yukh.xui.shared.profile.urlTakenByOther
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -109,6 +111,7 @@ fun App() {
             var baseUrl by remember { mutableStateOf("") }
             var token by remember { mutableStateOf("") }
             var allowInsecure by remember { mutableStateOf(false) }
+            var panelName by remember { mutableStateOf("") }
             var connected by remember { mutableStateOf(false) }
             var busy by remember { mutableStateOf(false) }
             var refreshing by remember { mutableStateOf(false) }
@@ -208,6 +211,8 @@ fun App() {
             var addUrl by remember { mutableStateOf("") }
             var addToken by remember { mutableStateOf("") }
             var addInsecure by remember { mutableStateOf(false) }
+            var addName by remember { mutableStateOf("") }
+            var editingProfileId by remember { mutableStateOf<String?>(null) }
             var addBusy by remember { mutableStateOf(false) }
             var addError by remember { mutableStateOf<String?>(null) }
             val store = remember { SessionStore() }
@@ -304,7 +309,7 @@ fun App() {
 
             // Validate URL+token by fetching status; on success keep the client,
             // mark connected and persist the session. Returns success.
-            suspend fun connect(url: String, tok: String, insecure: Boolean, save: Boolean = true): Boolean {
+            suspend fun connect(url: String, tok: String, insecure: Boolean, name: String = "", save: Boolean = true): Boolean {
                 busy = true
                 error = null
                 val a = PanelApi(url.trim(), tok.trim(), insecure)
@@ -327,7 +332,7 @@ fun App() {
                 }
                 busy = false
                 if (ok && save) {
-                    val s = SavedSession(url.trim(), tok.trim(), insecure)
+                    val s = SavedSession(url.trim(), tok.trim(), insecure, name.trim(), profiles.idFor(url.trim()))
                     store.upsertActive(s)
                     profiles = store.loadProfiles()
                     activeId = s.id
@@ -535,6 +540,7 @@ fun App() {
                         baseUrl = saved.baseUrl
                         token = saved.token
                         allowInsecure = saved.allowInsecure
+                        panelName = saved.name
                         activeId = saved.id
                         // Returning user with a saved session: arm the lock before
                         // the panel can render. A fresh manual sign-in (onConnect)
@@ -573,7 +579,7 @@ fun App() {
                 scope.launch {
                     api?.close()
                     api = PanelApi(p.baseUrl, p.token, p.allowInsecure)
-                    baseUrl = p.baseUrl; token = p.token; allowInsecure = p.allowInsecure
+                    baseUrl = p.baseUrl; token = p.token; allowInsecure = p.allowInsecure; panelName = p.name
                     activeId = p.id; store.setActiveId(p.id)
                     connected = true
                     clearPanelData()
@@ -615,10 +621,51 @@ fun App() {
                         catch (e: Throwable) { addError = e.message ?: "Network error"; false }
                     a.close()
                     if (ok) {
-                        val s = SavedSession(addUrl.trim(), addToken.trim(), addInsecure)
+                        val s = SavedSession(addUrl.trim(), addToken.trim(), addInsecure, addName.trim(), profiles.idFor(addUrl.trim()))
                         store.upsertActive(s); profiles = store.loadProfiles()
-                        addingPanel = false; addUrl = ""; addToken = ""; addInsecure = false; addError = null
+                        addingPanel = false; addUrl = ""; addToken = ""; addInsecure = false; addName = ""; addError = null
                         switchProfile(s)
+                    } else if (addError == null) {
+                        addError = "Login failed — check URL / token"
+                    }
+                    addBusy = false
+                }
+            }
+
+            fun startProfileEdit(p: SavedSession) {
+                addUrl = p.baseUrl; addToken = p.token; addInsecure = p.allowInsecure; addName = p.name
+                addError = null; editingProfileId = p.id; addingPanel = true
+            }
+
+            fun closePanelForm() {
+                addingPanel = false; editingProfileId = null; addError = null
+            }
+
+            // A rename is saved as is; a new URL, token or TLS setting is probed first (#11).
+            fun saveProfileEdit() {
+                val original = profiles.firstOrNull { it.id == editingProfileId } ?: return
+                val edited = original.edited(addUrl, addToken, addInsecure, addName)
+                if (profiles.urlTakenByOther(edited.id, edited.baseUrl)) {
+                    addError = tr(lang, "Another saved panel already uses this URL")
+                    return
+                }
+                val reconnect = edited.connectionDiffersFrom(original)
+                scope.launch {
+                    addBusy = true; addError = null
+                    val ok = if (!reconnect) true else {
+                        val a = PanelApi(edited.baseUrl, edited.token, edited.allowInsecure)
+                        val reachable = try {
+                            a.serverStatus().let { r -> r.success.also { if (!it) addError = r.msg.ifBlank { null } } }
+                        } catch (e: Throwable) { addError = e.message ?: "Network error"; false }
+                        a.close()
+                        reachable
+                    }
+                    if (ok) {
+                        store.replaceProfile(edited); profiles = store.loadProfiles()
+                        closePanelForm()
+                        if (edited.id == activeId) {
+                            if (reconnect) switchProfile(edited) else panelName = edited.name
+                        }
                     } else if (addError == null) {
                         addError = "Login failed — check URL / token"
                     }
@@ -662,7 +709,9 @@ fun App() {
                         onBaseUrl = { baseUrl = it; error = null },
                         onToken = { token = it; error = null },
                         onAllowInsecure = { allowInsecure = it },
-                        onConnect = { scope.launch { connect(baseUrl, token, allowInsecure) } },
+                        onConnect = { scope.launch { connect(baseUrl, token, allowInsecure, panelName) } },
+                        name = panelName,
+                        onName = { panelName = it },
                         onSettings = { showConnectSettings = true },
                     )
                 } else if (editingClient != null) {
@@ -1123,9 +1172,12 @@ fun App() {
                         onBaseUrl = { addUrl = it; addError = null },
                         onToken = { addToken = it; addError = null },
                         onAllowInsecure = { addInsecure = it },
-                        onConnect = { connectAdd() },
-                        addMode = true,
-                        onClose = { addingPanel = false; addError = null },
+                        onConnect = { if (editingProfileId != null) saveProfileEdit() else connectAdd() },
+                        name = addName,
+                        onName = { addName = it },
+                        addMode = editingProfileId == null,
+                        editMode = editingProfileId != null,
+                        onClose = { closePanelForm() },
                     )
                 } else {
                     val tabs = listOf("Dashboard", "Inbounds", "Clients", "Nodes", "More")
@@ -1331,7 +1383,8 @@ fun App() {
                                     profiles = profiles,
                                     activeId = activeId,
                                     onSwitch = { p -> if (p.id != activeId) switchProfile(p) },
-                                    onAddPanel = { addUrl = ""; addToken = ""; addInsecure = false; addError = null; addingPanel = true },
+                                    onAddPanel = { addUrl = ""; addToken = ""; addInsecure = false; addName = ""; addError = null; editingProfileId = null; addingPanel = true },
+                                    onEditProfile = { p -> startProfileEdit(p) },
                                     onDeleteProfile = { p -> deleteProfile(p) },
                                     onXrayConfig = { showXray = true; editorError = null; scope.launch { loadXray() } },
                                     onGeneralX = { showGeneralX = true; editorError = null; scope.launch { loadXray() } },
