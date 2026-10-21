@@ -1,22 +1,8 @@
 package net.yukh.xui.app
 
-/**
- * Persisted connection profile (panel base URL + API token + TLS trust). Keyed by
- * [baseUrl] — one profile per panel URL, mirroring the Android app's multi-profile
- * (multi-instance) model. [name] is an optional display label.
- */
-data class SavedSession(
-    val baseUrl: String,
-    val token: String,
-    val allowInsecure: Boolean = false,
-    val name: String = "",
-) {
-    /** Stable identifier — the panel URL. */
-    val id: String get() = baseUrl
-
-    /** Label for the panel switcher — the saved name, else the host. */
-    val label: String get() = name.ifBlank { hostOf(baseUrl) }
-}
+import net.yukh.xui.shared.profile.SavedSession
+import net.yukh.xui.shared.profile.decodeSessions
+import net.yukh.xui.shared.profile.encodeSessions
 
 /**
  * Cross-platform key/value persistence (iOS = NSUserDefaults, JVM = java.util.prefs).
@@ -63,7 +49,7 @@ fun SessionStore.activeProfile(): SavedSession? {
     return all.firstOrNull { it.id == activeId() } ?: all.firstOrNull()
 }
 
-/** Add the profile (or replace the one with the same URL), keeping order, and make it active. */
+/** Add the profile (or replace the one with the same id), keeping order, and make it active. */
 fun SessionStore.upsertActive(session: SavedSession) {
     val all = loadProfiles()
     val updated = if (all.any { it.id == session.id }) all.map { if (it.id == session.id) session else it }
@@ -71,6 +57,9 @@ fun SessionStore.upsertActive(session: SavedSession) {
     saveProfiles(updated)
     setActiveId(session.id)
 }
+
+fun SessionStore.replaceProfile(session: SavedSession) =
+    saveProfiles(loadProfiles().map { if (it.id == session.id) session else it })
 
 /** Remove a profile; returns the remaining list. */
 fun SessionStore.removeProfile(id: String): List<SavedSession> {
@@ -99,22 +88,3 @@ fun SessionStore.saveSpeedInBits(value: Boolean) = putString(KEY_SPEED_BITS, val
 /** Update channel: "stable" (GitHub) or "testing" (home GitLab). Default stable. */
 fun SessionStore.loadUpdateChannel(): String = getString(KEY_UPDATE_CHANNEL) ?: "stable"
 fun SessionStore.saveUpdateChannel(channel: String) = putString(KEY_UPDATE_CHANNEL, channel)
-
-// ---- encoding (composeApp has no kotlinx-serialization dependency) ----------
-// Fields joined by U+0001, profiles by U+0002 — control chars that never appear
-// in URLs or tokens.
-
-private const val FS = ""
-private const val RS = ""
-
-internal fun encodeSessions(list: List<SavedSession>): String =
-    list.joinToString(RS) { "${it.name}$FS${it.baseUrl}$FS${it.token}$FS${it.allowInsecure}" }
-
-internal fun decodeSessions(s: String): List<SavedSession> =
-    s.split(RS).filter { it.isNotBlank() }.mapNotNull { row ->
-        val p = row.split(FS)
-        if (p.size >= 4) SavedSession(name = p[0], baseUrl = p[1], token = p[2], allowInsecure = p[3] == "true")
-        else null
-    }
-
-internal fun hostOf(url: String): String = url.substringAfter("://", url).substringBefore("/").ifBlank { url }

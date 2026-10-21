@@ -49,6 +49,7 @@ import net.yukh.xui.shared.dto.inboundStreamWithWsTlsAlpn
 import net.yukh.xui.shared.dto.inboundTlsCertField
 import net.yukh.xui.shared.dto.masqueSettingsValid
 import net.yukh.xui.shared.dto.masqueSettingsWithMtu
+import net.yukh.xui.shared.dto.mtprotoSettingsWithPendingHandshakes
 import net.yukh.xui.shared.dto.ssSettingsWithMethod
 import net.yukh.xui.shared.dto.ssSettingsWithNewKey
 import net.yukh.xui.shared.dto.settingsText
@@ -381,6 +382,19 @@ private fun ProtocolSettingsFields(protocol: String, settingsJson: String, onCha
             EditField(mtu, { onChange(masqueSettingsWithMtu(settingsJson, it)) }, tr("MTU (1280–65535, blank = 1280)"), KeyboardType.Number)
             Text(
                 tr("MASQUE clients sign in with email and password. They get the connection from the JSON subscription: MASQUE has no share link."),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        "mtproto" -> {
+            EditField(
+                jsonGetString(settingsJson, listOf("pendingHandshakesMaxPerIp")),
+                { onChange(mtprotoSettingsWithPendingHandshakes(settingsJson, it)) },
+                tr("Max pending handshakes per IP"),
+                KeyboardType.Number,
+            )
+            Text(
+                tr("Close new connections from an IP that already has this many unfinished handshakes. Clients behind a shared IP (carrier NAT) share the limit. 0 disables it. Needs mtg-multi 1.16.0 or newer (panel 3.10.2)."),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

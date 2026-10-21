@@ -1,5 +1,7 @@
 package net.yukh.xui.app
 
+import net.yukh.xui.shared.profile.SavedSession
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -51,6 +53,7 @@ fun MoreScreen(
     activeId: String?,
     onSwitch: (SavedSession) -> Unit,
     onAddPanel: () -> Unit,
+    onEditProfile: (SavedSession) -> Unit,
     onDeleteProfile: (SavedSession) -> Unit,
     onXrayConfig: () -> Unit,
     onGeneralX: () -> Unit,
@@ -93,6 +96,7 @@ fun MoreScreen(
                                 maxLines = 1,
                             )
                         }
+                        TextButton(onClick = { onEditProfile(p) }) { Text(tr("Edit")) }
                         // Always available — signing out of the last panel returns
                         // to the Connect screen (this replaces the old Disconnect).
                         TextButton(onClick = { confirmDelete = p }) {

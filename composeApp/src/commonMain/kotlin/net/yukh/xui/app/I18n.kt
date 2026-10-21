@@ -222,6 +222,10 @@ val ruStrings: Map<String, String> = mapOf(
     "Connect to your panel" to "Подключение к панели",
     "Connect to another panel" to "Подключение к другой панели",
     "Add panel" to "Добавить панель",
+    "Edit panel" to "Изменить панель",
+    "Name (optional)" to "Название (необязательно)",
+    "Shown in the panel switcher instead of the host." to "Показывается в переключателе панелей вместо адреса.",
+    "Another saved panel already uses this URL" to "Этот URL уже есть у другой сохранённой панели",
     "Panels" to "Панели",
     "Sign out" to "Выйти",
     "Sign out of this panel?" to "Выйти из этой панели?",
@@ -428,6 +432,9 @@ val ruStrings: Map<String, String> = mapOf(
     "Add clients…" to "Добавить клиентов…",
     "Remove clients…" to "Убрать клиентов…",
     "Reset traffic" to "Сбросить трафик",
+    "Reset this client's traffic?" to "Сбросить трафик этого клиента?",
+    "Reset traffic of the selected clients?" to "Сбросить трафик выбранных клиентов?",
+    "Used traffic starts from zero, and a client its quota switched off is enabled again." to "Израсходованный трафик обнуляется, а клиент, отключённый по лимиту, снова включается.",
     "Rename" to "Переименовать",
     "Delete group" to "Удалить группу",
     "Delete the group's clients" to "Удалить клиентов группы",
@@ -723,6 +730,9 @@ val ruStrings: Map<String, String> = mapOf(
     "MTU (1280–65535, blank = 1280)" to "MTU (1280–65535, пусто = 1280)",
     "MASQUE clients sign in with email and password. They get the connection from the JSON subscription: MASQUE has no share link." to
         "Клиенты MASQUE входят по email и паролю. Подключение они получают из JSON-подписки: ссылки для MASQUE нет.",
+    "Max pending handshakes per IP" to "Макс. незавершённых рукопожатий на IP",
+    "Close new connections from an IP that already has this many unfinished handshakes. Clients behind a shared IP (carrier NAT) share the limit. 0 disables it. Needs mtg-multi 1.16.0 or newer (panel 3.10.2)." to
+        "Новые подключения с IP, у которого уже столько незавершённых рукопожатий, закрываются. Клиенты за общим IP (NAT оператора) делят этот лимит. 0 — отключено. Нужен mtg-multi 1.16.0 или новее (панель 3.10.2).",
     "XDRIVE storage is edited in the Transport / security JSON below. Its security stays None: Xray would read TLS here as the storage API's client TLS." to
         "Хранилище XDRIVE настраивается в поле «Транспорт / безопасность (JSON)» ниже. Безопасность остаётся None: Xray принял бы TLS здесь за клиентский TLS к API хранилища.",
     "Certificate file" to "Файл сертификата",

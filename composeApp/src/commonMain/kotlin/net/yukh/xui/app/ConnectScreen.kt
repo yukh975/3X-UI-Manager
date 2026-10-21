@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import net.yukh.xui.shared.profile.hostLabel
 
 /** First screen: panel base URL + API token. Mirrors the Android Connect screen
  *  (token auth path), shared via Compose Multiplatform. */
@@ -37,7 +38,10 @@ fun ConnectScreen(
     onToken: (String) -> Unit,
     onAllowInsecure: (Boolean) -> Unit,
     onConnect: () -> Unit,
+    name: String = "",
+    onName: ((String) -> Unit)? = null,
     addMode: Boolean = false,
+    editMode: Boolean = false,
     onClose: (() -> Unit)? = null,
     onSettings: (() -> Unit)? = null,
 ) {
@@ -48,16 +52,22 @@ fun ConnectScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            if (addMode) tr("Add panel") else "3X-UI Manager",
+            when {
+                editMode -> tr("Edit panel")
+                addMode -> tr("Add panel")
+                else -> "3X-UI Manager"
+            },
             style = MaterialTheme.typography.headlineMedium,
         )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            if (addMode) tr("Connect to another panel")
-            else tr("Sign in with an API token. Requires panel v3.3.0 or newer."),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (!editMode) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (addMode) tr("Connect to another panel")
+                else tr("Sign in with an API token. Requires panel v3.3.0 or newer."),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(
@@ -70,6 +80,19 @@ fun ConnectScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             modifier = Modifier.fillMaxWidth().widthIn(max = 480.dp),
         )
+        if (onName != null) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = name,
+                onValueChange = onName,
+                label = { Text(tr("Name (optional)")) },
+                placeholder = { Text(hostLabel(baseUrl.trim())) },
+                supportingText = { Text(tr("Shown in the panel switcher instead of the host.")) },
+                singleLine = true,
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().widthIn(max = 480.dp),
+            )
+        }
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = token,
@@ -108,10 +131,16 @@ fun ConnectScreen(
             if (busy) {
                 CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
             } else {
-                Text(if (addMode) tr("Add") else tr("Connect"))
+                Text(
+                    when {
+                        editMode -> tr("Save")
+                        addMode -> tr("Add")
+                        else -> tr("Connect")
+                    },
+                )
             }
         }
-        if (addMode && onClose != null) {
+        if ((addMode || editMode) && onClose != null) {
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onClose, enabled = !busy) { Text(tr("Cancel")) }
         }
