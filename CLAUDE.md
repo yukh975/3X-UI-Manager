@@ -37,7 +37,8 @@ Android side but the API/behaviour facts apply to the Apple app too.
    - **Don't build on this Intel Mac** unless asked (slow/unstable); the user
      verifies iOS/desktop on an Apple-Silicon machine.
 4. Keep **both READMEs** (`README.md` + `README.ru.md`) updated.
-5. In the **Russian** UI, do **not** translate the words `inbound` / `outbound`.
+5. The **Russian** UI says «Входящие» / «Исходящие» (tag: «Тег исходящего»), never `inbound` / `outbound` / «инбаунд»; a test fails on any Russian value that contains them.
+   A new UI string goes into `ruStrings` and `zhStrings` together (`I18nTest` pins key parity).
 6. Copyright: `© 2026 Yuriy Khachaturian (yukh.net)`.
 
 ## Quick facts

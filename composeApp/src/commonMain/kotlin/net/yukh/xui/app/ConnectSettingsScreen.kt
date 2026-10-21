@@ -55,6 +55,7 @@ fun ConnectSettingsScreen(
                 LangRow(tr("System default"), lang == LANG_SYSTEM) { onLang(LANG_SYSTEM) }
                 LangRow(tr("English"), lang == LANG_EN) { onLang(LANG_EN) }
                 LangRow(tr("Русский"), lang == LANG_RU) { onLang(LANG_RU) }
+                LangRow("中文", lang == LANG_ZH) { onLang(LANG_ZH) }
             }
         }
 
