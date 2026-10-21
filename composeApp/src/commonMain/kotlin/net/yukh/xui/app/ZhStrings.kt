@@ -611,4 +611,15 @@ val zhStrings: Map<String, String> = mapOf(
     "Saved — applies when Xray starts" to "已保存——将在 Xray 启动时生效",
     "Saved — the panel applies it within 30 seconds" to "已保存——面板将在 30 秒内应用",
     "The panel applies the config on save, restarting Xray only when a change can't be applied live. A broken config can take Xray down." to "面板会在保存时应用配置，仅当更改无法实时生效时才重启 Xray。错误的配置可能导致 Xray 宕机。",
+    "Edit panel" to "编辑面板",
+    "Name (optional)" to "名称（可选）",
+    "Shown in the panel switcher instead of the host." to "在面板切换器中代替主机地址显示。",
+    "Another saved panel already uses this URL" to "另一个已保存的面板已使用此 URL",
+    "Reset this client's traffic?" to "重置此客户端的流量？",
+    "Reset traffic of the selected clients?" to "重置所选客户端的流量？",
+    "Used traffic starts from zero, and a client its quota switched off is enabled again." to
+        "已用流量将从零开始，因配额用尽而被停用的客户端会重新启用。",
+    "Max pending handshakes per IP" to "每个 IP 的最大未完成握手数",
+    "Close new connections from an IP that already has this many unfinished handshakes. Clients behind a shared IP (carrier NAT) share the limit. 0 disables it. Needs mtg-multi 1.16.0 or newer (panel 3.10.2)." to
+        "若某个 IP 的未完成握手数已达到此值，则关闭来自该 IP 的新连接。共享 IP（运营商 NAT）后的客户端共用此限制。0 表示禁用。需要 mtg-multi 1.16.0 或更高版本（面板 3.10.2）。",
 )
