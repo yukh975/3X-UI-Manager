@@ -197,6 +197,11 @@ fun masqueSettingsWithMtu(settingsJson: String, text: String): String = editObje
     it.with("mtu", if (digits.isEmpty()) null else JsonPrimitive(digits.toInt()))
 }
 
+fun mtprotoSettingsWithPendingHandshakes(settingsJson: String, text: String): String = editObject(settingsJson) {
+    val digits = text.filter(Char::isDigit).take(6)
+    it.with("pendingHandshakesMaxPerIp", if (digits.isEmpty()) null else JsonPrimitive(digits.toInt()))
+}
+
 /** MASQUE needs an address pool, and an MTU (when set) inside the panel's 1280–65535. */
 fun masqueSettingsValid(settingsJson: String): Boolean {
     val s = parseObjectOrNull(settingsJson) ?: return true
