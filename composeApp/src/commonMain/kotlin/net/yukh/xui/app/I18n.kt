@@ -8,8 +8,8 @@ import androidx.compose.runtime.compositionLocalOf
  * Tiny i18n for the shared Compose-MP UI, mirroring the Android app's approach:
  * `tr("English source")` looks the string up in [ruStrings] or [zhStrings] for
  * the current language, else returns the English source. The English text IS the
- * key, so partial coverage degrades gracefully. The words `inbound`/`outbound`
- * are intentionally NOT translated in Russian.
+ * key, so partial coverage degrades gracefully. Russian says «входящие» /
+ * «исходящие», never `inbound` / `outbound`.
  */
 const val LANG_EN = "en"
 const val LANG_RU = "ru"
@@ -48,16 +48,16 @@ fun tr(lang: String, en: String): String = when (lang) {
 }
 
 val ruStrings: Map<String, String> = mapOf(
-    // Tabs (Inbounds stays untranslated by project rule)
+    // Tabs
     "Dashboard" to "Дашборд",
     "System default" to "Как в системе",
-    "On a TUIC inbound the panel can't enforce a per-client traffic limit or IP limit — limit traffic on the TUIC inbound itself." to "На TUIC-inbound панель не может ограничить трафик и число IP отдельного клиента — лимит трафика задайте на самом TUIC-inbound.",
+    "On a TUIC inbound the panel can't enforce a per-client traffic limit or IP limit — limit traffic on the TUIC inbound itself." to "На TUIC-входящем панель не может ограничить трафик и число IP отдельного клиента — лимит трафика задайте на самом TUIC-входящем.",
     "Keepalive (seconds)" to "Keepalive (секунды)",
     "How often the client sends a keepalive. 25 keeps NAT open and brings an idle peer back after any drop; 0 turns it off." to "Как часто клиент отправляет keepalive. 25 держит NAT открытым и возвращает простаивающий пир после любого обрыва; 0 — выключено.",
     "Device fingerprint" to "Отпечаток устройства",
     "Empty keeps each client's limit. Lowering it removes the extra registered devices." to "Пусто — лимит каждого клиента не меняется. При снижении лишние зарегистрированные устройства удаляются.",
     "MTProto ad tag" to "Рекламный тег MTProto",
-    "32 hex characters to set, none to clear, empty to keep. MTProto inbounds only." to "32 hex-символа — задать, none — очистить, пусто — не менять. Только для MTProto-inbound.",
+    "32 hex characters to set, none to clear, empty to keep. MTProto inbounds only." to "32 hex-символа — задать, none — очистить, пусто — не менять. Только для MTProto-входящих.",
     "Encrypted Happ link" to "Зашифрованная ссылка Happ",
     "Turned off on the panel. Enable \"Encrypted subscription links\" in the panel's settings: Subscription → Happ → Subscription links." to "Выключено на панели. Включите «Зашифрованные ссылки подписки» в настройках панели: Подписка → Happ → Ссылки подписки.",
     "Too long for a QR code — copy or share the link instead." to "Слишком длинная для QR-кода — скопируйте ссылку или поделитесь ею.",
@@ -81,14 +81,14 @@ val ruStrings: Map<String, String> = mapOf(
     "Expiry time" to "Время окончания",
     "Expiry" to "Срок действия",
     "OK" to "OK",
-    "No IPs logged." to "Адресов пока нет.",
+    "No IPs logged." to "IP не зафиксированы.",
     "The panel keeps an address for 30 minutes after the last connection, so this stays empty for anyone who hasn't connected recently." to "Панель хранит адрес 30 минут после последнего подключения — поэтому у тех, кто давно не подключался, здесь пусто.",
-    "Geodata auto-update" to "Автообновление гео-баз",
+    "Geodata auto-update" to "Обновление гео-баз",
     "Xray downloads these files on schedule and reloads them without a restart. URLs must be HTTPS, and each file has to exist in the panel's bin folder once before Xray can update it." to "Xray скачивает эти файлы по расписанию и перечитывает их без перезапуска. Адреса — только HTTPS, и каждый файл должен один раз появиться в папке bin панели, иначе обновлять будет нечего.",
     "Schedule" to "Расписание",
     "Cron (5 fields)" to "Cron (5 полей)",
     "Cron must have 5 fields, e.g. 0 4 * * *" to "В cron должно быть 5 полей, например 0 4 * * *",
-    "Download through outbound (optional)" to "Скачивать через outbound (необязательно)",
+    "Download through outbound (optional)" to "Через исходящий (необязательно)",
     "Default route" to "Обычный маршрут",
     "Files" to "Файлы",
     "No files configured. Reference them in routing rules as ext:geosite_custom.dat:category." to "Файлы не заданы. В правилах маршрутизации на них ссылаются как ext:geosite_custom.dat:категория.",
@@ -112,17 +112,17 @@ val ruStrings: Map<String, String> = mapOf(
     "Devices" to "Устройства",
     "Forwarded ports" to "Проброшенные порты",
     "No devices registered." to "Устройств пока нет.",
-    "Last seen" to "Последний раз",
+    "Last seen" to "Был онлайн",
     "Remove" to "Удалить",
     "Disable XTLS flow" to "Отключить XTLS flow",
-    "Stops the panel injecting xtls-rprx-vision into this inbound. Vision keeps working on your other inbounds. Needs panel v3.7.0." to "Запрещает панели подставлять xtls-rprx-vision этому inbound. На остальных ваших inbound Vision продолжит работать. Нужна панель v3.7.0.",
+    "Stops the panel injecting xtls-rprx-vision into this inbound. Vision keeps working on your other inbounds. Needs panel v3.7.0." to "Запрещает панели подставлять xtls-rprx-vision этому входящему. На остальных ваших входящих Vision продолжит работать. Нужна панель v3.7.0.",
     "Scope" to "Область действия",
     "Admin (full access)" to "Admin (полный доступ)",
     "Monitor (read-only)" to "Monitor (только чтение)",
     "Node sync" to "Node sync (синхронизация узлов)",
     "Everything the panel API can do." to "Всё, что умеет API панели.",
     "Server status and metric history only." to "Только состояние сервера и история метрик.",
-    "What a central panel needs: inbounds, clients, restart Xray." to "То, что нужно центральной панели: inbound, клиенты, перезапуск Xray.",
+    "What a central panel needs: inbounds, clients, restart Xray." to "То, что нужно центральной панели: входящие, клиенты, перезапуск Xray.",
     "Expires in, days (0 = never)" to "Истекает через, дней (0 — никогда)",
     "Scope and expiry need panel v3.7.0. An older panel ignores them and issues a full-access token." to "Область действия и срок требуют панель v3.7.0. Панель постарее их игнорирует и выдаёт токен с полным доступом.",
     "until" to "до",
@@ -167,17 +167,17 @@ val ruStrings: Map<String, String> = mapOf(
     "Sender name" to "Имя отправителя",
     "Address shown in the From header of panel emails. Leave empty to use the SMTP username." to "Адрес в заголовке From писем панели. Оставьте пустым, чтобы использовать логин SMTP.",
     "Notifications" to "Уведомления",
-    "Consecutive failed probes before an \"outbound down\" alert fires. 1 = alert on the first failure." to "Сколько подряд неудачных проверок до оповещения «outbound недоступен». 1 = оповещать при первой неудаче.",
-    "Outbound-down threshold" to "Порог оповещения outbound",
+    "Consecutive failed probes before an \"outbound down\" alert fires. 1 = alert on the first failure." to "Сколько подряд неудачных проверок до оповещения «исходящий недоступен». 1 = оповещать при первой неудаче.",
+    "Outbound-down threshold" to "Порог сбоя исходящего",
     "Email settings saved" to "Настройки почты сохранены",
     "Notification settings saved" to "Настройки уведомлений сохранены",
     "Changelog" to "История изменений",
     "No changelog available." to "История изменений недоступна.",
     "Our projects" to "Наши проекты",
     "3x-ui manual" to "Руководство по 3x-ui",
-    "Documentation for the panel this app manages" to "Документация по панели, которой управляет приложение",
+    "Documentation for the panel this app manages" to "Документация по панели, которой управляет это приложение",
     "Currency Converter" to "Конвертер валют",
-    "Exchange rates for Android, on F-Droid" to "Курсы валют для Android, в F-Droid",
+    "Exchange rates for Android, on F-Droid" to "Курсы валют для Android, есть в F-Droid",
     "Tools for network and system administrators" to "Инструменты для сетевых и системных администраторов",
     "Clients" to "Клиенты",
     "Nodes" to "Узлы",
@@ -199,20 +199,20 @@ val ruStrings: Map<String, String> = mapOf(
     // Panel alerts (settings card + notification texts)
     "Panel alerts" to "Оповещения панели",
     "Client expiry, traffic limits, inbounds & node status" to
-        "Истечение клиентов, лимиты трафика, доступность инбаундов и узлов",
+        "Истечение клиентов, лимиты трафика, доступность входящих и узлов",
     "Panel port" to "Порт панели",
     "This port on the panel host is probed for reachability (default 443). Per-inbound ports are monitored separately, from each inbound's editor." to
-        "Этот порт на хосте панели проверяется на доступность (по умолчанию 443). Порты отдельных инбаундов мониторятся отдельно — из редактора каждого инбаунда.",
+        "Этот порт на хосте панели проверяется на доступность (по умолчанию 443). Порты входящих мониторятся отдельно — из редактора каждого входящего.",
     "Days before expiry" to "Дней до истечения",
     "Traffic threshold (%)" to "Порог трафика (%)",
     "Checked when the app opens and opportunistically in the background." to
         "Проверяется при открытии приложения и по возможности в фоне.",
     "Panel unreachable" to "Панель недоступна",
-    "Inbounds unreachable" to "Инбаунды недоступны",
-    "Inbound unreachable" to "Инбаунд недоступен",
+    "Inbounds unreachable" to "Входящие недоступны",
+    "Inbound unreachable" to "Входящий недоступен",
     "Monitor reachability" to "Мониторить доступность",
     "Panel alerts notify you if this inbound's port stops answering (for inbounds exposed directly, without a reverse proxy)." to
-        "Оповещения панели сообщат, если порт этого инбаунда перестанет отвечать (для инбаундов с прямым доступом, без реверс-прокси).",
+        "Оповещения панели сообщат, если порт этого входящего перестанет отвечать (для входящих с прямым доступом, без реверс-прокси).",
     "Xray is down" to "Xray остановлен",
     "Client expired" to "Клиент истёк",
     "Client expires soon" to "Клиент скоро истечёт",
@@ -254,14 +254,14 @@ val ruStrings: Map<String, String> = mapOf(
     "cores" to "ядер",
     "Online" to "Онлайн",
     "Total" to "Всего",
-    "Depleted" to "Исчерпан",
+    "Depleted" to "Исчерпанные",
     "Online by server" to "Онлайн по серверам",
     "Main server" to "Основной сервер",
     "Online clients" to "Онлайн-клиенты",
     "Nobody online right now." to "Сейчас никто не в сети.",
     "Traffic this month" to "Трафик за месяц",
     "since" to "с",
-    "not all inbounds reset monthly" to "не все inbounds сбрасываются ежемесячно",
+    "not all inbounds reset monthly" to "не все входящие сбрасываются ежемесячно",
     "Geo databases" to "Гео-базы",
     "Update" to "Обновить",
     "Start" to "Запустить",
@@ -278,13 +278,13 @@ val ruStrings: Map<String, String> = mapOf(
         "Скачает свежую базу и перезапустит Xray, кратко разорвав все активные подключения.",
 
     // Lists
-    "No inbounds yet." to "Пока нет inbound'ов.",
+    "No inbounds yet." to "Пока нет входящих.",
     "No clients yet." to "Пока нет клиентов.",
     "No nodes yet." to "Пока нет узлов.",
     "online" to "онлайн",
     "offline" to "офлайн",
     "clients" to "клиентов",
-    "inbounds" to "inbounds",
+    "inbounds" to "входящих",
 
     // Settings / About
     "Settings" to "Настройки",
@@ -336,12 +336,12 @@ val ruStrings: Map<String, String> = mapOf(
     "Verify TLS certificate" to "Проверять TLS-сертификат",
     "TLS verify" to "Проверка TLS",
     "Mutual TLS: the API token is optional. Register this panel's CA on the node (menu → Node mTLS)." to
-        "Взаимный TLS: API-токен необязателен. Зарегистрируйте CA этой панели на узле (меню → Node mTLS).",
-    "Detach its inbounds first" to "Сначала отвяжите его inbounds",
+        "Mutual TLS: API-токен необязателен. Зарегистрируйте CA этой панели на узле (меню → mTLS узлов).",
+    "Detach its inbounds first" to "Сначала отвяжите его входящие",
     "Allow private address" to "Разрешить приватные адреса",
-    "Edit inbound" to "Изменить inbound",
-    "New inbound" to "Новый inbound",
-    "Delete inbound" to "Удалить inbound",
+    "Edit inbound" to "Изменить входящий",
+    "New inbound" to "Новый входящий",
+    "Delete inbound" to "Удалить входящий",
     "Protocol" to "Протокол",
     "Traffic reset" to "Сброс трафика",
     "Protocol settings (JSON)" to "Настройки протокола (JSON)",
@@ -354,9 +354,9 @@ val ruStrings: Map<String, String> = mapOf(
     "Service name" to "Имя сервиса",
     "Security" to "Безопасность",
     "SNI (server name)" to "SNI (имя сервера)",
-    "Dest (target)" to "Dest (цель)",
-    "Server names (comma-separated)" to "Имена серверов (через запятую)",
-    "Short IDs (comma-separated)" to "Short ID (через запятую)",
+    "Dest (target)" to "Dest (назначение)",
+    "Server names (comma-separated)" to "Server names (через запятую)",
+    "Short IDs (comma-separated)" to "Short IDs (через запятую)",
     "Fingerprint" to "Отпечаток (fingerprint)",
     "Public key" to "Публичный ключ",
     "Private key" to "Приватный ключ",
@@ -369,7 +369,7 @@ val ruStrings: Map<String, String> = mapOf(
         "Срок задан — изменить можно будет в полном редакторе (скоро).",
     "Protocol, transport and security are edited in the full editor (coming soon)." to
         "Протокол, транспорт и безопасность редактируются в полном редакторе (скоро).",
-    "Couldn't load inbound" to "Не удалось загрузить inbound",
+    "Couldn't load inbound" to "Не удалось загрузить входящий",
 
     // App lock
     "App lock" to "Блокировка приложения",
@@ -388,14 +388,14 @@ val ruStrings: Map<String, String> = mapOf(
     // Client editor
     "Edit client" to "Изменить клиента",
     "New client" to "Новый клиент",
-    "Attach to inbounds" to "Привязать к inbound'ам",
+    "Attach to inbounds" to "Привязать к входящим",
     "MTProto" to "MTProto",
     "MTProto secret" to "Секрет MTProto",
-    "Regenerate" to "Сгенерировать заново",
+    "Regenerate" to "Перегенерировать",
     "Ad-tag (sponsored channel, 32 hex)" to "Ad-tag (спонсорский канал, 32 hex)",
     "WireGuard allowed IPs" to "Разрешённые IP WireGuard",
     "Comma-separated; leave empty to auto-assign." to
-        "Через запятую; оставьте пустым для авто-назначения.",
+        "Через запятую; пусто — назначить автоматически.",
     "Delete client" to "Удалить клиента",
     "Email / name" to "Email / имя",
     "IP limit (0 = unlimited)" to "Лимит IP (0 = безлимит)",
@@ -404,14 +404,14 @@ val ruStrings: Map<String, String> = mapOf(
     "Group (optional)" to "Группа (необязательно)",
     "Comment (optional)" to "Комментарий (необязательно)",
     "Show connection links" to "Показать ссылки-подключения",
-    "IP log" to "Журнал IP",
+    "IP log" to "IP-лог",
     "Clear" to "Очистить",
     "All" to "Все",
-    "Disabled" to "Выключены",
+    "Disabled" to "Выключенные",
     "All groups" to "Все группы",
     "Export clients" to "Экспорт клиентов",
     "Import clients" to "Импорт клиентов",
-    "Delete unbound clients" to "Удалить непривязанных",
+    "Delete unbound clients" to "Удалить несвязанных клиентов",
     "Search clients" to "Поиск клиентов",
 
     // Client groups
@@ -446,7 +446,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Add to group" to "Добавить в группу",
     "Remove from group" to "Убрать из группы",
     "Clients already in this group are not listed. Their inbounds stay as they are — only the group changes." to
-        "Клиенты, которые уже в этой группе, здесь не показаны. Привязки к inbound'ам не меняются — меняется только группа.",
+        "Клиенты, которые уже в этой группе, здесь не показаны. Привязки к входящим не меняются — меняется только группа.",
     "The clients stay on the panel — they only leave the group." to
         "Клиенты остаются в панели — они только выходят из группы.",
     "Select all" to "Выбрать все",
@@ -464,7 +464,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Deleted / skipped" to "Удалено / пропущено",
     "Action failed" to "Не удалось выполнить",
     "Resetting a group's traffic" to "Сброс трафика группы",
-    "Route via outbound tag (optional)" to "Через outbound-тег (необязательно)",
+    "Route via outbound tag (optional)" to "Через тег исходящего (необязательно)",
     "Update to" to "Обновить до",
     "Node mTLS" to "mTLS узлов",
     "Share this panel's CA so a parent panel can trust it, or set the parent CA this panel trusts when it runs as a node." to
@@ -478,7 +478,7 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Xray config
     "Xray config" to "Конфиг Xray",
-    "Outbound test URL" to "URL для теста outbound",
+    "Outbound test URL" to "URL теста исходящих",
     "xray config (JSON)" to "конфиг xray (JSON)",
     "Invalid JSON." to "Некорректный JSON.",
     "Save, then restart Xray to apply. A broken config can take Xray down." to
@@ -541,16 +541,16 @@ val ruStrings: Map<String, String> = mapOf(
     "Mask address" to "Маскировать адрес",
     "DNS log" to "DNS-лог",
     "Statistics" to "Статистика",
-    "Inbound uplink stats" to "Статистика inbound ↑",
-    "Inbound downlink stats" to "Статистика inbound ↓",
-    "Outbound uplink stats" to "Статистика outbound ↑",
-    "Outbound downlink stats" to "Статистика outbound ↓",
+    "Inbound uplink stats" to "Статистика входящих ↑",
+    "Inbound downlink stats" to "Статистика входящих ↓",
+    "Outbound uplink stats" to "Статистика исходящих ↑",
+    "Outbound downlink stats" to "Статистика исходящих ↓",
 
     // DNS editor
     "DNS" to "DNS",
     "Enable DNS" to "Включить DNS",
     "Tag" to "Тег",
-    "Client IP" to "Client IP",
+    "Client IP" to "IP клиента",
     "Query strategy" to "Стратегия запросов",
     "Disable cache" to "Отключить кэш",
     "Disable fallback" to "Отключить fallback",
@@ -563,7 +563,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Port (blank = 53)" to "Порт (пусто = 53)",
     "Domains (comma-separated)" to "Домены (через запятую)",
     "Expected IPs (comma-separated)" to "Ожидаемые IP (через запятую)",
-    "Skip fallback" to "Пропускать fallback",
+    "Skip fallback" to "Пропустить fallback",
     "Edit" to "Изменить",
 
     // Routing editor
@@ -571,22 +571,22 @@ val ruStrings: Map<String, String> = mapOf(
     "Routing rules" to "Правила маршрутизации",
     "Add rule" to "Добавить правило",
     "Routing rule" to "Правило маршрутизации",
-    "Test route" to "Проверить маршрут",
+    "Test route" to "Тест маршрута",
     "Domain or IP" to "Домен или IP",
     "Port (optional)" to "Порт (необязательно)",
-    "Inbound" to "Inbound",
+    "Inbound" to "Входящий",
     "via" to "через",
-    "default outbound" to "outbound по умолчанию",
+    "default outbound" to "исходящий по умолчанию",
     "No rule matched — uses the default outbound." to
-        "Ни одно правило не подошло — используется outbound по умолчанию.",
+        "Ни одно правило не сработало — используется исходящий по умолчанию.",
     "Balancers" to "Балансировщики",
     "Add balancer" to "Добавить балансировщик",
     "Balancer" to "Балансировщик",
     "Target (one of)" to "Цель (одно из)",
-    "Outbound tag" to "Тег outbound",
+    "Outbound tag" to "Тег исходящего",
     "Balancer tag" to "Тег балансировщика",
     "Match" to "Условия",
-    "Inbound tags" to "Теги inbound",
+    "Inbound tags" to "Теги входящих",
     "Domains" to "Домены",
     "IPs" to "IP",
     "Source IPs" to "Source IP",
@@ -597,21 +597,21 @@ val ruStrings: Map<String, String> = mapOf(
     "Source port" to "Source-порт",
     "Network" to "Сеть",
     "Strategy" to "Стратегия",
-    "Selector (comma-separated)" to "Selector (через запятую)",
+    "Selector (comma-separated)" to "Селектор (через запятую)",
     "Fallback tag" to "Fallback-тег",
 
     // Outbounds editor
-    "Outbounds" to "Outbounds",
-    "Add outbound" to "Добавить outbound",
-    "Import from vless:// link" to "Импорт из vless://-ссылки",
+    "Outbounds" to "Исходящие",
+    "Add outbound" to "Добавить исходящий",
+    "Import from vless:// link" to "Импорт из vless:// ссылки",
     "Import" to "Импортировать",
-    "Export" to "Экспортировать",
-    "Generate VLESS encryption key" to "Сгенерировать ключ шифрования VLESS",
-    "VLESS encryption key" to "Ключ шифрования VLESS",
-    "Decryption" to "Расшифровка",
+    "Export" to "Экспорт",
+    "Generate VLESS encryption key" to "Сгенерировать ключ VLESS encryption",
+    "VLESS encryption key" to "Ключ VLESS encryption",
+    "Decryption" to "Decryption",
     "Encryption" to "Шифрование",
-    "Insert decryption" to "Вставить расшифровку",
-    "Decryption goes on this inbound; encryption goes to the clients." to "Расшифровка — на этот inbound; шифрование — клиентам.",
+    "Insert decryption" to "Вставить decryption",
+    "Decryption goes on this inbound; encryption goes to the clients." to "Decryption — на этот входящий; encryption — клиентам.",
     "No keys returned (needs panel v3.4.1, xray-core v26.6.21+)." to "Ключи не получены (нужна панель v3.4.1, xray-core v26.6.21+).",
     "Headers" to "Заголовки",
     "Value" to "Значение",
@@ -621,7 +621,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Disable" to "Выключить",
     "Adjust" to "Изменить",
     "Delete selected clients?" to "Удалить выбранных клиентов?",
-    "No change" to "Без изменений",
+    "No change" to "Не менять",
     "Clear flow" to "Очистить flow",
     "Add days (+/-)" to "Добавить дней (+/-)",
     "Add traffic (GB, +/-)" to "Добавить трафик (ГБ, +/-)",
@@ -634,19 +634,19 @@ val ruStrings: Map<String, String> = mapOf(
         "Узел перезапускается во время обновления. Если приложение подключено к панели через этот узел, соединение прервётся — переподключитесь вручную.",
     "If the app reaches the panel through it, the connection will drop — reconnect manually." to
         "Если приложение подключено к панели через неё, соединение прервётся — переподключитесь вручную.",
-    "Port 62789 is the reserved internal Xray API port — the panel may reject it." to "Порт 62789 — зарезервированный внутренний порт Xray API, панель может его отклонить.",
-    "Outbound" to "Outbound",
+    "Port 62789 is the reserved internal Xray API port — the panel may reject it." to "Порт 62789 зарезервирован под внутренний Xray API — панель может его отклонить.",
+    "Outbound" to "Исходящий",
     "Protocol" to "Протокол",
     "Edit raw JSON" to "Править сырой JSON",
-    "Target Strategy" to "Стратегия цели",
+    "Target Strategy" to "Стратегия адреса назначения",
     "Test" to "Тест",
-    "Test outbound" to "Проверить outbound",
+    "Test outbound" to "Проверить исходящий",
     "Run test" to "Запустить тест",
     "Testing…" to "Проверка…",
     "Test request failed." to "Запрос теста не удался.",
     "Failed" to "Ошибка",
     "Close" to "Закрыть",
-    "Outbound (JSON)" to "Outbound (JSON)",
+    "Outbound (JSON)" to "Исходящий (JSON)",
     "ID (UUID)" to "ID (UUID)",
     "Flow" to "Flow",
     "Password" to "Пароль",
@@ -663,7 +663,7 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Metric history chart
     "history" to "история",
-    "No history yet" to "Истории пока нет",
+    "No history yet" to "Данных истории пока нет",
     "Real-time" to "Реальное время",
     "30 min" to "30 мин",
     "1 hour" to "1 час",
@@ -676,7 +676,7 @@ val ruStrings: Map<String, String> = mapOf(
     // Backup / restore
     "Backup / restore" to "Бэкап / восстановление",
     "The backup is the panel's whole database — settings, inbounds, clients and the Xray config. SQLite saves as x-ui.db, PostgreSQL as x-ui.dump; either restores back here." to
-        "Бэкап — это вся база панели: настройки, inbounds, клиенты и конфиг Xray. SQLite сохраняется как x-ui.db, PostgreSQL как x-ui.dump; и то, и другое восстанавливается обратно.",
+        "Бэкап — это вся база панели: настройки, входящие, клиенты и конфиг Xray. SQLite сохраняется как x-ui.db, PostgreSQL как x-ui.dump; и то, и другое восстанавливается обратно.",
     "Back up" to "Сделать бэкап",
     "Download the database and save it via the share sheet." to "Скачать базу и сохранить через меню «Поделиться».",
     "Back up to file" to "Сохранить в файл",
@@ -701,14 +701,14 @@ val ruStrings: Map<String, String> = mapOf(
         "Путь к файлу .lua с функцией HandleDNSQuery — абсолютный или относительно папки bin Xray. Скрипт отвечает на все запросы и обращается к серверам только из своего кода. Xray не запустится, если файл отсутствует или содержит ошибки.",
     "Routing Script" to "Скрипт маршрутизации",
     "Path to a .lua file defining HandleRoute, absolute or relative to the Xray bin folder. The script then picks every route and Xray ignores all routing rules, the panel's api rule included: send the api inbound to the api outbound or traffic stats and live client changes stop. Xray will not start if the file is missing or invalid." to
-        "Путь к файлу .lua с функцией HandleRoute — абсолютный или относительно папки bin Xray. Скрипт выбирает каждый маршрут, а Xray игнорирует все правила маршрутизации, включая правило api панели: направляйте inbound api на outbound api, иначе остановятся статистика трафика и применение изменений клиентов на лету. Xray не запустится, если файл отсутствует или содержит ошибки.",
+        "Путь к файлу .lua с функцией HandleRoute — абсолютный или относительно папки bin Xray. Скрипт выбирает каждый маршрут, а Xray игнорирует все правила маршрутизации, включая правило api панели: направляйте входящий api на исходящий api, иначе остановятся статистика трафика и применение изменений клиентов на лету. Xray не запустится, если файл отсутствует или содержит ошибки.",
     "A routing script is set under General / Logs, so Xray ignores these rules." to
         "В разделе «Общее / Логи» задан скрипт маршрутизации, поэтому Xray игнорирует эти правила.",
     // 0.15.1 — clients & nodes
     "MASQUE: client email cannot contain \":\"" to "MASQUE: email клиента не может содержать «:»",
     "Weekly renewal is on (set in the web panel). A reset period or a renewal day turns it off." to
         "Включено еженедельное продление (задано в веб-панели). Период сброса или день продления его отключат.",
-    "Client updated, but the inbound change failed" to "Клиент обновлён, но изменить inbounds не удалось",
+    "Client updated, but the inbound change failed" to "Клиент обновлён, но изменить входящие не удалось",
     "JSON subscription" to "JSON-подписка",
     "Xray JSON configs. MASQUE connections are only in this one." to
         "Конфигурации Xray в JSON. Подключения MASQUE есть только в ней.",
@@ -727,41 +727,41 @@ val ruStrings: Map<String, String> = mapOf(
         "Хранилище XDRIVE настраивается в поле «Транспорт / безопасность (JSON)» ниже. Безопасность остаётся None: Xray принял бы TLS здесь за клиентский TLS к API хранилища.",
     "Certificate file" to "Файл сертификата",
     "Key file" to "Файл ключа",
-    "Inbound updated, but enabling/disabling failed:" to "Inbound обновлён, но включить/выключить его не удалось:",
+    "Inbound updated, but enabling/disabling failed:" to "Входящий обновлён, но включить/выключить его не удалось:",
     "Use system CA" to "Использовать системные CA",
     "Verify the server against the server OS's CA store instead of Xray's bundled roots — needed for a private CA. Needs panel v3.10.0." to
         "Проверять сервер по хранилищу CA операционной системы сервера, а не по встроенным корням Xray — нужно для частного CA. Требуется панель v3.10.0.",
     // observatory
     "Observatory" to "Обсерватория",
     "No connection observer is active. One is added automatically when you create a Least Ping or Least Load balancer — or a Random / Round-robin balancer with a fallback — so observer-backed balancers can check outbound health before choosing a target." to
-        "Нет активного наблюдателя соединений. Он добавляется автоматически при создании балансировщика Least Ping или Least Load — либо Random / Round-robin с fallback — чтобы балансировщики с наблюдателем могли проверять состояние outbound перед выбором цели.",
+        "Нет активного наблюдателя соединений. Он добавляется автоматически при создании балансировщика Least Ping или Least Load — либо Random / Round-robin с fallback — чтобы балансировщики с наблюдателем могли проверять состояние исходящих перед выбором цели.",
     "Observers are managed automatically from your balancers. Tune how they probe below — the watched outbounds follow your balancer selectors." to
-        "Наблюдатели управляются автоматически на основе ваших балансировщиков. Ниже можно настроить, как они опрашивают; отслеживаемые outbound следуют за селекторами балансировщика.",
+        "Наблюдатели управляются автоматически на основе ваших балансировщиков. Ниже можно настроить, как они опрашивают; отслеживаемые исходящие следуют за селекторами балансировщика.",
     "This config contains both Observatory and Burst Observatory. Xray uses one global observer, so this mixed legacy state is not supported; saving balancers will normalize it to one observer." to
         "В этой конфигурации одновременно есть Observatory и Burst Observatory. Xray использует один глобальный наблюдатель, поэтому такое устаревшее смешанное состояние не поддерживается; сохранение балансировщиков нормализует его до одного наблюдателя.",
-    "Watched Outbounds" to "Отслеживаемые outbound",
+    "Watched Outbounds" to "Отслеживаемые исходящие",
     "Outbound tags this observer probes. Managed automatically from your balancers." to
-        "Теги outbound, которые опрашивает этот наблюдатель. Управляется автоматически на основе ваших балансировщиков.",
+        "Теги исходящих, которые опрашивает этот наблюдатель. Управляется автоматически на основе ваших балансировщиков.",
     "Probe URL" to "URL пробы",
     "URL fetched to measure each outbound. Should return HTTP 204." to
-        "URL, запрашиваемый для измерения каждого outbound. Должен возвращать HTTP 204.",
+        "URL, запрашиваемый для измерения каждого исходящего. Должен возвращать HTTP 204.",
     "Probe Interval" to "Интервал пробы",
-    "How often to probe each outbound, e.g. 30s, 1m, 2h45m." to "Как часто опрашивать каждый outbound, например 30s, 1m, 2h45m.",
+    "How often to probe each outbound, e.g. 30s, 1m, 2h45m." to "Как часто опрашивать каждый исходящий, например 30s, 1m, 2h45m.",
     "Concurrent Probing" to "Параллельные пробы",
     "Probe all watched outbounds at once instead of one-by-one. Faster, but more visible on the network." to
-        "Опрашивать все отслеживаемые outbound сразу, а не по одному. Быстрее, но заметнее в сети.",
+        "Опрашивать все отслеживаемые исходящие сразу, а не по одному. Быстрее, но заметнее в сети.",
     "Probe Destination" to "Назначение пробы",
     "Connectivity Check" to "Проверка связи",
     "Optional local-network check URL, tried only after the destination fails. Leave empty to skip." to
         "Необязательный URL проверки локальной сети, используется только после сбоя назначения. Оставьте пустым, чтобы пропустить.",
     "Average time between probes per outbound, e.g. 1m. Minimum 10s." to
-        "Среднее время между пробами для каждого outbound, например 1m. Минимум 10s.",
+        "Среднее время между пробами для каждого исходящего, например 1m. Минимум 10s.",
     "Probe Timeout" to "Тайм-аут пробы",
     "How long to wait for a probe before it counts as failed, e.g. 5s." to
         "Сколько ждать ответа на пробу, прежде чем считать её неуспешной, например 5s.",
     "Sampling Count" to "Размер выборки",
     "Number of recent probe results kept to score each outbound." to
-        "Сколько последних результатов проб хранится для оценки каждого outbound.",
+        "Сколько последних результатов проб хранится для оценки каждого исходящего.",
     "HTTP Method" to "Метод HTTP",
     "HTTP method used for probes." to "Метод HTTP, используемый для проб.",
 

@@ -27,4 +27,11 @@ class I18nTest {
         assertEquals(emptyList(), (ruStrings.keys - zhStrings.keys).sorted(), "missing from zhStrings")
         assertEquals(emptyList(), (zhStrings.keys - ruStrings.keys).sorted(), "missing from ruStrings")
     }
+
+    @Test
+    fun russianNeverShowsInboundOrOutboundInEnglish() {
+        val untranslated = Regex("inbound|outbound|инбаунд|аутбаунд", RegexOption.IGNORE_CASE)
+        val offenders = ruStrings.filterValues { untranslated.containsMatchIn(it) }.keys.sorted()
+        assertEquals(emptyList(), offenders, "Russian values that still say inbound/outbound")
+    }
 }
