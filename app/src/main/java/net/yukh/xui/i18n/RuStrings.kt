@@ -414,7 +414,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Edit balancer" to "Изменить балансировщик",
     "Target" to "Назначение",
     "Match" to "Условия",
-    "Outbound tag" to "Тег outbound",
+    "Outbound tag" to "Тег исходящего",
     "Balancer tag" to "Тег балансировщика",
     "Inbound tags (comma-separated)" to "Теги inbound (через запятую)",
     "Domain (comma-separated)" to "Домены (через запятую)",
