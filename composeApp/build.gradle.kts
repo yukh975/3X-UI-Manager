@@ -88,6 +88,9 @@ kotlin {
             // for iOS via Compose MP but needs an explicit dep for the JVM target.
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
         val desktopMain by getting
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

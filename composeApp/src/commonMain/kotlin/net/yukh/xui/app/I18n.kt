@@ -6,16 +6,18 @@ import androidx.compose.runtime.compositionLocalOf
 
 /**
  * Tiny i18n for the shared Compose-MP UI, mirroring the Android app's approach:
- * `tr("English source")` looks the string up in [ruStrings] when the current
- * language is Russian, else returns the English source. The English text IS the
+ * `tr("English source")` looks the string up in [ruStrings] or [zhStrings] for
+ * the current language, else returns the English source. The English text IS the
  * key, so partial coverage degrades gracefully. The words `inbound`/`outbound`
  * are intentionally NOT translated in Russian.
  */
 const val LANG_EN = "en"
 const val LANG_RU = "ru"
+const val LANG_ZH = "zh"
 
 /** The stored preference meaning "follow the device language" — the default,
- *  so a Russian phone gets a Russian app without visiting Settings first. */
+ *  so a Russian or Chinese phone gets the app in its language without visiting
+ *  Settings first. */
 const val LANG_SYSTEM = ""
 
 /**
@@ -24,20 +26,26 @@ const val LANG_SYSTEM = ""
  * we don't translate falls back to English.
  */
 fun resolveLanguage(preference: String, systemLanguage: String): String = when (preference) {
-    LANG_RU, LANG_EN -> preference
-    else -> if (systemLanguage == LANG_RU) LANG_RU else LANG_EN
+    LANG_RU, LANG_EN, LANG_ZH -> preference
+    else -> when (systemLanguage) {
+        LANG_RU -> LANG_RU
+        LANG_ZH -> LANG_ZH
+        else -> LANG_EN
+    }
 }
 
 val LocalAppLanguage = compositionLocalOf { LANG_EN }
 
 @Composable
 @ReadOnlyComposable
-fun tr(en: String): String =
-    if (LocalAppLanguage.current == LANG_RU) ruStrings[en] ?: en else en
+fun tr(en: String): String = tr(LocalAppLanguage.current, en)
 
 /** Non-composable variant for the rare call site outside composition. */
-fun tr(lang: String, en: String): String =
-    if (lang == LANG_RU) ruStrings[en] ?: en else en
+fun tr(lang: String, en: String): String = when (lang) {
+    LANG_RU -> ruStrings[en] ?: en
+    LANG_ZH -> zhStrings[en] ?: en
+    else -> en
+}
 
 val ruStrings: Map<String, String> = mapOf(
     // Tabs (Inbounds stays untranslated by project rule)
