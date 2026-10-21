@@ -9,21 +9,29 @@ default:
     - export SDKMANAGER_OPTS="-Djava.net.preferIPv4Stack=true"
     - export ANDROID_HOME="$CI_PROJECT_DIR/.android-sdk"
     - export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+    # Runner caches are local, so the v0.15.5 tag job on a cache-less runner died on a dl.google.com outage.
+    # The SDK is mirrored in this project's package registry; whichever job installs it from Google seeds it.
+    - SDK_BUNDLE_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/android-sdk/35.0.0/android-sdk.tar.gz"
     - |
-      if [ ! -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
-        echo ">>> Installing Android command-line tools"
-        apt-get update -qq && apt-get install -y --no-install-recommends curl unzip > /dev/null
-        mkdir -p "$ANDROID_HOME/cmdline-tools"
-        curl -4 -sSL --retry 5 --retry-delay 10 --retry-all-errors -o /tmp/cmdline.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip -q /tmp/cmdline.zip -d "$ANDROID_HOME/cmdline-tools"
-        mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
-        rm /tmp/cmdline.zip
-      fi
-    - |
-      if [ ! -d "$ANDROID_HOME/platforms/android-35" ]; then
-        echo ">>> Accepting licenses and installing SDK platform 35 / build-tools 35.0.0"
-        yes | sdkmanager --licenses > /dev/null 2>&1 || true
-        sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0" > /dev/null
+      if [ ! -d "$ANDROID_HOME/platforms/android-35" ] || [ ! -d "$ANDROID_HOME/build-tools/35.0.0" ]; then
+        rm -rf "$ANDROID_HOME" && mkdir -p "$ANDROID_HOME"
+        if curl -4 -fsSL --retry 5 --retry-all-errors --header "JOB-TOKEN: $CI_JOB_TOKEN" -o /tmp/android-sdk.tar.gz "$SDK_BUNDLE_URL"; then
+          echo ">>> Android SDK restored from the package registry"
+          tar -xzf /tmp/android-sdk.tar.gz -C "$ANDROID_HOME"
+        else
+          echo ">>> No mirrored SDK, installing from dl.google.com"
+          apt-get update -qq && apt-get install -y --no-install-recommends unzip > /dev/null
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          curl -4 -sSL --retry 5 --retry-delay 10 --retry-all-errors -o /tmp/cmdline.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q /tmp/cmdline.zip -d "$ANDROID_HOME/cmdline-tools"
+          mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0" > /dev/null
+          tar -czf /tmp/android-sdk.tar.gz -C "$ANDROID_HOME" --exclude=./cmdline-tools .
+          curl -4 -fsS --request PUT --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file /tmp/android-sdk.tar.gz "$SDK_BUNDLE_URL" \
+            && echo ">>> SDK mirrored to the package registry" || echo "!!! SDK mirror upload failed"
+        fi
+        rm -f /tmp/android-sdk.tar.gz /tmp/cmdline.zip
       fi
     - cd "$CI_PROJECT_DIR"
 
