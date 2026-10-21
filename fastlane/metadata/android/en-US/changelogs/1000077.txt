@@ -1,0 +1,1 @@
+New version format: build date + build number that never resets, e.g. 26.10.21 build 77. Installed 0.15.x versions update to it as usual.

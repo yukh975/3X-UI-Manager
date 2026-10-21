@@ -8,7 +8,7 @@ resets: `26.10.21 build 77` = built on 21 October 2026, build 77 (tag
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [26.10.21 build 77] — 2026-10-21
 
 ### Changed
 - **New version format: build date + build number**, e.g. `26.10.21 build 77`. The number counts every build since the first one and never resets. Installed 0.15.x versions see it as an update as usual.
