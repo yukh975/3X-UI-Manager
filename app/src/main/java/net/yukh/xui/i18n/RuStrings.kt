@@ -73,7 +73,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Applies a rotated master certificate without restarting the panel. Needs panel v3.7.0." to "Применяет обновлённый мастер-сертификат без перезапуска панели. Нужна панель v3.7.0.",
     // Tabs & top-level menu
     "Dashboard" to "Дашборд",
-    "Inbounds" to "Inbounds",
+    "Inbounds" to "Входящие",
     "Clients" to "Клиенты",
     "Nodes" to "Узлы",
     "Menu" to "Меню",
@@ -204,7 +204,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Announcement" to "Объявление",
     "Announcement shown as a banner on the subscription info page. Leave empty for none." to "Текст-объявление, который показывается баннером на инфо-странице подписки. Пусто — без баннера.",
     "Subscription settings saved" to "Настройки подписки сохранены",
-    "Inbound" to "Inbound",
+    "Inbound" to "Входящий",
     "MTProto secret" to "Секрет MTProto",
     "Ad-tag (sponsored channel, 32 hex)" to "Ad-tag (спонсорский канал, 32 hex)",
     "Regenerate" to "Перегенерировать",
@@ -700,7 +700,7 @@ val ruStrings: Map<String, String> = mapOf(
 
     // Count suffixes (lowercase, after a number)
     "clients" to "клиентов",
-    "inbounds" to "inbounds",
+    "inbounds" to "входящих",
 
     // Relative time & expiry words (from Formatters)
     "Expired" to "Истёк",
