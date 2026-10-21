@@ -89,6 +89,26 @@ class ChangelogNotesTest {
     }
 
     @Test
+    fun `same-day builds are told apart by the build number`() {
+        val dated = ChangelogNotes.parse(
+            """
+            ## [2026.10.21b79] — 2026-10-21
+            - c
+            ## [2026.10.21b78] — 2026-10-21
+            - b
+            ## [2026.10.21b77] — 2026-10-21
+            - a
+            ## [0.15.6] — 2026-10-21
+            - old
+            """.trimIndent(),
+        )
+        assertEquals(
+            listOf("2026.10.21b79", "2026.10.21b78"),
+            ChangelogNotes.select(dated, "2026.10.21b77", "2026.10.21b79").map { it.version },
+        )
+    }
+
+    @Test
     fun `unparsable installed version gets the last three`() {
         assertEquals(listOf("0.15.10", "0.15.9", "0.15.8"), versions("garbage", "0.15.10"))
         assertEquals(listOf("0.15.8", "0.15.7", "0.15.6"), versions("", "0.15.8"))

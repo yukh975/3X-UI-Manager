@@ -1,6 +1,6 @@
 package net.yukh.xui.update
 
-/** One `## [X.Y.Z] — YYYY-MM-DD` section of the changelog. */
+/** One `## [YYYY.M.DbN] — YYYY-MM-DD` section of the changelog. */
 data class VersionNotes(
     val version: String,
     val date: String?,
@@ -17,7 +17,7 @@ object ChangelogNotes {
     const val FALLBACK_COUNT = 3
 
     private val HEADING = Regex("""^## \[([^\]]+)\]\s*(?:[—–-]\s*(.*))?$""")
-    private val VERSION = Regex("""^v?(\d+(?:\.\d+)*)""")
+    private val VERSION = Regex("""^v?(\d+(?:\.\d+)*)(?:b(\d+))?""")
 
     /** All versioned sections in file order; `[Unreleased]` and the like are skipped. */
     fun parse(changelog: String): List<VersionNotes> {
@@ -94,9 +94,13 @@ object ChangelogNotes {
         return (if (lineEnd > max / 2) head.take(lineEnd) else head).trimEnd() + "…"
     }
 
-    /** Leading numeric dotted part ("0.15.2-debug" → [0, 15, 2]), or null if there is none. */
-    fun parseVersion(v: String): List<Int>? =
-        VERSION.find(v.trim())?.groupValues?.get(1)?.split('.')?.map { it.toIntOrNull() ?: return null }
+    /** Dotted part plus build ("2026.10.21b77-debug" → [2026, 10, 21, 77], "0.15.2" → [0, 15, 2]); null if none. */
+    fun parseVersion(v: String): List<Int>? {
+        val m = VERSION.find(v.trim()) ?: return null
+        val dotted = m.groupValues[1].split('.').map { it.toIntOrNull() ?: return null }
+        val build = m.groupValues[2].ifEmpty { return dotted }.toIntOrNull() ?: return null
+        return dotted + build
+    }
 
     fun compare(a: List<Int>, b: List<Int>): Int {
         for (i in 0 until maxOf(a.size, b.size)) {

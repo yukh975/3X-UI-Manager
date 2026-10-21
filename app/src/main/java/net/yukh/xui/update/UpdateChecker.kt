@@ -9,7 +9,7 @@ import org.json.JSONObject
 
 /** A release published on one of the update channels. */
 data class AppRelease(
-    val version: String,   // e.g. "0.5.5" (the tag without the leading "v")
+    val version: String,   // e.g. "2026.10.21b77" (the tag without the leading "v")
     val notes: String,     // release description (markdown)
     val changes: List<VersionNotes> = emptyList(),  // changelog since the installed version, newest first
     val apkUrl: String?,   // download URL of the .apk asset, or null if missing
@@ -172,20 +172,10 @@ object UpdateChecker {
         }.getOrNull()
     }
 
-    /** true if [latest] > [current] by numeric semver (non-digit suffixes ignored). */
+    /** true if [latest] > [current]: date, then build number ("2026.10.21b78" > "2026.10.21b77" > "0.15.6"). */
     fun isNewer(latest: String, current: String): Boolean {
-        val a = parse(latest)
-        val b = parse(current)
-        for (i in 0 until maxOf(a.size, b.size)) {
-            val x = a.getOrElse(i) { 0 }
-            val y = b.getOrElse(i) { 0 }
-            if (x != y) return x > y
-        }
-        return false
+        val a = ChangelogNotes.parseVersion(latest) ?: return false
+        val b = ChangelogNotes.parseVersion(current) ?: emptyList()
+        return ChangelogNotes.compare(a, b) > 0
     }
-
-    private fun parse(v: String): List<Int> =
-        v.trim().removePrefix("v").split('.', '-', '+').mapNotNull { part ->
-            part.takeWhile(Char::isDigit).toIntOrNull()
-        }
 }

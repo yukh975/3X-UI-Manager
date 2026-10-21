@@ -11,27 +11,11 @@ plugins {
 
 // ---------- Versioning ----------------------------------------------------
 //
-// versionCode / versionName are plain literals in defaultConfig below. Bump
-// BOTH on every release to match the git tag:
-//   v0.8.6  ->  versionName "0.8.6", versionCode 80600
-//   (scheme: major*1_000_000 + minor*10_000 + patch*100)
-//
-// They MUST stay literals: F-Droid builds the app with no CI variables in its
-// environment, and its `fdroid checkupdates` scanner reads the versionCode
-// straight from this file — a computed value breaks both. A GitLab tag pipeline
-// still overrides them from CI_COMMIT_TAG (see defaultConfig) as a convenience,
-// which does not disturb the literal the scanner sees.
-
-/** Map a semver tag ("v0.8.6") to the versionCode scheme (80600). */
-fun parseSemverVersionCode(tag: String?): Int? {
-    val v = tag?.removePrefix("v") ?: return null
-    val parts = v.split(".")
-    if (parts.size != 3) return null
-    val major = parts[0].toIntOrNull() ?: return null
-    val minor = parts[1].toIntOrNull() ?: return null
-    val patch = parts[2].toIntOrNull() ?: return null
-    return major * 1_000_000 + minor * 10_000 + patch * 100
-}
+// The 1_000_000 offset keeps every code above the semver era (0.15.6 = 150600),
+// otherwise Android and F-Droid treat the update as a downgrade.
+/** "v2026.10.21b77" → 1_000_077, or null for any other tag. */
+fun buildVersionCode(tag: String): Int? =
+    Regex("""^v\d+\.\d+\.\d+b(\d+)$""").find(tag)?.groupValues?.get(1)?.toIntOrNull()?.let { 1_000_000 + it }
 
 // ---------- Release signing -----------------------------------------------
 //
@@ -106,14 +90,14 @@ android {
         applicationId = "net.yukh.xui"
         minSdk = 24
         targetSdk = 35
+        // Literals stamped by scripts/stamp-version.sh: F-Droid rebuilds later, and
+        // its checkupdates reads them from this file at the tag.
         versionCode = 150600
         versionName = "0.15.6"
-        // GitLab tag pipeline overrides the literals above from the tag. These
-        // lines don't match F-Droid's versionCode/versionName scanner (no bare
-        // literal), so the values above remain what it reads.
         System.getenv("CI_COMMIT_TAG")?.let { tag ->
-            versionName = tag.removePrefix("v")
-            parseSemverVersionCode(tag)?.let { versionCode = it }
+            check(tag == "v$versionName" && versionCode == buildVersionCode(tag)) {
+                "tag $tag does not match versionName $versionName / versionCode $versionCode; run scripts/stamp-version.sh"
+            }
         }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

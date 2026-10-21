@@ -1,10 +1,16 @@
 # Changelog
 
 All notable changes to the 3X-UI Manager Android app are documented here.
-Format based on [Keep a Changelog](https://keepachangelog.com/); the project
-uses [Semantic Versioning](https://semver.org/).
+Format based on [Keep a Changelog](https://keepachangelog.com/). Since the
+build after 0.15.6 a version is the build date plus a build number that never
+resets: `2026.10.21b77` = built on 21 October 2026, build 77.
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
+
+## [Unreleased]
+
+### Changed
+- **New version format: build date + build number**, e.g. `2026.10.21b77`. The number counts every build since the first one and never resets. Installed 0.15.x versions see it as an update as usual.
 
 ## [0.15.6] — 2026-10-21
 
