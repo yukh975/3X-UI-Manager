@@ -9,7 +9,10 @@ and tagged `v26.10.21b77`.
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [26.10.22.79] — 2026-10-22
+
+### Fixed
+- **F-Droid can build the app again.** Build 78 never reached F-Droid: its version name `26.10.21 build 78` did not match its tag `v26.10.21b78`, so F-Droid could not find the APK. Now the tag is always `v` + the version name — [#12](https://github.com/yukh975/3X-UI-Manager/issues/12), thanks [@linsui](https://github.com/linsui).
 
 ### Changed
 - **The version reads like its tag**: `26.10.22.79` instead of `26.10.21 build 78`, and the release is tagged `v26.10.22.79`. Earlier builds in the changelog and the update dialog are shown the same way.
