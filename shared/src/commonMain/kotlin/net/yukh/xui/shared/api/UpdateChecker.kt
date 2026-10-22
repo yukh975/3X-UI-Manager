@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 
 /** A release published on one of the update channels. */
 data class AppUpdate(
-    val version: String,   // tag without the leading "v", e.g. "26.10.21b78"
+    val version: String,   // tag without the leading "v", e.g. "26.10.22.79"
     val notes: String,     // release description (markdown)
     val pageUrl: String,   // release web page (opened in the browser)
     // Per-version changelog sections since the installed build; empty → show [notes].
@@ -156,7 +156,7 @@ object UpdateChecker {
         }
     }
 
-    /** true if [latest] > [current]: date, then build number ("26.10.21b78" > "26.10.21 build 77" > "0.15.3"). */
+    /** true if [latest] > [current]: date, then build number ("26.10.22.79" > "26.10.21 build 78" > "0.15.3"). */
     fun isNewer(latest: String, current: String): Boolean {
         val a = versionParts(latest)
         val b = versionParts(current)
@@ -168,15 +168,15 @@ object UpdateChecker {
         return false
     }
 
-    /** "26.10.21b78" → "26.10.21 build 78"; any other version unchanged. */
-    fun displayVersion(v: String): String = TAG_BUILD.replace(v) { "${it.groupValues[1]} build ${it.groupValues[2]}" }
+    /** "26.10.21b78" and "26.10.21 build 78" → "26.10.21.78"; any other version unchanged. */
+    fun displayVersion(v: String): String = SUFFIXED_BUILD.replace(v) { "${it.groupValues[1]}.${it.groupValues[2]}" }
 
-    private val TAG_BUILD = Regex("""^(\d+\.\d+\.\d+)b(\d+)$""")
+    private val SUFFIXED_BUILD = Regex("""^(\d+\.\d+\.\d+)(?:b| build )(\d+)$""")
 
-    // The app shows "26.10.21 build 77", the tag carries "26.10.21b77".
+    // b77 and b78 shipped as "26.10.21 build 77" with tag "v26.10.21b77" before the dotted form.
     private val VERSION = Regex("""^v?(\d+(?:\.\d+)*)(?:(?:b| build )(\d+))?""")
 
-    /** Dotted part plus build ("26.10.21 build 77" → [26, 10, 21, 77], "0.15.3-debug" → [0, 15, 3]); empty if none. */
+    /** Dotted part plus build ("26.10.21.77" and "26.10.21 build 77" → [26, 10, 21, 77], "0.15.3-debug" → [0, 15, 3]); empty if none. */
     internal fun versionParts(v: String): List<Int> {
         val m = VERSION.find(v.trim()) ?: return emptyList()
         val dotted = m.groupValues[1].split('.').map { it.toIntOrNull() ?: return emptyList() }

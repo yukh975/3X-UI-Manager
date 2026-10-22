@@ -3,17 +3,29 @@
 All notable changes to the 3X-UI Manager app are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/). Since the
 build after 0.15.6 a version is the build date plus a build number that never
-resets: `26.10.21 build 77` = built on 21 October 2026, build 77 (tag
-`v26.10.21b77`).
+resets: `26.10.22.79` = built on 22 October 2026, build 79; the tag is the same
+with a `v` (`v26.10.22.79`). Builds 77 and 78 were shown as `26.10.21 build 77`
+and tagged `v26.10.21b77`.
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [26.10.21 build 78] — 2026-10-21
+## [Unreleased]
+
+### Added
+- **Client card, as on Android.** Tapping a client opens a card with the subscription (QR, JSON subscription, Happ link), the connection links and the client actions; **Edit** opens the editor, which is now just the form. Deleting a client asks for confirmation.
 
 ### Changed
-- **First public build on the new version format.** The same app as 26.10.21 build 77; it brings everything from 0.15.5, 0.15.6 and build 77 to GitHub and F-Droid.
+- **The version reads like its tag**: `26.10.22.79` instead of `26.10.21 build 78`, and the release is tagged `v26.10.22.79`. Earlier builds in the changelog and the update dialog are shown the same way.
 
-## [26.10.21 build 77] — 2026-10-21
+### Fixed
+- **"Pick date & time" did nothing when adding a client**; the expiry date and time can now be picked for a new client too.
+
+## [26.10.21.78] — 2026-10-21
+
+### Changed
+- **First public build on the new version format.** The same app as 26.10.21.77; it brings everything from 0.15.5, 0.15.6 and build 77 to GitHub and F-Droid.
+
+## [26.10.21.77] — 2026-10-21
 
 ### Changed
 - **New version format: build date + build number**, e.g. `26.10.21 build 77`. The number counts every build since the first one and never resets. Installed 0.15.x versions see it as an update as usual.

@@ -59,7 +59,7 @@ fun UpdateDialog(
                         versions.forEach { v ->
                             val date = if (v.date.isNotBlank()) " · ${v.date}" else ""
                             Text(
-                                "${tr("Version")} ${v.version}$date",
+                                "${tr("Version")} ${UpdateChecker.displayVersion(v.version)}$date",
                                 style = MaterialTheme.typography.titleSmall,
                             )
                             Text(v.body, style = MaterialTheme.typography.bodySmall)
