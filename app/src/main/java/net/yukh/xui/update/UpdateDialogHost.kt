@@ -48,7 +48,7 @@ fun UpdateDialogHost(vm: UpdateViewModel) {
                     }
                     s.release.changes.forEach { change ->
                         Text(
-                            listOfNotNull("${tr("Version")} ${change.version}", change.date).joinToString(" · "),
+                            listOfNotNull("${tr("Version")} ${ChangelogNotes.displayVersion(change.version)}", change.date).joinToString(" · "),
                             style = MaterialTheme.typography.titleMedium,
                         )
                         if (change.body.isNotBlank()) {

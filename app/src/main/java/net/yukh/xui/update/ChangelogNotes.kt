@@ -1,6 +1,6 @@
 package net.yukh.xui.update
 
-/** One `## [YY.M.D build N] — YYYY-MM-DD` section of the changelog. */
+/** One `## [YY.M.D.N] — YYYY-MM-DD` section of the changelog. */
 data class VersionNotes(
     val version: String,
     val date: String?,
@@ -17,9 +17,9 @@ object ChangelogNotes {
     const val FALLBACK_COUNT = 3
 
     private val HEADING = Regex("""^## \[([^\]]+)\]\s*(?:[—–-]\s*(.*))?$""")
-    // The app shows "26.10.21 build 77", the tag carries "26.10.21b77".
+    // b77 and b78 shipped as "26.10.21 build 77" with tag "v26.10.21b77" before the dotted form.
     private val VERSION = Regex("""^v?(\d+(?:\.\d+)*)(?:(?:b| build )(\d+))?""")
-    private val TAG_BUILD = Regex("""^(\d+\.\d+\.\d+)b(\d+)$""")
+    private val SUFFIXED_BUILD = Regex("""^(\d+\.\d+\.\d+)(?:b| build )(\d+)$""")
 
     /** All versioned sections in file order; `[Unreleased]` and the like are skipped. */
     fun parse(changelog: String): List<VersionNotes> {
@@ -96,7 +96,7 @@ object ChangelogNotes {
         return (if (lineEnd > max / 2) head.take(lineEnd) else head).trimEnd() + "…"
     }
 
-    /** Dotted part plus build ("26.10.21 build 77-debug" → [26, 10, 21, 77], "0.15.2" → [0, 15, 2]); null if none. */
+    /** "26.10.21.77-debug" and "26.10.21 build 77" → [26, 10, 21, 77], "0.15.2" → [0, 15, 2]; null if none. */
     fun parseVersion(v: String): List<Int>? {
         val m = VERSION.find(v.trim()) ?: return null
         val dotted = m.groupValues[1].split('.').map { it.toIntOrNull() ?: return null }
@@ -104,8 +104,8 @@ object ChangelogNotes {
         return dotted + build
     }
 
-    /** "26.10.21b77" → "26.10.21 build 77"; any other version unchanged. */
-    fun displayVersion(v: String): String = TAG_BUILD.replace(v) { "${it.groupValues[1]} build ${it.groupValues[2]}" }
+    /** "26.10.21b77" and "26.10.21 build 77" → "26.10.21.77"; any other version unchanged. */
+    fun displayVersion(v: String): String = SUFFIXED_BUILD.replace(v) { "${it.groupValues[1]}.${it.groupValues[2]}" }
 
     fun compare(a: List<Int>, b: List<Int>): Int {
         for (i in 0 until maxOf(a.size, b.size)) {
