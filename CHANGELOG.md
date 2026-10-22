@@ -9,7 +9,7 @@ and tagged `v26.10.21b77`.
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [26.10.22.79] — 2026-10-22
 
 ### Added
 - **Client card, as on Android.** Tapping a client opens a card with the subscription (QR, JSON subscription, Happ link), the connection links and the client actions; **Edit** opens the editor, which is now just the form. Deleting a client asks for confirmation.
