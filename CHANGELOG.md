@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the 3X-UI Manager Android app are documented here.
+All notable changes to the 3X-UI Manager app are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/). Since the
 build after 0.15.6 a version is the build date plus a build number that never
 resets: `26.10.22.79` = built on 22 October 2026, build 79; the tag is the same
@@ -20,11 +20,14 @@ and tagged `v26.10.21b77`.
 
 ## [26.10.22.79] — 2026-10-22
 
-### Fixed
-- **F-Droid can build the app again.** Build 78 never reached F-Droid: its version name `26.10.21 build 78` did not match its tag `v26.10.21b78`, so F-Droid could not find the APK. Now the tag is always `v` + the version name — [#12](https://github.com/yukh975/3X-UI-Manager/issues/12), thanks [@linsui](https://github.com/linsui).
+### Added
+- **Client card, as on Android.** Tapping a client opens a card with the subscription (QR, JSON subscription, Happ link), the connection links and the client actions; **Edit** opens the editor, which is now just the form. Deleting a client asks for confirmation.
 
 ### Changed
 - **The version reads like its tag**: `26.10.22.79` instead of `26.10.21 build 78`, and the release is tagged `v26.10.22.79`. Earlier builds in the changelog and the update dialog are shown the same way.
+
+### Fixed
+- **"Pick date & time" did nothing when adding a client**; the expiry date and time can now be picked for a new client too.
 
 ## [26.10.21.78] — 2026-10-21
 
@@ -62,47 +65,43 @@ and tagged `v26.10.21b77`.
 - **Balancers and the Observatory settings have their own «Balancers» menu item under Routing.** The Routing screen keeps the strategy, rules, route tester and the routing-script warning; rules can still target a balancer. The Observatory section has its own Save button, active only while its settings have unsaved changes.
 
 ### Fixed
-- **The update dialog now lists the changes of every version since the installed one, not just the latest.** Each version has its own "Version X · date" heading, newest first, so updating over several versions no longer hides what the skipped ones changed.
-- **After saving Xray settings the app no longer asks to restart Xray.** Since panel 3.3.1 the panel applies the change itself on save — live through the Xray API where it can (inbounds, outbounds, routing, balancers), restarting Xray only when a change can't be applied live. The inbound save prompt no longer claims Xray will restart. Outbound-subscription refreshes, moves and deletes are applied by the panel within 30 seconds; only editing a subscription still needs a restart, and the app says so.
+- **Update notes now list the changes of every version since the installed one, not just the latest**, newest first, each under "Version X · date".
+- **After saving Xray settings the app no longer asks to restart Xray.** Since panel 3.3.1 the panel applies the change itself on save — live through the Xray API where it can, restarting Xray only when a change can't be applied live — so the app now says "Saved and applied". Outbound-subscription refreshes, moves and deletes are applied by the panel within 30 seconds; only editing a subscription still needs a restart, and the app says so.
 
 ## [0.15.2] — 2026-10-13
 
 ### Added
-- **Observatory settings on the Routing screen**, as in panel 3.10.0: for the active observer the probe URL, interval, timeout, sampling and HTTP method, plus the outbounds it watches. The panel and the app manage which observer exists; you tune how it probes.
+- **Observatory settings under Routing → Balancers**, as in panel 3.10.0: for the active observer the probe URL, interval, timeout, sampling and HTTP method, plus the outbounds it watches. Which observer exists is managed automatically; you tune how it probes.
 
 ### Fixed
-- **A balancer that needs an observatory made Xray fail to start.** Least Load, and Random / Round-robin with a fallback, need a connection observer; the app never created one, so Xray stopped with "not all dependencies are resolved". The observer is now created, kept in sync with the balancers and removed when nothing needs it, exactly as the panel does it.
+- **A balancer that needs an observatory made Xray fail to start.** Least Load, and Random / Round-robin with a fallback, need a connection observer; the app never created one. The observer is now created, kept in sync with the balancers and removed when nothing needs it, exactly as the panel does it.
 
 ## [0.15.1] — 2026-10-13
 
 ### Added
 - **Panel 3.10.0 support.** The app works with panel 3.10.0 and keeps everything new it adds when you save.
-- **MASQUE inbounds** (panel 3.10+): create them with an address pool, MTU and path; TLS is required, so TLS inbounds now have certificate and key file fields. MASQUE clients get their config only through the JSON subscription, so a client's share sheet now also shows the JSON subscription link when the panel serves it.
+- **MASQUE inbounds** (panel 3.10+): create them with an address pool, MTU and path; TLS only. TLS inbounds now have certificate and key file fields.
+- **JSON subscription in the client's subscription card** when the panel serves it — the only subscription that carries MASQUE.
 - **"Use system CA" in outbound TLS** (panel 3.10+): Xray-core 26.10.10 verifies servers against its bundled roots, so an outbound to a server with a private CA needs this switch.
-- **Lua scripts and DNS server ID** (panel 3.10+): fields for a DNS server's ID, the DNS Lua script and the routing script. The Routing screen warns when a routing script is set, because Xray then ignores the rules.
-- **Hysteria and MASQUE outbounds** (including WARP over MASQUE) now show their transport and TLS settings for editing.
-- **Certificate SHA-256 pin field** for nodes that use certificate pinning.
+- **Lua scripts and DNS server ID** (panel 3.10+): a DNS server's ID, the DNS Lua script and the routing script (under General / Logs). Routing shows a warning while a routing script is set, because Xray then ignores all rules.
+- **Certificate SHA-256 pin field** for nodes in pin mode, so such nodes can be saved.
 
 ### Fixed
-- **A new Shadowsocks inbound could not be created on panel 3.10.** The app now generates a server key of the right length and regenerates it when the method changes; the 2022 ChaCha20 method, which the panel refuses on inbounds, is no longer offered.
-- **Save in the outbound editor did not write to the panel**, so leaving the screen lost the change. It now saves at once, like the routing and DNS editors.
-- **Saving a DNS server dropped its ID, tag, client IP, expected IPs, skip-fallback and timeout settings.** Expected IPs also showed empty for servers saved by the panel, and Skip fallback showed as on when it was not set.
-- **Saving an inbound reset its custom tag, subscription order, "exclude from subscription" flag and monthly reset day.** A custom tag was regenerated, so routing rules pointing at it stopped matching. The Enabled switch in the inbound editor now really turns the inbound on or off.
-- **Editing a client turned off its weekly renewal and removed its VLESS reverse proxy.**
-- **Editing a node switched "selected inbounds" sync back to "all"**, and nodes using certificate pinning could not be saved at all.
-- **A failed attach or detach of a client's inbounds was reported as "Client updated".** The panel's error is shown now. With a MASQUE inbound selected, the client editor refuses an email containing ":".
-- **Changing a balancer's strategy dropped its leastLoad settings.**
-- **The new-inbound list offered "socks"**, which the panel rejects; it now offers "mixed" (SOCKS + HTTP).
-- **WebSocket + TLS inbounds now default to ALPN http/1.1**, so WebSocket connections no longer fail on h2. The inbound editor also hides transport and security choices that would break MASQUE, XDRIVE and TUN inbounds.
-- **The QR code is hidden for post-quantum links**, as in the panel: such links are too dense to scan.
+- **A new Shadowsocks inbound could not be created on panel 3.10.** The app now generates a server key sized for the method and makes a new one when the method changes; 2022-blake3-chacha20-poly1305, which the panel refuses on inbounds, is no longer offered.
+- **Save in the outbound editor only staged the change**, and leaving the list with Cancel lost it. It now writes to the panel at once.
+- **Editing an inbound reset its tag, subscription order, "exclude from subscription" flag and monthly reset day.** The Enabled switch in the inbound editor now really turns the inbound on or off.
+- **Editing a client — or toggling it in the list — turned off its weekly renewal and removed its VLESS reverse proxy.**
+- **Editing a node switched "sync selected inbounds" back to all inbounds.**
+- **If the panel refused to add or remove a client's inbounds after an edit**, nothing said so; the clients list now shows the panel's error. With a MASQUE inbound selected, an email containing ":" is refused.
+- **A DNS server written by the panel showed empty Expected IPs**, and editing them added a second list. Balancers are now saved the way the panel writes them.
+- **The new-inbound list offered "socks"**, which the panel rejects; it now offers "mixed". The inbound editor shows only the transport, security and sniffing settings that suit the protocol (MASQUE, XDRIVE, TUN), and WebSocket + TLS defaults to ALPN http/1.1.
+- **Links with post-quantum keys show a note instead of a QR code**, which would be too dense to scan.
+- **Editing a port in an outbound form or a DNS server wrote it as text** (`"443"`), which Xray cannot read, so the core could fail to start after saving. Ports are now written as numbers, and a cleared field removes the port.
 
 ## [0.14.3] — 2026-09-15
 
 ### Added
-- **Update channel in Settings.** The in-app updater now offers a Stable channel (the tested public releases — the default) and an Experimental channel (pre-release builds as soon as they are made, which can be unstable) for trying a build early.
-
-### Fixed
-- **Changes in the outbound, routing and DNS editors could not be saved.** These editors (an outbound, a routing rule, a balancer, a DNS server) only had "Done", which staged the change into the list while the screen's Save stayed grey until it was pressed; leaving with the arrow or system Back dropped the change, and Back even closed the whole screen. They now have "Save", which writes the change to the panel at once, and system Back returns to the list. An outbound with an empty or duplicate tag scrolls the form up to the message.
+- **Update channel in Settings.** The updater now offers a Stable channel (the tested public releases — the default) and an Experimental channel (pre-release builds as soon as they are made, which can be unstable) for trying a build early. The "Check for updates" button moved next to the channel picker.
 
 ## [0.14.2] — 2026-09-15
 
@@ -120,7 +119,7 @@ and tagged `v26.10.21b77`.
 ### Added
 - **Support for panel 3.8.0.** What the new panel version brings is offered only when the panel reports 3.8.0 or later; with older panels the app behaves as before.
 - **Keepalive for WireGuard and AmneziaWG clients.** The client editor has "Keepalive (seconds)" for clients on tunnel inbounds: a new client gets 25, like the panel's own form, and 0 turns keepalives off. Until now a client created from the app got no keepalive, so an idle peer stayed disconnected after a NAT timeout or a panel restart until its user sent traffic.
-- **Encrypted Happ link in the client's share sheet** (panel 3.8.0). When the operator allows encrypted subscription links on the panel, the subscription section creates a `happ://crypt5/…` link with its QR code; otherwise it says where that switch is.
+- **Encrypted Happ link in the client's subscription card** (panel 3.8.0). When the operator allows encrypted subscription links on the panel, the client editor's subscription card creates a `happ://crypt5/…` link with its QR code; otherwise it says where that switch is.
 - **Bulk adjust sets the device limit and the MTProto ad tag** (panel 3.8.0) and reports how many clients changed and why any were skipped.
 - **The device list shows a short fingerprint** for every registered device (panel 3.8.0), so two similar phones can be told apart.
 - **AmneziaWG as an outbound protocol** (panel 3.8.0), with a ready settings skeleton. **Routing rules show their panel-only comment**, and on 3.8.0 it can be edited.
@@ -130,7 +129,7 @@ and tagged `v26.10.21b77`.
 - **Restoring a database on panel 3.8.0 waits out the panel's own restart.** The panel restarts itself a few seconds after an import; the app now says so and reports when the panel answers again instead of failing requests in the meantime. The restore confirmation also mentions that API tokens come from the backup.
 
 ### Fixed
-- **A link too long for a QR code could crash the client's share sheet.** The sheet now shows a note in place of the code, and copy and share keep working.
+- **A link too long for a QR code no longer breaks the client editor.** It shows a note in place of the code, and copy and share keep working.
 - **With panel 3.8.0, saving a client that isn't on a WireGuard or AmneziaWG inbound wrote a stray `keepAlive: 0` into its settings.** The app now leaves the field out for such clients.
 
 ## [0.13.1] — 2026-09-14
