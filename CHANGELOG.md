@@ -9,6 +9,15 @@ and tagged `v26.10.21b77`.
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
+## [26.10.28.80] — 2026-10-28
+
+### Fixed
+- **The client list opens again on panel 3.11.0 when an AmneziaWG client has a keepalive range.** Panel 3.11.0 stores a range such as `15-25` as text, and the app expected a number, so the whole list failed to load. A range now loads, shows in the client editor and is saved back unchanged.
+
+### Added
+- **Keepalive ranges for AmneziaWG clients** (panel 3.11.0): the client editor takes `15-25` as well as plain seconds. The app checks the value the way the panel does — 0 to 65535, the lower bound first — and refuses a range when the client is also on a WireGuard inbound, which only takes whole seconds.
+- **Node administrator API token scope** (panel 3.11.0): node sync plus starting panel updates. A token with this scope is no longer listed as full access.
+
 ## [26.10.22.79] — 2026-10-22
 
 ### Fixed
