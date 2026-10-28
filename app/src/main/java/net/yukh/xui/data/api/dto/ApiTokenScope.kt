@@ -15,5 +15,8 @@ object ApiTokenScope {
     /** What a central panel needs to sync: inbounds, clients, restart Xray. */
     const val NODE_SYNC = "node-sync"
 
-    val ALL = listOf(ADMIN, MONITOR, NODE_SYNC)
+    /** [NODE_SYNC] plus starting panel updates (panel v3.11.0; older panels refuse it). */
+    const val NODE_ADMIN = "node-admin"
+
+    val ALL = listOf(ADMIN, MONITOR, NODE_SYNC, NODE_ADMIN)
 }

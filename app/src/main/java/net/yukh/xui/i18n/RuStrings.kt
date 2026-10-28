@@ -6,6 +6,10 @@ package net.yukh.xui.i18n
  */
 val ruStrings: Map<String, String> = mapOf(
     "On a TUIC inbound the panel can't enforce a per-client traffic limit or IP limit — limit traffic on the TUIC inbound itself." to "На TUIC-входящем панель не может ограничить трафик и число IP отдельного клиента — лимит трафика задайте на самом TUIC-входящем.",
+    "Seconds or a range such as 15-25, from 0 to 65535. 25 keeps NAT open; 0 turns it off." to "Секунды или диапазон, например 15-25, от 0 до 65535. 25 держит NAT открытым; 0 — выключено.",
+    "A keepalive range works only for AmneziaWG; WireGuard takes whole seconds." to "Диапазон keepalive работает только для AmneziaWG; WireGuard принимает целые секунды.",
+    "Enter a whole number or range from 0 to 65535." to "Введите целое число или диапазон от 0 до 65535.",
+    "Enter a whole number from 0 to 65535." to "Введите целое число от 0 до 65535.",
     "Keepalive (seconds)" to "Keepalive (секунды)",
     "How often the client sends a keepalive. 25 keeps NAT open and brings an idle peer back after any drop; 0 turns it off." to "Как часто клиент отправляет keepalive. 25 держит NAT открытым и возвращает простаивающий пир после любого обрыва; 0 — выключено.",
     "Device fingerprint" to "Отпечаток устройства",
@@ -63,6 +67,8 @@ val ruStrings: Map<String, String> = mapOf(
     "Everything the panel API can do." to "Всё, что умеет API панели.",
     "Server status and metric history only." to "Только состояние сервера и история метрик.",
     "What a central panel needs: inbounds, clients, restart Xray." to "То, что нужно центральной панели: входящие, клиенты, перезапуск Xray.",
+    "Node administrator" to "Node administrator (администратор узла)",
+    "Node sync plus starting panel updates. Needs panel v3.11.0." to "Синхронизация узлов плюс запуск обновления панели. Нужна панель v3.11.0.",
     "Expires in, days (0 = never)" to "Истекает через, дней (0 — никогда)",
     "Scope and expiry need panel v3.7.0. An older panel ignores them and issues a full-access token." to "Область действия и срок требуют панель v3.7.0. Панель постарее их игнорирует и выдаёт токен с полным доступом.",
     "until" to "до",

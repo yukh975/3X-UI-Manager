@@ -380,12 +380,14 @@ private fun CreateTokenDialog(onConfirm: (String, String, Long) -> Unit, onDismi
 private fun scopeLabel(scope: String): String = when (scope) {
     ApiTokenScope.MONITOR -> "Monitor (read-only)"
     ApiTokenScope.NODE_SYNC -> "Node sync"
+    ApiTokenScope.NODE_ADMIN -> "Node administrator"
     else -> "Admin (full access)"
 }
 
 private fun scopeHelp(scope: String): String = when (scope) {
     ApiTokenScope.MONITOR -> "Server status and metric history only."
     ApiTokenScope.NODE_SYNC -> "What a central panel needs: inbounds, clients, restart Xray."
+    ApiTokenScope.NODE_ADMIN -> "Node sync plus starting panel updates. Needs panel v3.11.0."
     else -> "Everything the panel API can do."
 }
 

@@ -20,6 +20,7 @@ import net.yukh.xui.data.api.dto.ClientModel
 import net.yukh.xui.data.api.dto.HAPP_SOURCE_TOO_LONG
 import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.SubInfo
+import net.yukh.xui.data.api.dto.parseKeepAlive
 import net.yukh.xui.data.json.string
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.data.repo.isUnsupportedByPanel
@@ -163,8 +164,8 @@ data class ClientEditorState(
     val secret: String = "",
     val adTag: String = "",
     val allowedIps: String = "",
-    /** PersistentKeepalive seconds for WireGuard/AmneziaWG peers. A new client gets 25,
-     *  like the panel's own form; 0 turns keepalives off. */
+    /** PersistentKeepalive seconds for WireGuard/AmneziaWG peers (AmneziaWG also takes
+     *  "15-25"). A new client gets 25, like the panel's own form; 0 turns keepalives off. */
     val keepAlive: String = "25",
     val selectedInboundIds: Set<Int> = emptySet(),
     val availableInbounds: List<InboundSlim> = emptyList(),
@@ -175,7 +176,14 @@ data class ClientEditorState(
 ) {
     val canSave: Boolean
         get() = !saving && email.isNotBlank() && (!isNew || selectedInboundIds.isNotEmpty()) &&
-            !masqueEmailInvalid
+            !masqueEmailInvalid && !keepAliveInvalid
+
+    /** Panel 3.11.0 takes a range only when every tunnel inbound of the client is AmneziaWG. */
+    val keepAliveRangeAllowed: Boolean
+        get() = isAmneziawg && !isWireguard
+
+    val keepAliveInvalid: Boolean
+        get() = (isWireguard || isAmneziawg) && parseKeepAlive(keepAlive, keepAliveRangeAllowed) == null
 
     /** A selected inbound is MASQUE, which logs users in with the email as the
      *  Basic-auth name: panel 3.10.0 refuses an email holding ":" there. */
@@ -247,7 +255,7 @@ internal fun ClientEditorState.toClientModel(newSubId: String = ""): ClientModel
         // Sent whenever a tunnel inbound is selected: panel v3.8.0 treats an explicit
         // 0 as "off" and a missing value as "keep", so other clients keep theirs.
         keepAlive = if (e.isWireguard || e.isAmneziawg) {
-            (e.keepAlive.toIntOrNull() ?: 0).coerceIn(0, 65535)
+            parseKeepAlive(e.keepAlive, e.keepAliveRangeAllowed) ?: "0"
         } else {
             base.keepAlive
         },
@@ -520,7 +528,7 @@ class ClientsViewModel @Inject constructor(
                     secret = client.secret,
                     adTag = client.adTag,
                     allowedIps = client.allowedIPs,
-                    keepAlive = client.keepAlive.toString(),
+                    keepAlive = client.keepAlive.ifEmpty { "0" },
                     selectedInboundIds = client.inboundIds.toSet(),
                     availableGroups = existingGroups(),
                     inboundsLoading = true,
@@ -583,7 +591,7 @@ class ClientsViewModel @Inject constructor(
     fun setEditorExpiry(ms: Long) = updateEditor { it.copy(expiryTime = ms) }
     fun setEditorAdTag(v: String) = updateEditor { it.copy(adTag = v.filter { c -> c.isDigit() || c in 'a'..'f' || c in 'A'..'F' }.take(32)) }
     fun setEditorAllowedIps(v: String) = updateEditor { it.copy(allowedIps = v) }
-    fun setEditorKeepAlive(v: String) = updateEditor { it.copy(keepAlive = v.filter(Char::isDigit).take(5)) }
+    fun setEditorKeepAlive(v: String) = updateEditor { it.copy(keepAlive = sanitizeKeepAlive(v, it.keepAliveRangeAllowed)) }
 
     /** Regenerate the MTProto FakeTLS secret, keeping the fronting domain from
      *  the current secret (or cloudflare's if there isn't one yet). Format:
@@ -845,3 +853,8 @@ class ClientsViewModel @Inject constructor(
 
     fun dismissMessage() = _state.update { it.copy(transientMessage = null) }
 }
+
+/** Typing filter for the keepalive field: digits, plus one "-" where a range is allowed. */
+internal fun sanitizeKeepAlive(raw: String, allowRange: Boolean): String =
+    if (allowRange) raw.filter { it.isDigit() || it == '-' }.replace(Regex("-+"), "-").take(11)
+    else raw.filter(Char::isDigit).take(5)

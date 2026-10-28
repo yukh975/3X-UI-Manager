@@ -37,7 +37,8 @@ data class Client(
     val publicKey: String = "",
     val preSharedKey: String = "",
     val allowedIPs: String = "",
-    val keepAlive: Int = 0,
+    @Serializable(with = KeepAliveSerializer::class)
+    val keepAlive: String = "",
     val enable: Boolean = true,
     val tgId: Long = 0,
     val limitIp: Int = 0,
@@ -87,7 +88,7 @@ data class Client(
         publicKey = publicKey,
         preSharedKey = preSharedKey,
         allowedIPs = allowedIPs.split(",").map { it.trim() }.filter { it.isNotEmpty() },
-        keepAlive = keepAlive.takeIf { it > 0 },
+        keepAlive = keepAlive.takeIf { it.isNotEmpty() && it != "0" },
         security = security,
         flow = flow,
         limitIp = limitIp,

@@ -375,9 +375,25 @@ fun ClientEditorScreen(
                     value = state.keepAlive,
                     onValueChange = onKeepAlive,
                     label = { Text(tr("Keepalive (seconds)")) },
-                    supportingText = { Text(tr("How often the client sends a keepalive. 25 keeps NAT open and brings an idle peer back after any drop; 0 turns it off.")) },
+                    isError = state.keepAliveInvalid,
+                    supportingText = {
+                        Text(
+                            when {
+                                !state.keepAliveInvalid && state.keepAliveRangeAllowed ->
+                                    tr("Seconds or a range such as 15-25, from 0 to 65535. 25 keeps NAT open; 0 turns it off.")
+                                !state.keepAliveInvalid ->
+                                    tr("How often the client sends a keepalive. 25 keeps NAT open and brings an idle peer back after any drop; 0 turns it off.")
+                                '-' in state.keepAlive && !state.keepAliveRangeAllowed ->
+                                    tr("A keepalive range works only for AmneziaWG; WireGuard takes whole seconds.")
+                                state.keepAliveRangeAllowed -> tr("Enter a whole number or range from 0 to 65535.")
+                                else -> tr("Enter a whole number from 0 to 65535.")
+                            },
+                        )
+                    },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = if (state.keepAliveRangeAllowed) KeyboardType.Phone else KeyboardType.Number,
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

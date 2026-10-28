@@ -60,10 +60,17 @@ class Panel380DtoTest {
     fun `client writes carry keepAlive only when the client has one`() {
         val vless = json.encodeToJsonElement(ClientModel.serializer(), Client(email = "v", uuid = "u").toModel()).jsonObject
         assertFalse("a stored 0 must stay out so 3.8.0 keeps its value", "keepAlive" in vless)
-        val wgModel = Client(email = "w", keepAlive = 25).toModel()
+        val wgModel = Client(email = "w", keepAlive = "25").toModel()
         assertEquals("25", json.encodeToJsonElement(ClientModel.serializer(), wgModel).jsonObject["keepAlive"].toString())
-        val off = json.encodeToJsonElement(ClientModel.serializer(), wgModel.copy(keepAlive = 0)).jsonObject
+        val off = json.encodeToJsonElement(ClientModel.serializer(), wgModel.copy(keepAlive = "0")).jsonObject
         assertEquals("an explicit 0 from the editor is sent", "0", off["keepAlive"].toString())
+    }
+
+    @Test
+    fun `an AmneziaWG keepalive range is sent back as the string the panel stored`() {
+        val listed = json.decodeFromString(Client.serializer(), """{"email":"a","keepAlive":"15-25"}""")
+        val sent = json.encodeToJsonElement(ClientModel.serializer(), listed.toModel()).jsonObject
+        assertEquals("\"15-25\"", sent["keepAlive"].toString())
     }
 
     @Test
