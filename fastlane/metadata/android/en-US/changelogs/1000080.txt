@@ -1,0 +1,1 @@
+Works with panel 3.11.0: the client list loads again when an AmneziaWG client has a keepalive range such as 15-25, and the client editor takes such ranges, checked the way the panel checks them. New "Node administrator" API token scope: node sync plus starting panel updates.
