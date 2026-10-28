@@ -45,6 +45,8 @@ import net.yukh.xui.shared.dto.Client
 import net.yukh.xui.shared.dto.ClientModel
 import net.yukh.xui.shared.dto.InboundSlim
 import net.yukh.xui.shared.dto.masqueEmailInvalid
+import net.yukh.xui.shared.dto.parseKeepAlive
+import net.yukh.xui.shared.dto.sanitizeKeepAlive
 import net.yukh.xui.shared.dto.withRenewal
 import net.yukh.xui.shared.secureRandomIndex
 
@@ -93,21 +95,24 @@ fun ClientEditorScreen(
     var secret by remember { mutableStateOf(source.secret) }
     var adTag by remember { mutableStateOf(source.adTag) }
     var allowedIps by remember { mutableStateOf(source.allowedIPs) }
-    // PersistentKeepalive seconds for WireGuard/AmneziaWG peers. A new client gets 25,
-    // like the panel's own form; 0 turns keepalives off.
-    var keepAlive by remember { mutableStateOf(if (isNew) "25" else source.keepAlive.toString()) }
+    // PersistentKeepalive seconds for WireGuard/AmneziaWG peers (AmneziaWG also takes
+    // "15-25"). A new client gets 25, like the panel's own form; 0 turns keepalives off.
+    var keepAlive by remember { mutableStateOf(if (isNew) "25" else source.keepAlive.ifEmpty { "0" }) }
 
     // Show protocol-specific fields when a selected inbound is MTProto / WireGuard.
     val selectedProtocols = availableInbounds.filter { it.id in selectedInbounds }.map { it.protocol.lowercase() }
     val isMtproto = "mtproto" in selectedProtocols
     val isWireguard = "wireguard" in selectedProtocols
     val isAmneziawg = "amneziawg" in selectedProtocols
+    // Panel 3.11.0 takes a range only when every tunnel inbound of the client is AmneziaWG.
+    val keepAliveRangeAllowed = isAmneziawg && !isWireguard
+    val keepAliveInvalid = (isWireguard || isAmneziawg) && parseKeepAlive(keepAlive, keepAliveRangeAllowed) == null
     // Panel v3.8.0 serves TUIC outside Xray, so per-client traffic and IP limits don't apply.
     val isTuic = "tuic" in selectedProtocols
     val emailInvalidForMasque = masqueEmailInvalid(email, selectedProtocols)
 
     val canSave = !saving && email.isNotBlank() && (!isNew || selectedInbounds.isNotEmpty()) &&
-        !emailInvalidForMasque
+        !emailInvalidForMasque && !keepAliveInvalid
     fun build(): ClientModel {
         val base = source.toModel().copy(
             email = email.trim(),
@@ -144,7 +149,7 @@ fun ClientEditorScreen(
             // A tunnel client sends the field, 0 included (panel v3.8.0 reads it as "off");
             // any other client keeps the rebuilt value: null, or a stored keepalive > 0.
             keepAlive = if (isWireguard || isAmneziawg) {
-                (keepAlive.toIntOrNull() ?: 0).coerceIn(0, 65535)
+                parseKeepAlive(keepAlive, keepAliveRangeAllowed) ?: "0"
             } else {
                 base.keepAlive
             },
@@ -317,11 +322,27 @@ fun ClientEditorScreen(
             if (isWireguard || isAmneziawg) {
                 OutlinedTextField(
                     value = keepAlive,
-                    onValueChange = { v -> keepAlive = v.filter(Char::isDigit).take(5) },
+                    onValueChange = { v -> keepAlive = sanitizeKeepAlive(v, keepAliveRangeAllowed) },
                     label = { Text(tr("Keepalive (seconds)")) },
-                    supportingText = { Text(tr("How often the client sends a keepalive. 25 keeps NAT open and brings an idle peer back after any drop; 0 turns it off.")) },
+                    isError = keepAliveInvalid,
+                    supportingText = {
+                        Text(
+                            when {
+                                !keepAliveInvalid && keepAliveRangeAllowed ->
+                                    tr("Seconds or a range such as 15-25, from 0 to 65535. 25 keeps NAT open; 0 turns it off.")
+                                !keepAliveInvalid ->
+                                    tr("How often the client sends a keepalive. 25 keeps NAT open and brings an idle peer back after any drop; 0 turns it off.")
+                                '-' in keepAlive && !keepAliveRangeAllowed ->
+                                    tr("A keepalive range works only for AmneziaWG; WireGuard takes whole seconds.")
+                                keepAliveRangeAllowed -> tr("Enter a whole number or range from 0 to 65535.")
+                                else -> tr("Enter a whole number from 0 to 65535.")
+                            },
+                        )
+                    },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = if (keepAliveRangeAllowed) KeyboardType.Phone else KeyboardType.Number,
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

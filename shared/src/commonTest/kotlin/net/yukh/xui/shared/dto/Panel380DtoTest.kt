@@ -1,5 +1,7 @@
 package net.yukh.xui.shared.dto
 
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.builtins.ListSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -115,6 +117,20 @@ class Panel380DtoTest {
         assertEquals(25, body(wg.toModel()).getValue("keepAlive").jsonPrimitive.int)
 
         // The editor's explicit 0 for a tunnel client means "off" and must reach the panel.
-        assertEquals(0, body(wg.toModel().copy(keepAlive = 0)).getValue("keepAlive").jsonPrimitive.int)
+        assertEquals(0, body(wg.toModel().copy(keepAlive = "0")).getValue("keepAlive").jsonPrimitive.int)
+    }
+
+    @Test
+    fun amneziawgKeepAliveRangeSurvivesTheListAndTheWriteBack() {
+        val list = sharedJson.decodeFromString(
+            ListSerializer(Client.serializer()),
+            """[{"id":1,"email":"wg","keepAlive":25},{"id":2,"email":"awg","keepAlive":"15-25"}]""",
+        )
+        assertEquals("25", list[0].keepAlive)
+        assertEquals("15-25", list[1].keepAlive)
+
+        fun sent(model: ClientModel) = sharedJson.encodeToJsonElement(ClientModel.serializer(), model).jsonObject.getValue("keepAlive")
+        assertEquals(JsonPrimitive(25), sent(list[0].toModel()))
+        assertEquals(JsonPrimitive("15-25"), sent(list[1].toModel()))
     }
 }

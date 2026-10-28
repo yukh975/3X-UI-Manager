@@ -187,7 +187,8 @@ data class Client(
     // wg_allowed_ips column), unlike the create/update body which is an array.
     // Declaring it List<String> here breaks parsing of the whole client list.
     val allowedIPs: String = "",
-    val keepAlive: Int = 0,
+    @Serializable(with = KeepAliveSerializer::class)
+    val keepAlive: String = "",
     val enable: Boolean = true,
     val tgId: Long = 0,
     val limitIp: Int = 0,
@@ -226,7 +227,7 @@ data class Client(
         allowedIPs = allowedIPs.split(",").map { it.trim() }.filter { it.isNotEmpty() },
         // Only a real keepalive goes back: a row's 0 can't tell "off" from "never set",
         // and an explicit 0 would be written into non-tunnel clients too.
-        keepAlive = keepAlive.takeIf { it > 0 },
+        keepAlive = keepAlive.takeIf { it.isNotEmpty() && it != "0" },
         flow = flow, limitIp = limitIp, totalGB = totalGB, expiryTime = expiryTime,
         enable = enable, tgId = tgId, subId = subId, group = group, comment = comment,
         reset = reset, resetDay = resetDay, resetMax = resetMax,
@@ -251,7 +252,8 @@ data class ClientModel(
     val allowedIPs: List<String> = emptyList(),
     // Null drops the key, so panel v3.8.0 keeps the stored keepalive; any number, 0
     // included, is written into the client's settings whatever its protocol.
-    val keepAlive: Int? = null,
+    @Serializable(with = KeepAliveSerializer::class)
+    val keepAlive: String? = null,
     val security: String = "auto",
     val flow: String = "",
     val limitIp: Int = 0,
@@ -634,6 +636,7 @@ object ApiTokenScope {
     const val ADMIN = "admin"
     const val MONITOR = "monitor"
     const val NODE_SYNC = "node-sync"
+    const val NODE_ADMIN = "node-admin"
 
-    val ALL = listOf(ADMIN, MONITOR, NODE_SYNC)
+    val ALL = listOf(ADMIN, MONITOR, NODE_SYNC, NODE_ADMIN)
 }
