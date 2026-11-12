@@ -47,6 +47,9 @@ class AppSettingsStore @Inject constructor(
     fun getSpeedInBits(): Boolean = prefs.getBoolean(KEY_SPEED_BITS, false)
     fun setSpeedInBits(value: Boolean) = prefs.edit { putBoolean(KEY_SPEED_BITS, value) }
 
+    fun getClientSort(): String? = prefs.getString(KEY_CLIENT_SORT, null)
+    fun setClientSort(key: String) = prefs.edit { putString(KEY_CLIENT_SORT, key) }
+
     /** Which channel the self-updater checks — "stable" (GitHub) or "testing"
      *  (home GitLab). Defaults to stable; see [net.yukh.xui.update.UpdateChannel]. */
     fun getUpdateChannel(): String = prefs.getString(KEY_UPDATE_CHANNEL, DEFAULT_UPDATE_CHANNEL) ?: DEFAULT_UPDATE_CHANNEL
@@ -62,6 +65,7 @@ class AppSettingsStore @Inject constructor(
         const val KEY_ALERT_TRAFFIC_PCT = "alerts.trafficPct"
         const val KEY_ALERT_PANEL_PORT = "alerts.panelPort"
         const val KEY_SPEED_BITS = "ui.speedInBits"
+        const val KEY_CLIENT_SORT = "clients.sort"
         const val KEY_UPDATE_DISMISSED = "update.dismissedVersion"
         const val KEY_UPDATE_CHANNEL = "update.channel"
         const val DEFAULT_UPDATE_CHANNEL = "stable"

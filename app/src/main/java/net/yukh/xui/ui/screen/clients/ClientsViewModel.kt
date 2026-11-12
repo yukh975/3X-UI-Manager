@@ -22,6 +22,7 @@ import net.yukh.xui.data.api.dto.InboundSlim
 import net.yukh.xui.data.api.dto.SubInfo
 import net.yukh.xui.data.api.dto.parseKeepAlive
 import net.yukh.xui.data.json.string
+import net.yukh.xui.data.prefs.AppSettingsStore
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.data.repo.isUnsupportedByPanel
 
@@ -48,6 +49,7 @@ data class ClientsUiState(
     /** Customer's-eye subscription status (sub server `?format=info`, best-effort). */
     val selectedSubInfo: SubInfo? = null,
     val filters: ClientFilters = ClientFilters(),
+    val sort: ClientSort = ClientSort.DEFAULT,
     // Multi-select / bulk actions
     val selectionMode: Boolean = false,
     val selectedEmails: Set<String> = emptySet(),
@@ -269,9 +271,10 @@ internal fun ClientEditorState.toClientModel(newSubId: String = ""): ClientModel
 @HiltViewModel
 class ClientsViewModel @Inject constructor(
     private val repo: PanelRepository,
+    private val settings: AppSettingsStore,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ClientsUiState())
+    private val _state = MutableStateFlow(ClientsUiState(sort = ClientSort.fromKey(settings.getClientSort())))
     val state: StateFlow<ClientsUiState> = _state.asStateFlow()
 
     private var pollJob: Job? = null
@@ -328,11 +331,10 @@ class ClientsViewModel @Inject constructor(
 
             clients
                 .onSuccess { list ->
-                    val sorted = list.sortedBy { c -> c.email.lowercase() }
                     val now = System.currentTimeMillis()
                     val dt = (now - prevTime) / 1000.0
                     val speeds = if (prevTime > 0 && dt > 0.5) {
-                        sorted.mapNotNull { c ->
+                        list.mapNotNull { c ->
                             val prev = prevTotals[c.email] ?: return@mapNotNull null
                             val up = (((c.up - prev.first).coerceAtLeast(0)) / dt).toLong()
                             val down = (((c.down - prev.second).coerceAtLeast(0)) / dt).toLong()
@@ -341,11 +343,11 @@ class ClientsViewModel @Inject constructor(
                     } else {
                         emptyMap()
                     }
-                    prevTotals = sorted.associate { it.email to (it.up to it.down) }
+                    prevTotals = list.associate { it.email to (it.up to it.down) }
                     prevTime = now
                     _state.update {
                         it.copy(
-                            items = sorted,
+                            items = it.sort.sorted(list),
                             speedByClient = speeds,
                             online = onlines.getOrNull()?.toSet().orEmpty(),
                             panel380 = panel380,
@@ -666,6 +668,11 @@ class ClientsViewModel @Inject constructor(
     }
 
     fun clearFilters() = _state.update { it.copy(filters = ClientFilters()) }
+
+    fun setSort(sort: ClientSort) {
+        settings.setClientSort(sort.key)
+        _state.update { it.copy(sort = sort, items = sort.sorted(it.items)) }
+    }
 
     // ---- Multi-select / bulk actions --------------------------------------
 

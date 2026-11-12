@@ -517,6 +517,18 @@ val zhStrings: Map<String, String> = mapOf(
     "Clear all" to "清除全部",
     "No clients match the filters" to "没有符合筛选条件的客户端",
 
+    // Client sort
+    "Sort" to "排序",
+    "Oldest first" to "最旧优先",
+    "Newest first" to "最新优先",
+    "Recently updated" to "最近更新",
+    "Recently online" to "最近在线",
+    "Email A→Z" to "邮箱 A→Z",
+    "Email Z→A" to "邮箱 Z→A",
+    "Most traffic" to "流量最多",
+    "Highest remaining" to "剩余最多",
+    "Expiring soonest" to "即将过期",
+
     // Client bulk actions
     "selected" to "已选",
     "Select all" to "全选",

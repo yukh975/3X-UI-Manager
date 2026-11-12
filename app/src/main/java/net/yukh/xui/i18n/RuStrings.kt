@@ -499,6 +499,18 @@ val ruStrings: Map<String, String> = mapOf(
     "Clear all" to "Сбросить всё",
     "No clients match the filters" to "Нет клиентов по фильтрам",
 
+    // Client sort
+    "Sort" to "Сортировка",
+    "Oldest first" to "Сначала старые",
+    "Newest first" to "Сначала новые",
+    "Recently updated" to "Недавно обновлены",
+    "Recently online" to "Недавно в сети",
+    "Email A→Z" to "Email А→Я",
+    "Email Z→A" to "Email Я→А",
+    "Most traffic" to "Больше трафика",
+    "Highest remaining" to "Больше остатка",
+    "Expiring soonest" to "Скорее истекают",
+
     // Client bulk actions
     "selected" to "выбрано",
     "Select all" to "Выбрать все",

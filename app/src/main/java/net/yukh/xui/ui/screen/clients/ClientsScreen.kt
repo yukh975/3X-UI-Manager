@@ -22,7 +22,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
@@ -99,6 +101,7 @@ fun ClientsScreen(
     var confirmBulkDelete by remember { mutableStateOf(false) }
     var confirmBulkReset by remember { mutableStateOf(false) }
     var clientsMenu by remember { mutableStateOf(false) }
+    var sortMenu by remember { mutableStateOf(false) }
     var showImportClients by remember { mutableStateOf(false) }
     var confirmDeleteOrphans by remember { mutableStateOf(false) }
 
@@ -193,6 +196,22 @@ fun ClientsScreen(
                                 },
                             ) {
                                 Icon(Icons.Filled.FilterList, contentDescription = tr("Filters"))
+                            }
+                        }
+                        Box {
+                            IconButton(onClick = { sortMenu = true }) {
+                                Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = tr("Sort"))
+                            }
+                            DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                                ClientSort.entries.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(sortLabel(option)) },
+                                        onClick = { sortMenu = false; vm.setSort(option) },
+                                        trailingIcon = {
+                                            if (option == state.sort) Icon(Icons.Filled.Check, contentDescription = null)
+                                        },
+                                    )
+                                }
                             }
                         }
                         Box {
@@ -676,4 +695,17 @@ private fun BulkAdjustDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
+}
+
+@Composable
+private fun sortLabel(sort: ClientSort): String = when (sort) {
+    ClientSort.OLDEST -> tr("Oldest first")
+    ClientSort.NEWEST -> tr("Newest first")
+    ClientSort.RECENTLY_UPDATED -> tr("Recently updated")
+    ClientSort.RECENTLY_ONLINE -> tr("Recently online")
+    ClientSort.EMAIL_ASC -> tr("Email A→Z")
+    ClientSort.EMAIL_DESC -> tr("Email Z→A")
+    ClientSort.MOST_TRAFFIC -> tr("Most traffic")
+    ClientSort.HIGHEST_REMAINING -> tr("Highest remaining")
+    ClientSort.EXPIRING_SOONEST -> tr("Expiring soonest")
 }
