@@ -994,7 +994,7 @@ A separate item in the **⋮** menu. It holds:
 - the **changelog** — the full list of versions and what changed in each. It works
   offline: the changelog is bundled into the app, nothing is fetched for it;
 - a link to the **project on GitHub**;
-- the **Our projects** block — the 3x-ui manual, Currency Converter and netadm.pro.
+- the **Our projects** block — the 3x-ui manual, Currency Converter, TermiPort, and netadm.pro.
 
 Before you connect to a panel the section is reachable from Settings, so the
 version can be checked without signing in.

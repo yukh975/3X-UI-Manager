@@ -309,6 +309,7 @@ val zhStrings: Map<String, String> = mapOf(
     "Documentation for the panel this app manages" to "本应用所管理面板的文档",
     "Currency Converter" to "汇率转换器",
     "Exchange rates for Android, on F-Droid" to "Android 汇率应用，F-Droid 上架",
+    "SSH terminal for Android and iOS" to "适用于 Android 和 iOS 的 SSH 终端",
     "Tools for network and system administrators" to "面向网络和系统管理员的工具",
     "Installed from F-Droid — updates come through the F-Droid catalog." to "当前为 F-Droid 安装版——更新通过 F-Droid 目录推送。",
     "Update available" to "有可用更新",

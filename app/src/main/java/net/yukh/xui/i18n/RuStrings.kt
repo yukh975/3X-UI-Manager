@@ -304,6 +304,7 @@ val ruStrings: Map<String, String> = mapOf(
     "Documentation for the panel this app manages" to "Документация по панели, которой управляет это приложение",
     "Currency Converter" to "Конвертер валют",
     "Exchange rates for Android, on F-Droid" to "Курсы валют для Android, есть в F-Droid",
+    "SSH terminal for Android and iOS" to "SSH-терминал для Android и iOS",
     "Tools for network and system administrators" to "Инструменты для сетевых и системных администраторов",
     "Installed from F-Droid — updates come through the F-Droid catalog." to "Установлена версия из F-Droid — обновления приходят через каталог F-Droid.",
     "Update available" to "Доступно обновление",

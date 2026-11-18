@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -143,6 +144,13 @@ fun AboutScreen(onClose: () -> Unit) {
                         title = tr("Currency Converter"),
                         subtitle = tr("Exchange rates for Android, on F-Droid"),
                         onClick = { uriHandler.openUri("https://f-droid.org/packages/net.yukh.currency") },
+                    )
+                    HorizontalDivider()
+                    ProjectRow(
+                        icon = Icons.Outlined.Terminal,
+                        title = "TermiPort",
+                        subtitle = tr("SSH terminal for Android and iOS"),
+                        onClick = { uriHandler.openUri("https://termiport.com") },
                     )
                     HorizontalDivider()
                     ProjectRow(
