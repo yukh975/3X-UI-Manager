@@ -117,6 +117,46 @@ build:release:
     expire_in: 26 weeks
     when: on_success
 
+# fdroid-flavor APK for F-Droid's reproducible-build check. Built here because
+# local builds are forbidden on the dev host; the toolchain matches the wrapper
+# (gradle 8.10.2, JDK 21) and the reproducibility opt-outs live in
+# app/build.gradle.kts. Manual on web/API pipelines: only the version actually
+# sent to F-Droid needs it. The APK lands in the generic package
+# xui-android-fdroid/<versionName>/fdroid.apk and is attached to the GitHub
+# release by hand from the dev host (publish_github.py --fdroid in the internal
+# repo).
+build:fdroid:
+  stage: build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api"
+      when: manual
+  variables:
+    RELEASE_KEYSTORE_FILE: "$CI_PROJECT_DIR/.release-keystore.p12"
+  script:
+    - |
+      if [ -z "$RELEASE_KEYSTORE_B64" ]; then
+        echo "RELEASE_KEYSTORE_B64 not set — release will be unsigned."
+      else
+        echo "$RELEASE_KEYSTORE_B64" | base64 -d > "$RELEASE_KEYSTORE_FILE"
+        echo ">>> Keystore decoded ($(wc -c < "$RELEASE_KEYSTORE_FILE") bytes)"
+      fi
+    - gradle assembleFdroidRelease --no-daemon --stacktrace --warning-mode=summary
+    - rm -f "$RELEASE_KEYSTORE_FILE"
+    - |
+      PKG_VERSION="$(sed -n 's/^ *versionName = "\([^"]*\)"$/\1/p' app/build.gradle.kts)"
+      echo ">>> Uploading fdroid.apk to generic package registry @ $PKG_VERSION"
+      curl --fail --silent --show-error --request PUT \
+        --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        --upload-file app/build/outputs/apk/fdroid/release/3x-ui-manager-fdroid-release.apk \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/xui-android-fdroid/$PKG_VERSION/fdroid.apk"
+      echo
+  artifacts:
+    name: "xui-android-fdroid-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - app/build/outputs/apk/fdroid/release/3x-ui-manager-fdroid-release.apk
+    expire_in: 26 weeks
+    when: on_success
+
 # Auto-create a GitLab Release whenever a v* tag's pipeline goes green.
 # The semver tag enforces "new release = new version" without manual
 # release-page editing — to ship a new build to the Releases page, push a
