@@ -19,7 +19,7 @@ import net.yukh.xui.data.json.string
 import net.yukh.xui.data.repo.PanelRepository
 import net.yukh.xui.data.repo.isUnsupportedByPanel
 
-data class PanelAdminUiState(
+internal data class PanelAdminUiState(
     val tokensLoading: Boolean = true,
     /** The panel predates API tokens (the endpoint 404s). */
     val tokensUnsupported: Boolean = false,
@@ -33,6 +33,9 @@ data class PanelAdminUiState(
     // whole group loads together with the first getRawSettings call.
     val subLoaded: Boolean = false,
     val subAnnounce: String = "",
+    val hosts: PanelHostsSettings = PanelHostsSettings(),
+    val telegram: PanelBotSettings = PanelBotSettings(),
+    val discord: PanelBotSettings = PanelBotSettings(),
     // Email / SMTP From header (panel v3.6.0).
     val smtpFrom: String = "",
     val smtpFromName: String = "",
@@ -54,7 +57,7 @@ class PanelAdminViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PanelAdminUiState())
-    val state: StateFlow<PanelAdminUiState> = _state.asStateFlow()
+    internal val state: StateFlow<PanelAdminUiState> = _state.asStateFlow()
 
     // Full settings object, kept verbatim so a save only changes the edited field.
     private var rawSettings: JsonObject? = null
@@ -67,6 +70,9 @@ class PanelAdminViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             subLoaded = true,
+                            hosts = PanelHostsSettings.read(obj),
+                            telegram = PanelBotSettings.read(obj, PanelBot.Telegram),
+                            discord = PanelBotSettings.read(obj, PanelBot.Discord),
                             subAnnounce = obj.string("subAnnounce"),
                             smtpFrom = obj.string("smtpFrom"),
                             smtpFromName = obj.string("smtpFromName"),
@@ -76,6 +82,65 @@ class PanelAdminViewModel @Inject constructor(
                     }
                 }
                 .onFailure { e -> _state.update { it.copy(error = e.message ?: "Couldn't load settings") } }
+        }
+    }
+
+    internal fun setHosts(settings: PanelHostsSettings) =
+        _state.update { it.copy(hosts = settings) }
+
+    internal fun saveHosts() {
+        val raw = rawSettings ?: return
+        if (_state.value.busy) return
+        val updated = _state.value.hosts.applyTo(raw)
+        savePanelSettings(updated, "Panel host settings saved") {
+            it.copy(hosts = PanelHostsSettings.read(updated))
+        }
+    }
+
+    internal fun setBot(bot: PanelBot, settings: PanelBotSettings) =
+        _state.update {
+            when (bot) {
+                PanelBot.Telegram -> it.copy(telegram = settings)
+                PanelBot.Discord -> it.copy(discord = settings)
+            }
+        }
+
+    internal fun saveBot(bot: PanelBot, replacement: String, clear: Boolean, onSaved: () -> Unit) {
+        val raw = rawSettings ?: return
+        val current = _state.value
+        if (current.busy) return
+        val draft = when (bot) {
+            PanelBot.Telegram -> current.telegram
+            PanelBot.Discord -> current.discord
+        }
+        if (!draft.supported) return
+        val updated = bot.withTokenUpdate(draft.applyTo(raw, bot), replacement, clear)
+        val cached = bot.afterSave(updated)
+        savePanelSettings(updated, "Bot settings saved", cached, onSaved) {
+            val saved = PanelBotSettings.read(cached, bot)
+            when (bot) {
+                PanelBot.Telegram -> it.copy(telegram = saved)
+                PanelBot.Discord -> it.copy(discord = saved)
+            }
+        }
+    }
+
+    private fun savePanelSettings(
+        submitted: JsonObject,
+        message: String,
+        cached: JsonObject = submitted,
+        onSaved: () -> Unit = {},
+        updateState: (PanelAdminUiState) -> PanelAdminUiState,
+    ) {
+        _state.update { it.copy(busy = true, error = null, message = null) }
+        viewModelScope.launch {
+            repo.updateSettings(submitted)
+                .onSuccess {
+                    rawSettings = cached
+                    _state.update { updateState(it).copy(busy = false, message = message) }
+                    onSaved()
+                }
+                .onFailure { e -> _state.update { it.copy(busy = false, error = e.message ?: "Couldn't save settings") } }
         }
     }
 

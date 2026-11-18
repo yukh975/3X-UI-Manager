@@ -18,6 +18,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -220,6 +221,37 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
                 }
             }
 
+            // ---- Hosts (the panel's own web host) ----
+            HostsCard(
+                hosts = state.hosts,
+                loaded = state.subLoaded,
+                busy = state.busy,
+                onChange = vm::setHosts,
+                onSave = vm::saveHosts,
+            )
+
+            // ---- Telegram bot ----
+            BotCard(
+                bot = PanelBot.Telegram,
+                title = tr("Telegram bot"),
+                settings = state.telegram,
+                loaded = state.subLoaded,
+                busy = state.busy,
+                onChange = { vm.setBot(PanelBot.Telegram, it) },
+                onSave = { replacement, clear, onSaved -> vm.saveBot(PanelBot.Telegram, replacement, clear, onSaved) },
+            )
+
+            // ---- Discord bot ----
+            BotCard(
+                bot = PanelBot.Discord,
+                title = tr("Discord bot"),
+                settings = state.discord,
+                loaded = state.subLoaded,
+                busy = state.busy,
+                onChange = { vm.setBot(PanelBot.Discord, it) },
+                onSave = { replacement, clear, onSaved -> vm.saveBot(PanelBot.Discord, replacement, clear, onSaved) },
+            )
+
             // ---- Panel ----
             SectionTitle(tr("Panel"))
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -265,6 +297,175 @@ fun PanelAdminScreen(onClose: () -> Unit, vm: PanelAdminViewModel = hiltViewMode
             onConfirm = { showRestart = false; vm.restartPanel() },
             onDismiss = { showRestart = false },
         )
+    }
+}
+
+@Composable
+private fun HostsCard(
+    hosts: PanelHostsSettings,
+    loaded: Boolean,
+    busy: Boolean,
+    onChange: (PanelHostsSettings) -> Unit,
+    onSave: () -> Unit,
+) {
+    val editable = loaded && !busy
+    SectionTitle(tr("Hosts"))
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!loaded) {
+                Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp))
+                }
+                return@Column
+            }
+            Text(
+                tr("The panel's own host settings. Changing the listen IP, domain or port may require reconnecting the app."),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(
+                value = hosts.listen, onValueChange = { onChange(hosts.copy(listen = it)) },
+                label = { Text(tr("Listen IP")) }, singleLine = true, enabled = editable,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = hosts.domain, onValueChange = { onChange(hosts.copy(domain = it)) },
+                label = { Text(tr("Domain")) }, singleLine = true, enabled = editable,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = hosts.port, onValueChange = { onChange(hosts.copy(port = it.filter(Char::isDigit).take(5))) },
+                label = { Text(tr("Port")) }, singleLine = true, enabled = editable,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedButton(onClick = onSave, enabled = editable, modifier = Modifier.fillMaxWidth()) {
+                Text(tr("Save"))
+            }
+        }
+    }
+}
+
+@Composable
+private fun BotCard(
+    bot: PanelBot,
+    title: String,
+    settings: PanelBotSettings,
+    loaded: Boolean,
+    busy: Boolean,
+    onChange: (PanelBotSettings) -> Unit,
+    onSave: (String, Boolean, () -> Unit) -> Unit,
+) {
+    var tokenText by remember { mutableStateOf("") }
+    var clearArmed by remember { mutableStateOf(false) }
+    val editable = loaded && !busy
+
+    SectionTitle(title)
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!loaded) {
+                Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp))
+                }
+                return@Column
+            }
+            if (!settings.supported) {
+                Text(
+                    tr("Your panel version doesn't support this yet. Update the panel to the latest version to use it."),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                return@Column
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text(tr("Enable bot"), modifier = Modifier.weight(1f))
+                Switch(checked = settings.enabled, onCheckedChange = { onChange(settings.copy(enabled = it)) }, enabled = editable)
+            }
+            Text(
+                if (settings.tokenConfigured) tr("A token is configured. Leave empty to keep it, or paste a new one.")
+                else tr("Paste the bot token from BotFather."),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(
+                value = tokenText,
+                onValueChange = { tokenText = it; if (it.isNotBlank()) clearArmed = false },
+                label = { Text(tr("Bot token")) },
+                placeholder = { Text(if (settings.tokenConfigured) tr("Configured") else "") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                enabled = editable,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (settings.canClearToken && settings.tokenConfigured) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = clearArmed,
+                        onCheckedChange = { clearArmed = it; if (it) tokenText = "" },
+                        enabled = editable,
+                    )
+                    Text(tr("Clear the stored token"))
+                }
+            }
+            OutlinedTextField(
+                value = settings.recipient, onValueChange = { onChange(settings.copy(recipient = it)) },
+                label = { Text(if (bot == PanelBot.Telegram) tr("Chat ID") else tr("Channel ID")) },
+                singleLine = true, enabled = editable, modifier = Modifier.fillMaxWidth(),
+            )
+            if (bot == PanelBot.Telegram) {
+                OutlinedTextField(
+                    value = settings.apiServer, onValueChange = { onChange(settings.copy(apiServer = it)) },
+                    label = { Text(tr("API server (optional)")) }, placeholder = { Text("https://api.example.com") },
+                    singleLine = true, enabled = editable, modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = settings.proxy, onValueChange = { onChange(settings.copy(proxy = it)) },
+                    label = { Text(tr("Proxy (optional)")) }, singleLine = true, enabled = editable,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                OutlinedTextField(
+                    value = settings.adminIds, onValueChange = { onChange(settings.copy(adminIds = it)) },
+                    label = { Text(tr("Admin IDs (optional)")) }, singleLine = true, enabled = editable,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            OutlinedTextField(
+                value = settings.language, onValueChange = { onChange(settings.copy(language = it)) },
+                label = { Text(tr("Bot language")) }, placeholder = { Text("en-US") },
+                singleLine = true, enabled = editable, modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = settings.schedule, onValueChange = { onChange(settings.copy(schedule = it)) },
+                label = { Text(tr("Report schedule")) }, placeholder = { Text("@daily") },
+                singleLine = true, enabled = editable, modifier = Modifier.fillMaxWidth(),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text(tr("Send backup on report"), modifier = Modifier.weight(1f))
+                Switch(checked = settings.backup, onCheckedChange = { onChange(settings.copy(backup = it)) }, enabled = editable)
+            }
+            OutlinedTextField(
+                value = settings.cpu, onValueChange = { onChange(settings.copy(cpu = it.filter(Char::isDigit).take(3))) },
+                label = { Text(tr("CPU alert threshold, %")) }, singleLine = true, enabled = editable,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = settings.memory, onValueChange = { onChange(settings.copy(memory = it.filter(Char::isDigit).take(3))) },
+                label = { Text(tr("Memory alert threshold, %")) }, singleLine = true, enabled = editable,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = settings.events, onValueChange = { onChange(settings.copy(events = it)) },
+                label = { Text(tr("Events (comma-separated)")) }, placeholder = { Text("login.attempt,cpu.high") },
+                enabled = editable, modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedButton(
+                onClick = { onSave(tokenText, clearArmed) { tokenText = ""; clearArmed = false } },
+                enabled = editable, modifier = Modifier.fillMaxWidth(),
+            ) { Text(tr("Save")) }
+        }
     }
 }
 
