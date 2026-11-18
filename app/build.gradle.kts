@@ -92,8 +92,8 @@ android {
         targetSdk = 35
         // Literals stamped by scripts/stamp-version.sh: F-Droid rebuilds later, and
         // its checkupdates reads them from this file at the tag.
-        versionCode = 1000081
-        versionName = "26.11.18.81"
+        versionCode = 1000082
+        versionName = "26.11.18.82"
         System.getenv("CI_COMMIT_TAG")?.let { tag ->
             check(tag == "v" + versionName && versionCode == buildVersionCode(tag)) {
                 "tag $tag does not match versionName $versionName / versionCode $versionCode; run scripts/stamp-version.sh"

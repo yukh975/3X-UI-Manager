@@ -1,0 +1,1 @@
+New in Our projects on the About screen: TermiPort, an SSH terminal for Android and iOS. The client list now scrolls to the top when you change the sort order, so the new order is visible from the first client.

@@ -9,7 +9,7 @@ and tagged `v26.10.21b77`.
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [26.11.18.82] — 2026-11-18
 
 ### Added
 - **TermiPort in Our projects**: the About screen now links TermiPort, an SSH terminal for Android and iOS, alongside the 3x-ui manual, Currency Converter and netadm.pro.
