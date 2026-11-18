@@ -9,9 +9,10 @@ and tagged `v26.10.21b77`.
 
 🇷🇺 [Версия на русском](CHANGELOG.ru.md)
 
-## [Unreleased]
+## [26.11.18.81] — 2026-11-18
 
 ### Added
+- **Panel host and bot settings** ([#14](https://github.com/yukh975/3X-UI-Manager/issues/14)): Panel admin now edits the panel's own host (listen IP, domain, port) and the Telegram and Discord notification bots — enable, token, chat/channel, language, report schedule, backup, CPU/memory thresholds and events. A configured bot token is kept when the field is left empty; clearing it is a separate, explicit action.
 - **Sorting the client list** ([#13](https://github.com/yukh975/3X-UI-Manager/issues/13)): a sort button next to the filter offers the same orders as the panel — oldest first, newest first, recently updated, recently online, email A→Z and Z→A, most traffic, highest remaining, expiring soonest. The choice is remembered; the list keeps email A→Z until you pick another order.
 
 ## [26.10.28.80] — 2026-10-28

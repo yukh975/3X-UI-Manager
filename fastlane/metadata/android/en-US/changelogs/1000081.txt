@@ -1,0 +1,1 @@
+New in Panel admin: edit the panel's own host (listen IP, domain, port) and the Telegram and Discord notification bots — enable, token, chat/channel, language, report schedule, backup, CPU/memory thresholds and events. A configured bot token stays when the field is left empty; clearing it is explicit. Also: sort the client list the way the panel does.
