@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -104,8 +105,14 @@ fun ClientsScreen(
     var sortMenu by remember { mutableStateOf(false) }
     var showImportClients by remember { mutableStateOf(false) }
     var confirmDeleteOrphans by remember { mutableStateOf(false) }
+    val clientListState = rememberLazyListState()
 
     LaunchedEffect(Unit) { vm.load() }
+    LaunchedEffect(state.sort) {
+        if (state.visibleItems.isNotEmpty()) {
+            clientListState.scrollToItem(0)
+        }
+    }
 
     // Auto-refresh the list while the screen is on-screen (start/stop with lifecycle).
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -239,6 +246,7 @@ fun ClientsScreen(
                     }
                 } else {
                     LazyColumn(
+                        state = clientListState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),

@@ -14,6 +14,9 @@ and tagged `v26.10.21b77`.
 ### Added
 - **TermiPort in Our projects**: the About screen now links TermiPort, an SSH terminal for Android and iOS, alongside the 3x-ui manual, Currency Converter and netadm.pro.
 
+### Changed
+- **The client list scrolls to the top when the sort order changes**, so a newly picked order is visible from the first client instead of staying at the old scroll position.
+
 ## [26.11.18.81] — 2026-11-18
 
 ### Added
